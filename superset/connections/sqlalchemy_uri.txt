@@ -1,0 +1,15 @@
+# ============================================================
+# SQLAlchemy Connection String Template
+# ============================================================
+# Use this connection string in Superset to connect to DWH_RetailTech
+
+mssql+pyodbc://sa:YourStrong@Passw0rd123@mssql:1433/DWH_RetailTech?driver=ODBC+Driver+17+for+SQL+Server
+
+# ---- Alternative (if using localhost outside Docker) ----
+# mssql+pyodbc://sa:YourStrong@Passw0rd123@localhost:1433/DWH_RetailTech?driver=ODBC+Driver+17+for+SQL+Server
+
+# ---- Driver Info ----
+# The ODBC Driver 17 for SQL Server must be installed on the machine running Superset.
+# Linux: apt install msodbcsql17
+# macOS: brew install microsoft/mssql-release/msodbcsql17
+# Windows: Already included with the driver installation

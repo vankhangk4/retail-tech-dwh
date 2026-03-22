@@ -1,0 +1,361 @@
+1. DANH SÁCH USE CASE CỐT LÕI
+
+ACTOR: Nhân viên Kho (Data Operator)
+├── UC-01: Nhập dữ liệu bán hàng từ tệp Excel/CSV
+├── UC-02: Nhập dữ liệu tồn kho từ tệp Excel/Google Sheets
+├── UC-03: Nhập dữ liệu danh mục sản phẩm từ tệp CSV
+└── UC-04: Nhập dữ liệu từ cơ sở dữ liệu nguồn (SQL Server/MySQL)
+
+ACTOR: Quản trị hệ thống (System Administrator)
+├── UC-05: Khởi tạo chiều dữ liệu (Dimension) ban đầu
+├── UC-06: Cập nhật chiều dữ liệu (SCD Type 2)
+├── UC-07: Giám sát tiến trình ETL (xem log, trạng thái)
+├── UC-08: Quản lý lỗi dữ liệu (xem, phân loại, xử lý)
+└── UC-09: Lập lịch ETL tự động (hàng ngày/tuần)
+
+ACTOR: Quản lý cửa hàng (Store Manager)
+├── UC-10: Xem Dashboard Doanh thu (biểu đồ, so sánh theo kỳ)
+├── UC-11: Xem Dashboard Sản phẩm (TOP bán chạy, biên lợi nhuận)
+├── UC-12: Xem Dashboard Tồn kho (cảnh báo ngưỡng, dự báo)
+└── UC-13: Lọc và Drill-down theo chiều dữ liệu (thời gian, cửa hàng, danh mục)
+
+ACTOR: Giám đốc (Director)
+├── UC-14: Xem Dashboard Tổng quan toàn hệ thống (KPIs tổng hợp)
+├── UC-15: Xem Dashboard Khách hàng (RFM, tỷ lệ quay lại)
+├── UC-16: Xem Dashboard Nhân viên (doanh số, hiệu suất)
+└── UC-17: Nhận báo cáo định kỳ qua email (Scheduled Reports)
+
+ACTOR: Người dùng tự do (Ad-hoc User)
+├── UC-18: Tạo truy vấn SQL trên DWH (khám phá dữ liệu)
+└── UC-19: Xuất dữ liệu báo cáo (Excel/PDF)
+Sơ đồ Use Case tổng quát:
+
+
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│ Data Operator│     │Admin (ETL)   │     │ Store Manager│
+│ (Kho/Nhập   │     │              │     │              │
+│  liệu)      │     │              │     │              │
+└──────┬───────┘     └──────┬───────┘     └──────┬───────┘
+       │                   │                   │
+       │ UC-01~04          │ UC-05~09          │ UC-10~13
+       │ (Import)          │ (ETL Mgmt)        │ (Dashboards)
+       ▼                   ▼                   ▼
+┌──────────────────────────────────────────────────────┐
+│              HỆ THỐNG DATA WAREHOUSE & BI           │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐            │
+│  │  Staging │→ │  DWH     │→ │  BI      │            │
+│  │  Layer   │  │  (Dim/   │  │(Superset)│            │
+│  │          │  │  Fact)   │  │          │            │
+│  └──────────┘  └──────────┘  └──────────┘            │
+└──────────────────────────────────────────────────────┘
+                                  ▲
+       ┌───────────────────────────┘
+       │ UC-14~19
+┌──────┴───────┐
+│ Director /  │
+│ Ad-hoc User │
+└─────────────┘
+2. CẤU TRÚC DATABASE (STAR SCHEMA)
+Tầng Staging (STG_*)
+
+STG_SalesRaw          STG_InventoryRaw          STG_ProductRaw
+├── MaHoaDon (PK)    ├── MaPhieu (PK)          ├── MaSP (PK/BK)
+├── MaSP             ├── MaSP                   ├── TenSP
+├── MaKH             ├── MaCH                  ├── ThuongHieu
+├── MaCH             ├── NgayChot              ├── DanhMuc
+├── MaNV             ├── TonDauNgay            ├── GiaVon
+├── NgayBan          ├── TonCuoiNgay           ├── GiaNiemYet
+├── SoLuong          ├── NhapTrongNgay         └── ...
+├── DonGiaBan        ├── XuatTrongNgay
+├── ChietKhau        └── NhaCungCap
+└── ...
+
+STG_CustomerRaw       STG_StoreRaw              STG_SupplierRaw
+├── MaKH (PK/BK)     ├── MaCH (PK/BK)          ├── MaNCC (PK/BK)
+├── HoTen            ├── TenCH                 ├── TenNCC
+├── GioiTinh         ├── DiaChi                ├── QuocGia
+├── ThanhPho         ├── ThanhPho              └── ...
+├── LoaiKH           └── NgayKhaiTruong
+└── ...
+Tầng Core DWH (Dim & Fact)
+
+┌─────────────────────────────────────────────────────────────────┐
+│                         DIMENSIONS (6)                          │
+│                                                                 │
+│  ┌───────────┐   ┌────────────┐   ┌─────────────┐               │
+│  │  DimDate  │   │ DimProduct │   │DimCustomer  │               │
+│  │  (Pre-   │   │ (SCD T2)   │   │             │               │
+│  │  filled) │   │            │   │             │               │
+│  └───────────┘   └────────────┘   └─────────────┘               │
+│                                                                 │
+│  ┌───────────┐   ┌────────────┐   ┌─────────────┐               │
+│  │ DimStore  │   │DimEmployee │   │ DimSupplier  │               │
+│  │           │   │            │   │             │               │
+│  └───────────┘   └────────────┘   └─────────────┘               │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                          FACTS (3)                               │
+│                                                                 │
+│  ┌───────────────┐   ┌───────────────┐   ┌────────────────┐     │
+│  │  FactSales    │   │FactInventory  │   │ FactPurchase   │     │
+│  │  (Transaction)│   │(Periodic Snap.)│   │ (Transaction)  │     │
+│  │               │   │               │   │                │     │
+│  │ DateKey  ─────│───│── DateKey     │───│── DateKey      │     │
+│  │ ProductKey───│───│── ProductKey   │───│── ProductKey   │     │
+│  │ CustomerKey───│   │               │   │── SupplierKey  │     │
+│  │ StoreKey─────│───│── StoreKey    │───│── StoreKey     │     │
+│  │ EmployeeKey  │   │               │   │                │     │
+│  │               │   │ SupplierKey   │   │                │     │
+│  └───────────────┘   └───────────────┘   └────────────────┘     │
+└─────────────────────────────────────────────────────────────────┘
+Luồng khóa ngoại chi tiết (Foreign Key Flow)
+
+DimDate
+  PK: DateKey (INT, yyyyMMdd)
+       │
+       ├─→ FactSales.DateKey
+       ├─→ FactInventory.DateKey
+       └─→ FactPurchase.DateKey
+
+DimProduct
+  PK: ProductKey (INT, Surrogate)
+  BK: ProductCode (VARCHAR)
+       │
+       ├─→ FactSales.ProductKey
+       ├─→ FactInventory.ProductKey
+       └─→ FactPurchase.ProductKey
+
+DimCustomer
+  PK: CustomerKey (INT, Surrogate)
+  BK: CustomerCode (VARCHAR)
+       └─→ FactSales.CustomerKey
+
+DimStore
+  PK: StoreKey (INT, Surrogate)
+  BK: StoreCode (VARCHAR)
+       ├─→ FactSales.StoreKey
+       ├─→ FactInventory.StoreKey
+       ├─→ FactPurchase.StoreKey
+       └─→ DimEmployee.StoreKey
+
+DimEmployee
+  PK: EmployeeKey (INT, Surrogate)
+  BK: EmployeeCode (VARCHAR)
+       └─→ FactSales.EmployeeKey
+
+DimSupplier
+  PK: SupplierKey (INT, Surrogate)
+  BK: SupplierCode (VARCHAR)
+       ├─→ FactInventory.SupplierKey
+       └─→ FactPurchase.SupplierKey
+Bảng hệ thống và Staging
+
+ETL_Watermark          ETL_RunLog              STG_ErrorLog
+├── WatermarkID (PK)  ├── RunLogID (PK)       ├── ErrorID (PK)
+├── SourceName        ├── RunDate             ├── SourceTable
+├── WatermarkValue    ├── PipelineName        ├── ErrorType
+├── LastRunStatus     ├── Status               ├── RawData
+├── LastRunDatetime   ├── RowsProcessed        ├── LoadDatetime
+└── RowsExtracted     ├── Duration_Seconds     └── IsProcessed
+                     └── ErrorMessage
+Tầng Data Mart (DM_*)
+
+DM_SalesDailySummary        DM_InventoryAlert
+├── DateKey (PK)            ├── ProductKey (PK)
+├── StoreKey                ├── StoreKey
+├── CategoryKey             ├── AlertLevel (LOW/MEDIUM/HIGH)
+├── NetSalesAmount          ├── CurrentStock
+├── GrossProfitAmount       ├── ReorderPoint
+├── QuantitySold            ├── DaysOfSupply
+└── TransactionCount        └── SuggestedOrderQty
+3. DÀN Ý BÁO CÁO PHÂN TÍCH THIẾT KẾ (5 CHƯƠNG)
+CHƯƠNG 1: TỔNG QUAN HỆ THỐNG
+
+1.1. Bối cảnh thực trạng doanh nghiệp
+    1.1.1. Mô tả thực trạng quản lý dữ liệu hiện tại
+    1.1.2. Các bất cập và hạn chế của mô hình dữ liệu phân tán
+    1.1.3. Phân tích hệ thống nguồn dữ liệu (3 nguồn: POS, Kho, Sản phẩm)
+
+1.2. Lý do cần xây dựng Data Warehouse
+    1.2.1. Tập trung hóa dữ liệu (SSOT)
+    1.2.2. Hỗ trợ phân tích lịch sử
+    1.2.3. Nâng cao chất lượng dữ liệu
+    1.2.4. Nền tảng cho Business Intelligence
+
+1.3. Mục tiêu dự án
+    1.3.1. Mục tiêu tổng quát
+    1.3.2. Mục tiêu cụ thể (4 mục tiêu)
+
+1.4. Phạm vi và giới hạn dự án
+    1.4.1. Phạm vi chức năng
+    1.4.2. Phạm vi phi chức năng
+    1.4.3. Giả định và phụ thuộc
+
+1.5. Tài liệu tham khảo
+CHƯƠNG 2: PHÂN TÍCH YÊU CẦU HỆ THỐNG
+
+2.1. Thu thập yêu cầu
+    2.1.1. Phương pháp thu thập yêu cầu
+    2.1.2. Danh sách bên liên quan (Stakeholders)
+    2.1.3. Danh sách câu hỏi phỏng vấn nghiệp vụ
+
+2.2. Yêu cầu chức năng
+    2.2.1. Nhóm chức năng thu thập và tích hợp dữ liệu (FR-01 → FR-04)
+    2.2.2. Nhóm chức năng biến đổi và làm sạch dữ liệu (FR-05 → FR-09)
+    2.2.3. Nhóm chức năng Dashboard và trực quan hóa (FR-10 → FR-15)
+
+2.3. Yêu cầu phi chức năng
+    2.3.1. Yêu cầu hiệu năng (thời gian phản hồi < 3 giây)
+    2.3.2. Yêu cầu khả năng mở rộng (hàng triệu bản ghi)
+    2.3.3. Yêu cầu bảo mật (phân quyền RBAC)
+    2.3.4. Yêu cầu khả dụng (scheduled reports)
+    2.3.5. Yêu cầu bảo trì (logging, monitoring)
+
+2.4. Mô hình Use Case
+    2.4.1. Sơ đồ Use Case tổng quát
+    2.4.2. Đặc tả chi tiết từng Use Case (UC-01 → UC-19)
+    2.4.3. Quan hệ giữa các Use Case (include, extend)
+
+2.5. Ma trận truy vấn (Requirement Traceability Matrix)
+CHƯƠNG 3: THIẾT KẾ KIẾN TRÚC HỆ THỐNG TỔNG THỂ
+
+3.1. Lựa chọn kiến trúc và justification
+    3.1.1. So sánh các mô hình kiến trúc (Monolithic, 3-tier, Data Lake, Lambda)
+    3.1.2. Kiến trúc đề xuất: 4-Tier Layered Architecture
+
+3.2. Mô tả chi tiết từng tầng
+    3.2.1. Tầng 1: Data Sources (Nguồn dữ liệu)
+        └── 3 nguồn: POS/Excel, Kho/Google Sheets, Danh mục CSV
+    3.2.2. Tầng 2: ETL Processing Layer
+        ├── Staging Database
+        ├── Transformation Engine (Python / Stored Procedures)
+        └── ETL Orchestrator (Python Scheduler / SQL Agent)
+    3.2.3. Tầng 3: Data Warehouse (SQL Server)
+        ├── Staging Layer (STG_*)
+        ├── Core DWH Layer (Dim/Fact)
+        └── Data Mart Layer (DM_*, Aggregate Tables)
+    3.2.4. Tầng 4: BI & Visualization (Apache Superset)
+        ├── Interactive Dashboards
+        ├── Scheduled Reports
+        └── RBAC (Role-based Access Control)
+
+3.3. Luồng dữ liệu tổng thể (Data Flow Diagram - Level 1 & 2)
+
+3.4. Công nghệ và Stack kỹ thuật
+    ├── Database: SQL Server
+    ├── ETL: Python (pandas, pyodbc), T-SQL (Stored Procedures)
+    ├── Scheduling: Python APScheduler / SQL Server Agent
+    ├── BI Platform: Apache Superset + SQLAlchemy
+    ├── Version Control: Git
+    └── OS: Linux / Windows
+
+3.5. Sơ đồ triển khai (Deployment Diagram)
+CHƯƠNG 4: THIẾT KẾ CƠ SỞ DỮ LIỆU
+
+4.1. Phương pháp thiết kế
+    4.1.1. Lý thuyết Dimensional Modeling (Ralph Kimball)
+    4.1.2. Lựa chọn Star Schema — justification
+
+4.2. Thiết kế bảng Dimension (chiều)
+    4.2.1. DimDate — Chiều Thời gian (pre-populated)
+        ├── Cấu trúc vật lý, các cột chi tiết
+        └── Phương pháp khởi tạo (script)
+    4.2.2. DimProduct — Chiều Sản phẩm (SCD Type 2)
+        ├── Cấu trúc vật lý (ProductKey, ProductCode, ..., SCD columns)
+        └── Chiến lược SCD Type 2 (EffectiveDate, ExpirationDate, IsCurrent)
+    4.2.3. DimCustomer — Chiều Khách hàng
+    4.2.4. DimStore — Chiều Cửa hàng
+    4.2.5. DimEmployee — Chiều Nhân viên
+    4.2.6. DimSupplier — Chiều Nhà cung cấp
+
+4.3. Thiết kế bảng Fact (sự kiện)
+    4.3.1. FactSales — Bán hàng (Transaction Fact)
+        ├── Grain (độ hạt): 1 dòng = 1 sản phẩm / 1 hóa đơn
+        ├── Cấu trúc vật lý
+        └── Các measure: Quantity, GrossSalesAmount, NetSalesAmount, CostAmount, GrossProfitAmount
+    4.3.2. FactInventory — Tồn kho (Periodic Snapshot Fact)
+        ├── Grain: 1 dòng = 1 sản phẩm / 1 cửa hàng / 1 ngày
+        └── Measures: OpeningStock, ClosingStock, TotalInventoryValue
+    4.3.3. FactPurchase — Nhập hàng (Transaction Fact)
+
+4.4. Thiết kế Staging Tables
+    4.4.1. Danh sách các bảng Staging
+    4.4.2. Ánh xạ từ nguồn vào Staging (Source → STG mapping)
+
+4.5. Thiết kế bảng hệ thống
+    4.5.1. ETL_Watermark (cơ chế trích xuất tăng dần)
+    4.5.2. ETL_RunLog (kiểm toán pipeline)
+    4.5.3. STG_ErrorLog (quản lý lỗi)
+
+4.6. Thiết kế Data Mart (Aggregate Tables)
+    4.6.1. DM_SalesDailySummary
+    4.6.2. DM_InventoryAlert
+
+4.7. Sơ đồ ERD Star Schema (PlantUML code)
+    └── Trực quan hóa toàn bộ mô hình
+
+4.8. Ràng buộc toàn vẹn và index strategy
+    ├── Primary Key / Foreign Key constraints
+    ├── Clustered Index vs Non-clustered Index
+    └── Partitioning strategy (theo DateKey)
+CHƯƠNG 5: THIẾT KẾ TIẾN TRÌNH ETL
+
+5.1. Tổng quan quy trình ETL
+    5.1.1. Kiến trúc tổng thể quy trình ETL
+    5.1.2. Cơ chế điều phối (Orchestration)
+    5.1.3. Error handling và retry mechanism
+
+5.2. Bước 1: EXTRACT (Trích xuất)
+    5.2.1. Đọc tệp Excel/CSV (pandas)
+    5.2.2. Kết nối cơ sở dữ liệu nguồn (pyodbc)
+    5.2.3. Cơ chế Watermark (trích xuất tăng dần)
+    5.2.4. Code mẫu: extract_sales_from_excel.py
+    5.2.5. Load vào Staging
+
+5.3. Bước 2: TRANSFORM (Biến đổi)
+    5.3.1. Danh mục các phép biến đổi (Data Quality Rules)
+        ├── Loại bỏ trùng lặp (Deduplication)
+        ├── Chuẩn hóa định dạng (Date, Currency, String)
+        ├── Xử lý NULL và dữ liệu thiếu
+        ├── Tra cứu Surrogate Key
+        └── Kiểm tra ràng buộc toàn vẹn tham chiếu
+    5.3.2. Slowly Changing Dimension Type 2 cho DimProduct
+        ├── Logic đóng bản ghi cũ
+        ├── Logic tạo bản ghi mới
+        └── Code: usp_Load_DimProduct (T-SQL)
+    5.3.3. Biến đổi FactSales
+        └── Code: usp_Transform_FactSales (T-SQL)
+    5.3.4. Biến đổi FactInventory và FactPurchase
+    5.3.5. Ghi log chi tiết quá trình biến đổi
+
+5.4. Bước 3: LOAD (Nạp dữ liệu)
+    5.4.1. Thứ tự nạp (Dimension trước, Fact sau)
+    5.4.2. Idempotency (ngăn nạp trùng)
+    5.4.3. Refresh Data Mart
+
+5.5. ETL Orchestrator (Bộ điều phối chính)
+    5.5.1. Thiết kế main_etl.py
+    5.5.2. Cấu hình lập lịch (APScheduler / SQL Agent)
+    5.5.3. Luồng xử lý lỗi end-to-end
+
+5.6. Kế hoạch kiểm thử ETL
+    5.6.1. Unit test cho từng module
+    5.6.2. Integration test cho toàn pipeline
+    5.6.3. So sánh dữ liệu nguồn vs DWH (data reconciliation)
+    5.6.4. Performance test (đo thời gian, tài nguyên)
+Tóm tắt quan hệ logic giữa 5 chương
+
+Chương 1 (Tổng quan) ──→ "Tại sao cần DWH?"
+         │
+         ▼
+Chương 2 (Yêu cầu) ────→ "Hệ thống cần làm gì?" (Use Cases)
+         │
+         ▼
+Chương 3 (Kiến trúc) ──→ "Giải pháp tổng thể trông như thế nào?" (4-tier)
+         │
+         ▼
+Chương 4 (CSDL) ───────→ "Dữ liệu được tổ chức ra sao?" (Star Schema)
+         │
+         ▼
+Chương 5 (ETL) ────────→ "Dữ liệu di chuyển như thế nào?" (E→T→L pipeline)

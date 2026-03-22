@@ -1,0 +1,847 @@
+
+	
+TRƯỜNG ĐẠI HỌC THUỶ LỢI 
+KHOA CÔNG NGHỆ THÔNG TIN
+
+ĐỀ CƯƠNG ĐỒ ÁN TỐT NGHIỆP
+
+
+
+
+
+BÁO CÁO
+PHÂN TÍCH VÀ THIẾT KẾ HỆ THỐNG
+
+
+Đề tài:
+XÂY DỰNG HỆ THỐNG DATA WAREHOUSE VÀ TRỰC QUAN HÓA DỮ LIỆU KINH DOANH CHO CHUỖI CỬA HÀNG BÁN LẺ THIẾT BỊ CÔNG NGHỆ
+
+
+
+
+
+
+
+
+
+
+Sinh viên thực hiện: Nguyễn Văn Khang
+Mã sinh viên: 2251162042
+Số điện thoại: 0977159653
+Email:  vankhangk4@gmail.com
+Giảng viên hướng dẫn: Đỗ Oanh Cường, Nguyễn Tu Trung
+
+
+
+Năm học: 2025 – 2026
+
+MỤC LỤC
+
+
+
+CHƯƠNG 1: TỔNG QUAN HỆ THỐNG
+1.1. Bối cảnh và Thực trạng Doanh nghiệp
+1.1.1. Mô tả Thực trạng
+Trong bối cảnh nền kinh tế số đang phát triển mạnh mẽ, các doanh nghiệp bán lẻ thiết bị công nghệ phải đối mặt với áp lực cạnh tranh ngày càng gay gắt. Dữ liệu kinh doanh được xem là tài sản chiến lược, tuy nhiên nhiều doanh nghiệp vừa và nhỏ vẫn chưa khai thác hiệu quả nguồn tài nguyên này.
+Hiện tại, doanh nghiệp đang quản lý toàn bộ dữ liệu hoạt động kinh doanh thông qua các tệp tin đơn lẻ dạng Microsoft Excel hoặc Google Sheets. Mỗi bộ phận (kinh doanh, kho vận, kế toán, nhân sự) duy trì một hệ thống tệp tin riêng biệt, không có sự liên thông và tích hợp. Đây là mô hình dữ liệu phân tán, đặt ra nhiều thách thức nghiêm trọng cho ban quản lý trong việc ra quyết định chiến lược.
+
+📌 Các vấn đề nổi cộm trong thực trạng hiện tại
+• Dữ liệu bị phân mảnh: Mỗi tệp Excel là một 'đảo dữ liệu' độc lập, không có cơ chế tích hợp tự động.
+• Không nhất quán: Cùng một chỉ số có thể cho kết quả khác nhau tùy theo người tổng hợp.
+• Không có lịch sử: Dữ liệu lịch sử theo thời gian bị ghi đè hoặc lưu trữ tùy tiện.
+• Hiệu quả thấp: Báo cáo hàng tháng mất 3-5 ngày làm việc thủ công của đội ngũ kế toán/kinh doanh.
+• Rủi ro mất dữ liệu: Không có cơ chế backup tập trung và kiểm soát phiên bản.
+
+1.1.2. Phân tích Hệ thống Nguồn Dữ liệu
+Dữ liệu hiện tại đến từ ba nguồn chính, hoạt động độc lập:
+
+Nguồn Dữ liệu	Định dạng	Tần suất cập nhật	Người phụ trách
+Hệ thống Bán hàng (POS)	Excel / CSV	Hàng ngày	Bộ phận Kinh doanh
+Hệ thống Quản lý Kho	Excel / Google Sheets	Hàng ngày	Bộ phận Kho vận
+Danh mục Sản phẩm	Excel / CSV tĩnh	Theo đợt nhập hàng	Bộ phận Thu mua
+
+1.2. Lý do Cần xây dựng Data Warehouse
+Trước những bất cập của thực trạng hiện tại, việc xây dựng một Kho Dữ liệu Tập trung (Data Warehouse - DWH) là giải pháp tất yếu, mang lại những lợi ích chiến lược sau:
+•	Tập trung hóa dữ liệu: Mọi nguồn dữ liệu được tích hợp vào một điểm duy nhất, đảm bảo tính nhất quán và là nguồn sự thật duy nhất (Single Source of Truth - SSOT).
+•	Hỗ trợ phân tích lịch sử: DWH lưu trữ dữ liệu theo chiều thời gian, cho phép phân tích xu hướng dài hạn, so sánh hiệu suất theo kỳ.
+•	Nâng cao chất lượng dữ liệu: Quy trình ETL tích hợp các bước làm sạch, chuẩn hóa, loại bỏ sai sót và dữ liệu trùng lặp một cách có hệ thống.
+•	Tốc độ phân tích: Cấu trúc Star Schema được tối ưu cho các truy vấn phân tích (OLAP), cho phép báo cáo theo thời gian thực thay vì mất nhiều ngày tổng hợp thủ công.
+•	Nền tảng cho BI: DWH là cơ sở hạ tầng thiết yếu để triển khai các công cụ Business Intelligence (BI), cung cấp Dashboard tương tác cho ban lãnh đạo.
+
+1.3. Mục tiêu Dự án
+1.3.1. Mục tiêu Tổng quát
+Xây dựng một hệ thống Data Warehouse toàn diện và hoàn chỉnh, bao gồm cơ sở hạ tầng lưu trữ, quy trình xử lý dữ liệu tự động (ETL), và nền tảng trực quan hóa dữ liệu phục vụ phân tích kinh doanh cho chuỗi cửa hàng bán lẻ thiết bị công nghệ.
+1.3.2. Mục tiêu Cụ thể
+1.	Xây dựng cơ sở dữ liệu Data Warehouse trên SQL Server với mô hình Star Schema, đảm bảo khả năng lưu trữ và truy vấn hàng triệu bản ghi giao dịch.
+2.	Triển khai quy trình ETL (Extract – Transform – Load) tự động, có khả năng thu thập dữ liệu từ nhiều nguồn không đồng nhất (Excel, CSV, SQL) và nạp vào DWH.
+3.	Xây dựng các bảng Dimension và Fact theo mô hình chiều (Dimensional Modeling) phản ánh đầy đủ các thực thể kinh doanh: Sản phẩm, Khách hàng, Thời gian, Địa điểm, Nhân viên.
+4.	Triển khai Apache Superset làm nền tảng BI, xây dựng ít nhất 5 Dashboard tương tác phân tích các KPIs: Doanh thu, Lợi nhuận, Tồn kho, Hành vi khách hàng.
+5.	Đảm bảo hiệu năng truy vấn đạt chuẩn: thời gian phản hồi dưới 3 giây cho các báo cáo tổng hợp thông thường.
+
+CHƯƠNG 2: YÊU CẦU HỆ THỐNG
+2.1. Yêu cầu Chức năng
+2.1.1. Nhóm Chức năng Thu thập và Tích hợp Dữ liệu
+Hệ thống phải có khả năng kết nối và trích xuất dữ liệu từ các nguồn đa dạng:
+•	FR-01: Hỗ trợ đọc và xử lý tệp tin định dạng .xlsx, .xls, .csv từ thư mục cục bộ hoặc mạng nội bộ (Local/Network Share).
+•	FR-02: Hỗ trợ kết nối đến cơ sở dữ liệu quan hệ (SQL Server, MySQL) thông qua ODBC/JDBC làm nguồn dữ liệu.
+•	FR-03: Hỗ trợ lập lịch (scheduling) tự động cho quy trình ETL với tần suất tùy chỉnh (hàng ngày, hàng tuần, theo sự kiện).
+•	FR-04: Cơ chế trích xuất tăng dần (Incremental Extraction) để chỉ xử lý dữ liệu mới hoặc thay đổi, giảm tải hệ thống.
+2.1.2. Nhóm Chức năng Biến đổi và Làm sạch Dữ liệu
+•	FR-05: Phát hiện và loại bỏ các bản ghi trùng lặp dựa trên khóa nghiệp vụ (business key).
+•	FR-06: Chuẩn hóa định dạng: ngày tháng (DD/MM/YYYY → DATE), đơn vị tiền tệ (loại bỏ ký tự thừa), chuỗi ký tự (UPPER/TRIM).
+•	FR-07: Xử lý giá trị NULL và dữ liệu thiếu bằng chiến lược thay thế phù hợp (giá trị mặc định, giá trị trung bình, hoặc ghi nhận vào bảng lỗi).
+•	FR-08: Kiểm tra ràng buộc toàn vẹn tham chiếu: đảm bảo các khóa ngoại trong bảng Fact trỏ đến khóa chính hợp lệ trong bảng Dimension.
+•	FR-09: Ghi log chi tiết cho toàn bộ quá trình ETL: số bản ghi đã xử lý, số bản ghi lỗi, thời gian thực thi.
+2.1.3. Nhóm Chức năng Dashboard và Trực quan hóa
+•	FR-10: Dashboard Phân tích Doanh thu: biểu đồ doanh thu theo ngày/tuần/tháng/năm, so sánh cùng kỳ, phân tích theo cửa hàng và danh mục sản phẩm.
+•	FR-11: Dashboard Phân tích Sản phẩm: TOP 10 sản phẩm bán chạy, tỷ lệ đóng góp doanh thu theo danh mục, phân tích biên lợi nhuận gộp.
+•	FR-12: Dashboard Quản lý Tồn kho: cảnh báo tồn kho dưới ngưỡng tối thiểu, dự báo nhu cầu nhập hàng dựa trên xu hướng bán hàng.
+•	FR-13: Dashboard Phân tích Khách hàng: phân khúc khách hàng theo RFM (Recency, Frequency, Monetary), tỷ lệ khách hàng quay lại.
+•	FR-14: Dashboard Hiệu suất Nhân viên: doanh số theo nhân viên, tỷ lệ chuyển đổi, hiệu quả theo ca làm việc.
+•	FR-15: Hỗ trợ lọc dữ liệu đa chiều (drill-down/drill-up) theo thời gian, địa điểm, danh mục sản phẩm.
+
+2.2. Yêu cầu Phi chức năng
+
+Mã yêu cầu	Danh mục	Yêu cầu cụ thể	Chỉ tiêu đo lường
+NFR-01	Hiệu năng	Tốc độ truy vấn báo cáo tổng hợp	≤ 3 giây cho tập dữ liệu ≤ 5 triệu bản ghi
+NFR-02	Hiệu năng	Thời gian thực thi ETL hàng ngày	≤ 30 phút cho khối lượng ≤ 50.000 giao dịch/ngày
+NFR-03	Khả năng lưu trữ	Dung lượng dữ liệu tối đa	Hỗ trợ ≥ 100 triệu bản ghi trong bảng Fact
+NFR-04	Toàn vẹn DL	Chính xác dữ liệu sau ETL	Tỷ lệ bản ghi lỗi ≤ 0.1% tổng số bản ghi
+NFR-05	Độ tin cậy	Uptime hệ thống	≥ 99% trong giờ làm việc
+NFR-06	Bảo mật	Kiểm soát truy cập	Phân quyền theo vai trò (RBAC)
+NFR-07	Khả năng mở rộng	Scale theo dữ liệu	Mở rộng nguồn và lượng dữ liệu không cần thay đổi kiến trúc
+NFR-08	Khả dụng	Tương thích trình duyệt	Chrome, Firefox, Edge (phiên bản mới nhất)
+
+CHƯƠNG 3: KIẾN TRÚC HỆ THỐNG TỔNG THỂ
+3.1. Mô hình Kiến trúc Đề xuất
+Hệ thống được thiết kế theo kiến trúc phân tầng (Layered Architecture) gồm 4 tầng chính, phản ánh luồng dữ liệu từ nguồn đến điểm tiêu thụ. Kiến trúc này đảm bảo sự tách biệt trách nhiệm rõ ràng, dễ bảo trì và mở rộng.
+
+📌 Sơ đồ Kiến trúc Tổng thể (Mô tả văn bản – Render bằng PlantUML)
+[Tầng 1: Data Sources] --> [Tầng 2: ETL Processing Layer] --> [Tầng 3: Data Warehouse] --> [Tầng 4: BI & Visualization]
+
+Luồng dữ liệu: File Excel/CSV | SQL Server OLTP → Python ETL Scripts | Stored Procedures → SQL Server DWH (Staging → Core → Data Mart) → Apache Superset Dashboards
+
+3.2. Mô tả Chi tiết từng Tầng
+3.2.1. Tầng 1: Data Sources (Nguồn Dữ liệu)
+Đây là tầng chứa dữ liệu thô từ các hệ thống nghiệp vụ. Tầng này không bị can thiệp; dữ liệu được đọc theo chế độ chỉ đọc (Read-Only) để đảm bảo tính toàn vẹn của hệ thống nguồn.
+•	Nguồn 1 – Hệ thống Bán hàng: Tệp Excel/CSV xuất từ phần mềm POS (Point of Sale), chứa thông tin hóa đơn, chi tiết sản phẩm bán, thông tin khách hàng và nhân viên bán hàng.
+•	Nguồn 2 – Hệ thống Quản lý Kho: Tệp Excel/Google Sheets ghi nhận phiếu nhập kho, xuất kho, điều chỉnh tồn kho, thông tin nhà cung cấp.
+•	Nguồn 3 – Danh mục Sản phẩm: Tệp CSV tĩnh định nghĩa cấu trúc danh mục sản phẩm, thông số kỹ thuật, giá nhập, giá bán tham chiếu.
+3.2.2. Tầng 2: ETL Processing Layer (Tầng Xử lý ETL)
+Đây là tầng quan trọng nhất, chịu trách nhiệm toàn bộ quá trình xử lý dữ liệu. Tầng này được triển khai bằng Python và/hoặc Stored Procedures của SQL Server.
+•	Staging Database: Vùng đệm tạm thời để lưu dữ liệu thô được trích xuất từ các nguồn, trước khi áp dụng các bước biến đổi. Cấu trúc bảng Staging phản chiếu cấu trúc dữ liệu nguồn.
+•	Transformation Engine: Module Python hoặc Stored Procedure thực hiện các bước làm sạch, chuẩn hóa, làm phong phú (enrichment) và kiểm tra chất lượng dữ liệu.
+•	ETL Orchestrator: Bộ điều phối (có thể dùng Python scheduler hoặc SQL Server Agent) quản lý thứ tự thực thi, xử lý lỗi và cơ chế retry.
+3.2.3. Tầng 3: Data Warehouse – SQL Server
+Tầng lưu trữ trung tâm, được tổ chức thành ba lớp logic:
+•	Staging Layer (STG_*): Bảng dữ liệu thô sau khi trích xuất, chưa qua biến đổi. Dữ liệu được truncate và load lại trong mỗi chu kỳ ETL.
+•	Core DWH Layer (DWH_*): Bảng Dimension và Fact theo mô hình Star Schema. Đây là lớp chính của Data Warehouse, lưu trữ dữ liệu lịch sử.
+•	Data Mart Layer (DM_*): Các Aggregate Table và View được tính toán sẵn phục vụ các Dashboard cụ thể, tối ưu hóa hiệu năng truy vấn.
+3.2.4. Tầng 4: BI & Visualization – Apache Superset
+Apache Superset kết nối trực tiếp đến SQL Server DWH thông qua SQLAlchemy Connector. Tầng này cung cấp:
+•	Interactive Dashboards: Giao diện web-based cho phép người dùng cuối khám phá dữ liệu mà không cần viết SQL.
+•	Scheduled Reports: Tự động gửi báo cáo định kỳ qua email đến ban lãnh đạo.
+•	Role-based Access Control: Phân quyền xem Dashboard theo vai trò (Giám đốc, Quản lý cửa hàng, Nhân viên kế toán).
+
+3.3. Công nghệ và Stack Kỹ thuật
+
+Thành phần	Công nghệ	Phiên bản đề xuất	Vai trò
+CSDL DWH	Microsoft SQL Server	2019 / 2022	Lưu trữ Data Warehouse trung tâm
+ETL Engine	Python	3.10+	Xử lý biến đổi và nạp dữ liệu
+Python Libraries	pandas, pyodbc, sqlalchemy	Mới nhất	Đọc file, kết nối DB, xử lý dữ liệu
+ETL Stored Procs	T-SQL (SQL Server)	Tương thích SQL Server 2019	Biến đổi và nạp trong nội bộ DB
+Scheduler	Python schedule / SQL Server Agent	-	Lập lịch chạy ETL tự động
+BI Platform	Apache Superset	3.x LTS	Dashboard và trực quan hóa
+Môi trường	Linux (Ubuntu 22.04) / Windows Server	-	Hạ tầng triển khai
+Containerization	Docker / Docker Compose	Latest	Đóng gói và triển khai Superset
+
+CHƯƠNG 4: THIẾT KẾ CƠ SỞ DỮ LIỆU
+4.1. Phương pháp Thiết kế – Dimensional Modeling
+Hệ thống Data Warehouse được thiết kế theo phương pháp Dimensional Modeling (Mô hình hóa Chiều) do Ralph Kimball đề xuất. Đây là phương pháp thiết kế tối ưu cho hệ thống OLAP, ưu tiên tốc độ truy vấn và tính dễ hiểu cho người dùng cuối.
+Mô hình được lựa chọn là Star Schema (Lược đồ Sao) – bảng Fact trung tâm kết nối trực tiếp đến các bảng Dimension, tối giản số lần JOIN trong câu truy vấn phân tích.
+
+4.2. Thiết kế Bảng Dimension
+4.2.1. DimDate – Chiều Thời gian
+Bảng Dimension quan trọng nhất trong mọi Data Warehouse. Được khởi tạo trước (pre-populated) với dữ liệu từ ngày bắt đầu kinh doanh đến tương lai (ví dụ: 2015-01-01 đến 2030-12-31).
+
+Tên Cột	Kiểu Dữ liệu	Ràng buộc	Mô tả
+DateKey	INT	PK, NOT NULL	Khóa chính dạng số nguyên (YYYYMMDD, VD: 20240115)
+FullDate	DATE	NOT NULL, UNIQUE	Ngày đầy đủ
+DayOfWeek	TINYINT	NOT NULL	Ngày trong tuần (1=Thứ 2, 7=Chủ nhật)
+DayName	VARCHAR(15)	NOT NULL	Tên ngày (Thứ Hai, Thứ Ba,...)
+DayOfMonth	TINYINT	NOT NULL	Ngày trong tháng (1-31)
+WeekOfYear	TINYINT	NOT NULL	Tuần trong năm (1-53)
+MonthNumber	TINYINT	NOT NULL	Số tháng (1-12)
+MonthName	VARCHAR(15)	NOT NULL	Tên tháng (Tháng 1, Tháng 2,...)
+Quarter	TINYINT	NOT NULL	Quý (1-4)
+QuarterName	CHAR(2)	NOT NULL	Tên Quý (Q1, Q2, Q3, Q4)
+Year	SMALLINT	NOT NULL	Năm (VD: 2024)
+IsWeekend	BIT	NOT NULL, DEFAULT 0	Cờ ngày cuối tuần (1=Cuối tuần)
+IsHoliday	BIT	NOT NULL, DEFAULT 0	Cờ ngày lễ/tết
+HolidayName	NVARCHAR(100)	NULL	Tên ngày lễ (nếu có)
+FiscalYear	SMALLINT	NOT NULL	Năm tài chính
+FiscalQuarter	TINYINT	NOT NULL	Quý tài chính
+
+4.2.2. DimProduct – Chiều Sản phẩm
+Bảng này lưu trữ thông tin đầy đủ về sản phẩm. Sử dụng Slowly Changing Dimension Type 2 (SCD Type 2) để theo dõi lịch sử thay đổi giá và phân loại sản phẩm.
+
+Tên Cột	Kiểu Dữ liệu	Ràng buộc	Mô tả
+ProductKey	INT IDENTITY	PK, NOT NULL	Surrogate Key – khóa thay thế tự tăng
+ProductCode	VARCHAR(50)	NOT NULL	Mã sản phẩm nghiệp vụ (từ hệ thống nguồn)
+ProductName	NVARCHAR(255)	NOT NULL	Tên sản phẩm đầy đủ
+Brand	NVARCHAR(100)	NOT NULL	Thương hiệu (Apple, Samsung, Dell,...)
+CategoryID	INT	FK → DimCategory	Mã danh mục sản phẩm
+CategoryName	NVARCHAR(100)	NOT NULL	Tên danh mục (Điện thoại, Laptop,...)
+SubCategory	NVARCHAR(100)	NULL	Danh mục con
+UnitCostPrice	DECIMAL(18,2)	NOT NULL	Giá vốn tại thời điểm hiệu lực
+UnitListPrice	DECIMAL(18,2)	NOT NULL	Giá niêm yết tại thời điểm hiệu lực
+UnitOfMeasure	VARCHAR(20)	NOT NULL, DEFAULT 'cái'	Đơn vị tính
+Warranty_Months	TINYINT	NULL	Thời gian bảo hành (tháng)
+IsActive	BIT	NOT NULL, DEFAULT 1	Trạng thái kinh doanh (1=Đang bán)
+EffectiveDate	DATE	NOT NULL	Ngày bắt đầu hiệu lực của bản ghi (SCD2)
+ExpirationDate	DATE	NULL	Ngày hết hiệu lực (NULL = hiện tại)
+IsCurrent	BIT	NOT NULL, DEFAULT 1	Cờ bản ghi hiện tại (SCD2)
+
+4.2.3. DimCustomer – Chiều Khách hàng
+Tên Cột	Kiểu Dữ liệu	Ràng buộc	Mô tả
+CustomerKey	INT IDENTITY	PK, NOT NULL	Surrogate Key
+CustomerCode	VARCHAR(50)	NOT NULL	Mã khách hàng từ hệ thống nguồn
+FullName	NVARCHAR(150)	NOT NULL	Họ và tên đầy đủ
+Gender	CHAR(1)	NULL	Giới tính (M=Nam, F=Nữ, U=Không xác định)
+DateOfBirth	DATE	NULL	Ngày sinh
+AgeGroup	VARCHAR(20)	NULL	Nhóm tuổi (18-24, 25-34, 35-44,...)
+Phone	VARCHAR(20)	NULL	Số điện thoại (đã mã hóa/ẩn bớt)
+Email	VARCHAR(150)	NULL	Email (đã mã hóa)
+City	NVARCHAR(100)	NULL	Thành phố
+Province	NVARCHAR(100)	NULL	Tỉnh/Thành phố
+CustomerType	VARCHAR(20)	NOT NULL, DEFAULT 'Lẻ'	Loại KH (Lẻ, Doanh nghiệp, VIP)
+LoyaltyPoint	INT	NOT NULL, DEFAULT 0	Điểm tích lũy hiện tại
+MemberSince	DATE	NOT NULL	Ngày đăng ký thành viên
+IsActive	BIT	NOT NULL, DEFAULT 1	Trạng thái hoạt động
+
+4.2.4. DimStore – Chiều Cửa hàng
+Tên Cột	Kiểu Dữ liệu	Ràng buộc	Mô tả
+StoreKey	INT IDENTITY	PK, NOT NULL	Surrogate Key
+StoreCode	VARCHAR(20)	NOT NULL, UNIQUE	Mã cửa hàng nghiệp vụ
+StoreName	NVARCHAR(150)	NOT NULL	Tên cửa hàng
+StoreType	VARCHAR(50)	NOT NULL	Loại hình (Flagship, Chi nhánh, Online)
+Address	NVARCHAR(255)	NOT NULL	Địa chỉ đầy đủ
+District	NVARCHAR(100)	NOT NULL	Quận/Huyện
+City	NVARCHAR(100)	NOT NULL	Thành phố
+OpenDate	DATE	NOT NULL	Ngày khai trương
+ManagerName	NVARCHAR(150)	NULL	Tên quản lý cửa hàng
+StoreArea_m2	DECIMAL(8,2)	NULL	Diện tích mặt sàn (m²)
+IsActive	BIT	NOT NULL, DEFAULT 1	Trạng thái hoạt động
+
+4.2.5. DimEmployee – Chiều Nhân viên
+Tên Cột	Kiểu Dữ liệu	Ràng buộc	Mô tả
+EmployeeKey	INT IDENTITY	PK, NOT NULL	Surrogate Key
+EmployeeCode	VARCHAR(20)	NOT NULL	Mã nhân viên
+FullName	NVARCHAR(150)	NOT NULL	Họ và tên
+Department	NVARCHAR(100)	NOT NULL	Phòng/Bộ phận
+Position	NVARCHAR(100)	NOT NULL	Chức vụ (Nhân viên bán hàng, Trưởng ca,...)
+StoreKey	INT	FK → DimStore	Cửa hàng phụ trách
+HireDate	DATE	NOT NULL	Ngày vào làm
+IsActive	BIT	NOT NULL, DEFAULT 1	Trạng thái làm việc
+
+4.2.6. DimSupplier – Chiều Nhà cung cấp
+Tên Cột	Kiểu Dữ liệu	Ràng buộc	Mô tả
+SupplierKey	INT IDENTITY	PK, NOT NULL	Surrogate Key
+SupplierCode	VARCHAR(50)	NOT NULL, UNIQUE	Mã nhà cung cấp
+SupplierName	NVARCHAR(200)	NOT NULL	Tên nhà cung cấp/nhà phân phối
+Country	NVARCHAR(100)	NOT NULL	Quốc gia
+ContactPerson	NVARCHAR(150)	NULL	Người liên hệ
+Phone	VARCHAR(30)	NULL	Số điện thoại
+Email	VARCHAR(150)	NULL	Email
+PaymentTerm_Days	TINYINT	NULL	Điều khoản thanh toán (số ngày)
+IsActive	BIT	NOT NULL, DEFAULT 1	Trạng thái
+
+4.3. Thiết kế Bảng Fact
+4.3.1. FactSales – Sự kiện Bán hàng (Bảng Fact chính)
+Đây là bảng Fact trung tâm, ghi nhận mọi giao dịch bán hàng ở mức độ chi tiết dòng hóa đơn (line-item grain). Mỗi bản ghi đại diện cho một sản phẩm trong một hóa đơn.
+
+Tên Cột	Kiểu Dữ liệu	Ràng buộc	Mô tả
+SalesKey	BIGINT IDENTITY	PK, NOT NULL	Surrogate Key của Fact
+DateKey	INT	FK → DimDate, NOT NULL	Ngày giao dịch
+ProductKey	INT	FK → DimProduct, NOT NULL	Sản phẩm được bán
+CustomerKey	INT	FK → DimCustomer, NOT NULL	Khách hàng mua
+StoreKey	INT	FK → DimStore, NOT NULL	Cửa hàng thực hiện giao dịch
+EmployeeKey	INT	FK → DimEmployee, NOT NULL	Nhân viên bán hàng
+InvoiceNumber	VARCHAR(50)	NOT NULL	Số hóa đơn (Degenerate Dimension)
+Quantity	SMALLINT	NOT NULL, CHECK > 0	Số lượng bán
+UnitPrice	DECIMAL(18,2)	NOT NULL	Đơn giá thực tế bán
+DiscountAmount	DECIMAL(18,2)	NOT NULL, DEFAULT 0	Số tiền chiết khấu
+GrossSalesAmount	DECIMAL(18,2)	NOT NULL	Doanh thu gộp (Qty × UnitPrice)
+NetSalesAmount	DECIMAL(18,2)	NOT NULL	Doanh thu thuần (Gross - Discount)
+CostAmount	DECIMAL(18,2)	NOT NULL	Giá vốn (Qty × UnitCostPrice)
+GrossProfitAmount	DECIMAL(18,2)	NOT NULL	Lợi nhuận gộp (NetSales - Cost)
+TaxAmount	DECIMAL(18,2)	NOT NULL, DEFAULT 0	Thuế VAT
+PaymentMethod	VARCHAR(30)	NOT NULL	Phương thức thanh toán
+SalesChannel	VARCHAR(20)	NOT NULL, DEFAULT 'InStore'	Kênh bán (InStore, Online)
+ReturnFlag	BIT	NOT NULL, DEFAULT 0	Cờ giao dịch hoàn trả (1=Hoàn trả)
+LoadDatetime	DATETIME2	NOT NULL, DEFAULT GETDATE()	Thời điểm nạp vào DWH
+
+4.3.2. FactInventory – Sự kiện Tồn kho
+Bảng Fact dạng Snapshot (chụp ảnh định kỳ), ghi nhận trạng thái tồn kho tại cuối mỗi ngày. Đây là bảng cơ sở cho phân tích quản lý kho và dự báo.
+
+Tên Cột	Kiểu Dữ liệu	Ràng buộc	Mô tả
+InventoryKey	BIGINT IDENTITY	PK, NOT NULL	Surrogate Key
+DateKey	INT	FK → DimDate, NOT NULL	Ngày chụp ảnh tồn kho
+ProductKey	INT	FK → DimProduct, NOT NULL	Sản phẩm
+StoreKey	INT	FK → DimStore, NOT NULL	Cửa hàng/Kho
+SupplierKey	INT	FK → DimSupplier, NULL	Nhà cung cấp chính
+OpeningStock	INT	NOT NULL, DEFAULT 0	Tồn đầu ngày
+ClosingStock	INT	NOT NULL, DEFAULT 0	Tồn cuối ngày
+StockReceived	INT	NOT NULL, DEFAULT 0	Số lượng nhập trong ngày
+StockSold	INT	NOT NULL, DEFAULT 0	Số lượng bán trong ngày
+StockAdjusted	INT	NOT NULL, DEFAULT 0	Số lượng điều chỉnh (mất mát, hỏng,...)
+ReorderPoint	INT	NULL	Mức tồn kho tối thiểu (trigger đặt hàng)
+UnitCost	DECIMAL(18,2)	NOT NULL	Giá vốn tại thời điểm chụp
+TotalInventoryValue	DECIMAL(18,2)	NOT NULL	Giá trị tồn kho (ClosingStock × UnitCost)
+LoadDatetime	DATETIME2	NOT NULL, DEFAULT GETDATE()	Thời điểm nạp
+
+4.3.3. FactPurchase – Sự kiện Nhập hàng
+Tên Cột	Kiểu Dữ liệu	Ràng buộc	Mô tả
+PurchaseKey	BIGINT IDENTITY	PK, NOT NULL	Surrogate Key
+DateKey	INT	FK → DimDate, NOT NULL	Ngày nhập hàng
+ProductKey	INT	FK → DimProduct, NOT NULL	Sản phẩm nhập
+SupplierKey	INT	FK → DimSupplier, NOT NULL	Nhà cung cấp
+StoreKey	INT	FK → DimStore, NOT NULL	Kho nhận hàng
+PurchaseOrderNo	VARCHAR(50)	NOT NULL	Số phiếu đặt hàng
+QuantityOrdered	INT	NOT NULL	Số lượng đặt
+QuantityReceived	INT	NOT NULL	Số lượng thực nhận
+UnitPurchasePrice	DECIMAL(18,2)	NOT NULL	Đơn giá nhập
+TotalPurchaseAmount	DECIMAL(18,2)	NOT NULL	Tổng giá trị nhập
+LeadTime_Days	SMALLINT	NULL	Thời gian giao hàng thực tế (ngày)
+LoadDatetime	DATETIME2	NOT NULL, DEFAULT GETDATE()	Thời điểm nạp
+
+4.4. Code PlantUML – Sơ đồ ERD (Star Schema)
+Đoạn code PlantUML dưới đây có thể được render tại plantuml.com hoặc tích hợp vào tài liệu bằng plugin PlantUML. Sơ đồ thể hiện toàn bộ mối quan hệ giữa các bảng Fact và Dimension.
+
+@startuml DWH_RetailTech_StarSchema
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam entity {
+  BackgroundColor #D6E4F0
+  BorderColor #2E75B6
+  FontColor #1F4E79
+  FontStyle Bold
+}
+skinparam arrow {
+  Color #2E75B6
+  FontColor #555555
+}
+
+' ============= DIMENSION TABLES =============
+entity "DimDate" as DimDate {
+  * DateKey : INT <<PK>>
+  --
+  FullDate : DATE
+  DayOfWeek : TINYINT
+  DayName : VARCHAR(15)
+  DayOfMonth : TINYINT
+  WeekOfYear : TINYINT
+  MonthNumber : TINYINT
+  MonthName : VARCHAR(15)
+  Quarter : TINYINT
+  Year : SMALLINT
+  IsWeekend : BIT
+  IsHoliday : BIT
+  FiscalYear : SMALLINT
+}
+
+entity "DimProduct" as DimProduct {
+  * ProductKey : INT <<PK, Surrogate>>
+  --
+  ProductCode : VARCHAR(50) <<BK>>
+  ProductName : NVARCHAR(255)
+  Brand : NVARCHAR(100)
+  CategoryName : NVARCHAR(100)
+  SubCategory : NVARCHAR(100)
+  UnitCostPrice : DECIMAL(18,2)
+  UnitListPrice : DECIMAL(18,2)
+  IsActive : BIT
+  EffectiveDate : DATE <<SCD2>>
+  ExpirationDate : DATE <<SCD2>>
+  IsCurrent : BIT <<SCD2>>
+}
+
+entity "DimCustomer" as DimCustomer {
+  * CustomerKey : INT <<PK, Surrogate>>
+  --
+  CustomerCode : VARCHAR(50) <<BK>>
+  FullName : NVARCHAR(150)
+  Gender : CHAR(1)
+  AgeGroup : VARCHAR(20)
+  City : NVARCHAR(100)
+  Province : NVARCHAR(100)
+  CustomerType : VARCHAR(20)
+  LoyaltyPoint : INT
+  MemberSince : DATE
+}
+
+entity "DimStore" as DimStore {
+  * StoreKey : INT <<PK, Surrogate>>
+  --
+  StoreCode : VARCHAR(20) <<BK>>
+  StoreName : NVARCHAR(150)
+  StoreType : VARCHAR(50)
+  Address : NVARCHAR(255)
+  District : NVARCHAR(100)
+  City : NVARCHAR(100)
+  OpenDate : DATE
+  IsActive : BIT
+}
+
+entity "DimEmployee" as DimEmployee {
+  * EmployeeKey : INT <<PK, Surrogate>>
+  --
+  EmployeeCode : VARCHAR(20) <<BK>>
+  FullName : NVARCHAR(150)
+  Department : NVARCHAR(100)
+  Position : NVARCHAR(100)
+  StoreKey : INT <<FK>>
+  HireDate : DATE
+  IsActive : BIT
+}
+
+entity "DimSupplier" as DimSupplier {
+  * SupplierKey : INT <<PK, Surrogate>>
+  --
+  SupplierCode : VARCHAR(50) <<BK>>
+  SupplierName : NVARCHAR(200)
+  Country : NVARCHAR(100)
+  PaymentTerm_Days : TINYINT
+  IsActive : BIT
+}
+
+' ============= FACT TABLES =============
+entity "FactSales" as FactSales {
+  * SalesKey : BIGINT <<PK>>
+  --
+  DateKey : INT <<FK>>
+  ProductKey : INT <<FK>>
+  CustomerKey : INT <<FK>>
+  StoreKey : INT <<FK>>
+  EmployeeKey : INT <<FK>>
+  InvoiceNumber : VARCHAR(50) <<DD>>
+  Quantity : SMALLINT
+  UnitPrice : DECIMAL(18,2)
+  DiscountAmount : DECIMAL(18,2)
+  GrossSalesAmount : DECIMAL(18,2)
+  NetSalesAmount : DECIMAL(18,2)
+  CostAmount : DECIMAL(18,2)
+  GrossProfitAmount : DECIMAL(18,2)
+  TaxAmount : DECIMAL(18,2)
+  PaymentMethod : VARCHAR(30)
+  SalesChannel : VARCHAR(20)
+  ReturnFlag : BIT
+}
+
+entity "FactInventory" as FactInventory {
+  * InventoryKey : BIGINT <<PK>>
+  --
+  DateKey : INT <<FK>>
+  ProductKey : INT <<FK>>
+  StoreKey : INT <<FK>>
+  SupplierKey : INT <<FK>>
+  OpeningStock : INT
+  ClosingStock : INT
+  StockReceived : INT
+  StockSold : INT
+  ReorderPoint : INT
+  TotalInventoryValue : DECIMAL(18,2)
+}
+
+entity "FactPurchase" as FactPurchase {
+  * PurchaseKey : BIGINT <<PK>>
+  --
+  DateKey : INT <<FK>>
+  ProductKey : INT <<FK>>
+  SupplierKey : INT <<FK>>
+  StoreKey : INT <<FK>>
+  PurchaseOrderNo : VARCHAR(50) <<DD>>
+  QuantityOrdered : INT
+  QuantityReceived : INT
+  UnitPurchasePrice : DECIMAL(18,2)
+  TotalPurchaseAmount : DECIMAL(18,2)
+  LeadTime_Days : SMALLINT
+}
+
+' ============= RELATIONSHIPS =============
+DimDate ||--o{ FactSales : "DateKey"
+DimDate ||--o{ FactInventory : "DateKey"
+DimDate ||--o{ FactPurchase : "DateKey"
+
+DimProduct ||--o{ FactSales : "ProductKey"
+DimProduct ||--o{ FactInventory : "ProductKey"
+DimProduct ||--o{ FactPurchase : "ProductKey"
+
+DimCustomer ||--o{ FactSales : "CustomerKey"
+
+DimStore ||--o{ FactSales : "StoreKey"
+DimStore ||--o{ FactInventory : "StoreKey"
+DimStore ||--o{ FactPurchase : "StoreKey"
+DimStore ||--o{ DimEmployee : "StoreKey"
+
+DimEmployee ||--o{ FactSales : "EmployeeKey"
+
+DimSupplier ||--o{ FactInventory : "SupplierKey"
+DimSupplier ||--o{ FactPurchase : "SupplierKey"
+
+note top of FactSales
+  FACT TABLE CHÍNH
+  Grain: 1 dòng = 1 sản phẩm / 1 hóa đơn
+  Loại: Transaction Fact
+end note
+
+note top of FactInventory
+  FACT TABLE TỒN KHO
+  Grain: 1 dòng = 1 sản phẩm / 1 cửa hàng / 1 ngày
+  Loại: Periodic Snapshot Fact
+end note
+
+note right of DimProduct
+  SCD Type 2:
+  EffectiveDate, ExpirationDate, IsCurrent
+  giúp theo dõi lịch sử thay đổi giá
+end note
+
+@enduml
+
+CHƯƠNG 5: THIẾT KẾ TIẾN TRÌNH ETL
+5.1. Tổng quan Quy trình ETL
+Quy trình ETL (Extract – Transform – Load) là xương sống của hệ thống Data Warehouse. Đây là quy trình tự động, có thể lập lịch chạy hàng đêm (batch processing) hoặc kích hoạt theo sự kiện (event-driven). Mỗi lần chạy được ghi nhận vào bảng kiểm soát ETL_RunLog để theo dõi và kiểm toán.
+
+📌 Chiến lược ETL
+• Tần suất chạy: Hàng ngày lúc 02:00 SA (giờ thấp điểm, tránh ảnh hưởng hệ thống nguồn).
+• Phương thức trích xuất: Incremental Load dựa trên cột LastModifiedDate hoặc watermark.
+• Xử lý lỗi: Ghi nhận bản ghi lỗi vào bảng STG_ErrorLog và tiếp tục xử lý bản ghi hợp lệ (không dừng toàn bộ tiến trình).
+• Idempotency: ETL có thể chạy lại nhiều lần cho cùng một khoảng thời gian mà không sinh dữ liệu trùng.
+• Kiểm soát phụ thuộc: Dimension phải được nạp trước Fact để đảm bảo tính toàn vẹn tham chiếu.
+
+5.2. Bước 1 – EXTRACT (Trích xuất Dữ liệu)
+5.2.1. Kết nối và Đọc Nguồn Dữ liệu
+Module Extract có nhiệm vụ kết nối đến từng nguồn dữ liệu, đọc dữ liệu mới/thay đổi kể từ lần chạy ETL trước, và nạp vào Staging Database dưới dạng thô (chưa biến đổi).
+
+# etl/extract/extract_sales.py
+# Module trích xuất dữ liệu bán hàng từ tệp Excel
+
+import pandas as pd
+import pyodbc
+import os
+import logging
+from datetime import datetime
+
+def get_last_watermark(conn, source_name: str) -> datetime:
+    """Lấy mốc thời gian lần chạy ETL thành công cuối cùng."""
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT MAX(WatermarkValue) FROM ETL_Watermark WHERE SourceName = ?",
+        (source_name,)
+    )
+    row = cursor.fetchone()
+    return row[0] if row[0] else datetime(2020, 1, 1)  # Default start date
+
+def extract_sales_from_excel(file_path: str, watermark: datetime) -> pd.DataFrame:
+    """Đọc dữ liệu bán hàng từ file Excel, lọc theo watermark."""
+    try:
+        df = pd.read_excel(
+            file_path,
+            sheet_name='DanhSachHoaDon',
+            dtype={'MaHoaDon': str, 'MaSP': str, 'MaKH': str}
+        )
+        df.columns = df.columns.str.strip()  # Loại bỏ khoảng trắng tên cột
+        # Lọc chỉ lấy bản ghi mới hơn watermark
+        df['NgayBan'] = pd.to_datetime(df['NgayBan'], dayfirst=True)
+        df = df[df['NgayBan'] > pd.Timestamp(watermark)]
+        logging.info(f"Extracted {len(df)} rows from {os.path.basename(file_path)}")
+        return df
+    except Exception as e:
+        logging.error(f"Extract failed for {file_path}: {e}")
+        raise
+
+def load_to_staging(df: pd.DataFrame, conn, table_name: str):
+    """Nạp DataFrame vào bảng Staging trên SQL Server."""
+    from sqlalchemy import create_engine
+    engine = create_engine(
+        'mssql+pyodbc://sa:password@localhost/DWH_Staging?driver=ODBC+Driver+17+for+SQL+Server'
+    )
+    df.to_sql(table_name, engine, if_exists='append', index=False, chunksize=5000)
+    logging.info(f"Loaded {len(df)} rows to Staging.{table_name}")
+
+5.2.2. Cơ chế Watermark (Trích xuất Tăng dần)
+Cơ chế Watermark đảm bảo mỗi lần ETL chỉ xử lý dữ liệu mới, tránh tái xử lý toàn bộ dữ liệu lịch sử:
+
+-- T-SQL: Tạo bảng kiểm soát Watermark
+CREATE TABLE ETL_Watermark (
+    WatermarkID    INT IDENTITY(1,1) PRIMARY KEY,
+    SourceName     VARCHAR(100)  NOT NULL,  -- 'Sales_Excel', 'Inventory_Sheet'
+    WatermarkValue DATETIME2     NOT NULL,  -- Mốc thời gian cuối cùng
+    LastRunStatus  VARCHAR(20)   NOT NULL,  -- 'SUCCESS', 'FAILED', 'RUNNING'
+    LastRunDatetime DATETIME2    NOT NULL DEFAULT GETDATE(),
+    RowsExtracted  INT           NULL,
+    Notes          NVARCHAR(500) NULL
+);
+
+-- Cập nhật watermark sau khi ETL thành công
+UPDATE ETL_Watermark
+SET    WatermarkValue   = GETDATE(),
+       LastRunStatus    = 'SUCCESS',
+       LastRunDatetime  = GETDATE(),
+       RowsExtracted    = @RowsProcessed
+WHERE  SourceName = 'Sales_Excel';
+
+5.3. Bước 2 – TRANSFORM (Biến đổi và Làm sạch)
+5.3.1. Danh mục các Phép biến đổi
+
+Loại biến đổi	Mô tả	Công cụ thực hiện	Ví dụ
+Chuẩn hóa kiểu DL	Chuyển đổi kiểu dữ liệu về chuẩn DWH	Python (pandas)	String '15/01/2024' → DATE 2024-01-15
+Làm sạch chuỗi	Loại bỏ khoảng trắng thừa, chuyển hoa/thường	Python (str.strip, upper)	'  iphone 15  ' → 'IPHONE 15'
+Xử lý NULL	Điền giá trị mặc định hoặc ghi lỗi	Python / T-SQL ISNULL()	NULL → 'Unknown', NULL → 0
+Loại trùng lặp	Giữ bản ghi mới nhất theo business key	Python (drop_duplicates)	Nhiều dòng cùng MaHoaDon+MaSP → giữ 1
+Tra cứu Surrogate Key	Ánh xạ business key → surrogate key DWH	T-SQL Stored Procedure	MaSP='SP001' → ProductKey=45
+Tính toán cột phái sinh	Tính các chỉ số từ cột gốc	Python / T-SQL	GrossProfit = NetSales - CostAmount
+Kiểm tra tham chiếu	Đảm bảo FK hợp lệ trước khi nạp Fact	T-SQL JOIN kiểm tra	DateKey phải tồn tại trong DimDate
+Kiểm tra ngưỡng	Phát hiện giá trị bất thường	Python (assert / log)	Quantity <= 0 hoặc UnitPrice < 0 → lỗi
+
+5.3.2. Code T-SQL – Stored Procedure Biến đổi bảng Fact Sales
+
+-- ============================================================
+-- SP: usp_Transform_FactSales
+-- Mục đích: Biến đổi dữ liệu Staging → Fact Sales trong DWH
+-- ============================================================
+CREATE OR ALTER PROCEDURE usp_Transform_FactSales
+    @BatchDate DATE = NULL   -- Ngày xử lý (NULL = ngày hiện tại)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    IF @BatchDate IS NULL SET @BatchDate = CAST(GETDATE() AS DATE);
+
+    -- Bước 1: Ghi nhận bản ghi lỗi (không tìm thấy dimension)
+    INSERT INTO STG_ErrorLog (SourceTable, ErrorType, RawData, LoadDatetime)
+    SELECT
+        'STG_SalesRaw',
+        'DIMENSION_NOT_FOUND',
+        CONCAT('MaSP=', s.MaSP, ', MaKH=', s.MaKH),
+        GETDATE()
+    FROM STG_SalesRaw s
+    WHERE CAST(s.NgayBan AS DATE) = @BatchDate
+      AND NOT EXISTS (
+          SELECT 1 FROM DimProduct p
+          WHERE p.ProductCode = s.MaSP AND p.IsCurrent = 1
+      );
+
+    -- Bước 2: Nạp dữ liệu hợp lệ vào FactSales
+    INSERT INTO FactSales (
+        DateKey, ProductKey, CustomerKey, StoreKey, EmployeeKey,
+        InvoiceNumber, Quantity, UnitPrice, DiscountAmount,
+        GrossSalesAmount, NetSalesAmount, CostAmount, GrossProfitAmount,
+        TaxAmount, PaymentMethod, SalesChannel, ReturnFlag, LoadDatetime
+    )
+    SELECT
+        -- Tra cứu DateKey từ DimDate
+        CONVERT(INT, FORMAT(s.NgayBan, 'yyyyMMdd'))        AS DateKey,
+
+        -- Tra cứu Surrogate Keys từ các Dimension (lấy bản ghi IsCurrent)
+        p.ProductKey,
+        ISNULL(c.CustomerKey, -1)                          AS CustomerKey, -- -1 = Unknown
+        st.StoreKey,
+        ISNULL(e.EmployeeKey, -1)                          AS EmployeeKey,
+
+        -- Degenerate Dimension
+        UPPER(LTRIM(RTRIM(s.MaHoaDon)))                    AS InvoiceNumber,
+
+        -- Measures
+        s.SoLuong                                          AS Quantity,
+        s.DonGiaBan                                        AS UnitPrice,
+        ISNULL(s.ChietKhau, 0)                             AS DiscountAmount,
+        s.SoLuong * s.DonGiaBan                            AS GrossSalesAmount,
+        (s.SoLuong * s.DonGiaBan) - ISNULL(s.ChietKhau,0) AS NetSalesAmount,
+        s.SoLuong * p.UnitCostPrice                        AS CostAmount,
+        (s.SoLuong * s.DonGiaBan) - ISNULL(s.ChietKhau,0)
+            - (s.SoLuong * p.UnitCostPrice)                AS GrossProfitAmount,
+        ISNULL(s.ThueSuat, 0) * (s.SoLuong * s.DonGiaBan) AS TaxAmount,
+        ISNULL(s.PhuongThucTT, 'Tiền mặt')                 AS PaymentMethod,
+        ISNULL(s.KenhBan, 'InStore')                       AS SalesChannel,
+        ISNULL(s.IsHoanTra, 0)                             AS ReturnFlag,
+        GETDATE()                                          AS LoadDatetime
+    FROM STG_SalesRaw s
+    INNER JOIN DimProduct   p  ON p.ProductCode  = s.MaSP  AND p.IsCurrent = 1
+    INNER JOIN DimStore     st ON st.StoreCode   = s.MaCH
+    LEFT  JOIN DimCustomer  c  ON c.CustomerCode = s.MaKH
+    LEFT  JOIN DimEmployee  e  ON e.EmployeeCode = s.MaNV
+    WHERE CAST(s.NgayBan AS DATE) = @BatchDate
+      -- Chỉ nạp bản ghi chưa tồn tại (idempotency)
+      AND NOT EXISTS (
+          SELECT 1 FROM FactSales f
+          WHERE f.InvoiceNumber = UPPER(LTRIM(RTRIM(s.MaHoaDon)))
+            AND f.ProductKey = p.ProductKey
+      );
+
+    PRINT CONCAT('FactSales loaded: ', @@ROWCOUNT, ' rows for date ', @BatchDate);
+END;
+GO
+
+5.4. Bước 3 – LOAD (Nạp Dữ liệu vào DWH)
+5.4.1. Thứ tự nạp dữ liệu
+Thứ tự nạp phải tuân theo quan hệ phụ thuộc giữa các bảng – Dimension được nạp trước Fact:
+6.	Nạp/Cập nhật DimDate (chạy một lần, pre-populated)
+7.	Nạp/Cập nhật DimSupplier (từ STG_SupplierRaw)
+8.	Nạp/Cập nhật DimProduct (SCD Type 2)
+9.	Nạp/Cập nhật DimCustomer (từ STG_CustomerRaw)
+10.	Nạp/Cập nhật DimStore (từ STG_StoreRaw)
+11.	Nạp/Cập nhật DimEmployee (từ STG_EmployeeRaw)
+12.	Nạp FactSales (gọi usp_Transform_FactSales)
+13.	Nạp FactInventory (gọi usp_Transform_FactInventory)
+14.	Nạp FactPurchase (gọi usp_Transform_FactPurchase)
+15.	Cập nhật bảng Aggregate/Data Mart
+16.	Cập nhật Watermark và ghi ETL_RunLog
+
+5.4.2. Code Python – ETL Orchestrator (Bộ điều phối chính)
+
+# etl/orchestrator/main_etl.py
+# Bộ điều phối chính – chạy toàn bộ pipeline ETL
+
+import logging
+import pyodbc
+from datetime import datetime, date
+from extract.extract_sales import extract_sales_from_excel, load_to_staging
+from extract.extract_inventory import extract_inventory_from_excel
+
+# Cấu hình logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.FileHandler(f'logs/etl_{date.today()}.log'),
+        logging.StreamHandler()
+    ]
+)
+
+CONN_STR = (
+    'DRIVER={ODBC Driver 17 for SQL Server};'
+    'SERVER=localhost;DATABASE=DWH;UID=sa;PWD=YourPassword;'
+)
+
+def run_stored_procedure(conn, sp_name: str, params: dict = None):
+    """Thực thi Stored Procedure trên SQL Server."""
+    cursor = conn.cursor()
+    if params:
+        param_str = ', '.join([f'@{k}=?' for k in params.keys()])
+        cursor.execute(f'EXEC {sp_name} {param_str}', list(params.values()))
+    else:
+        cursor.execute(f'EXEC {sp_name}')
+    conn.commit()
+    logging.info(f'Executed: {sp_name}')
+
+def main():
+    batch_date = date.today().strftime('%Y-%m-%d')
+    logging.info(f'===== ETL Pipeline Started | Batch Date: {batch_date} =====')
+
+    try:
+        conn = pyodbc.connect(CONN_STR, autocommit=False)
+
+        # ---- PHASE 1: EXTRACT ----
+        logging.info('--- PHASE 1: EXTRACT ---')
+        watermark = get_last_watermark(conn, 'Sales_Excel')
+        df_sales = extract_sales_from_excel('./sources/BaoCaoDoanhThu.xlsx', watermark)
+        load_to_staging(df_sales, conn, 'STG_SalesRaw')
+
+        df_inv = extract_inventory_from_excel('./sources/QuanLyKho.xlsx', watermark)
+        load_to_staging(df_inv, conn, 'STG_InventoryRaw')
+
+        # ---- PHASE 2: TRANSFORM & LOAD DIMENSIONS ----
+        logging.info('--- PHASE 2: TRANSFORM & LOAD DIMENSIONS ---')
+        run_stored_procedure(conn, 'usp_Load_DimProduct')
+        run_stored_procedure(conn, 'usp_Load_DimCustomer')
+        run_stored_procedure(conn, 'usp_Load_DimStore')
+        run_stored_procedure(conn, 'usp_Load_DimEmployee')
+        run_stored_procedure(conn, 'usp_Load_DimSupplier')
+
+        # ---- PHASE 3: TRANSFORM & LOAD FACTS ----
+        logging.info('--- PHASE 3: TRANSFORM & LOAD FACTS ---')
+        run_stored_procedure(conn, 'usp_Transform_FactSales',
+                             params={'BatchDate': batch_date})
+        run_stored_procedure(conn, 'usp_Transform_FactInventory',
+                             params={'BatchDate': batch_date})
+        run_stored_procedure(conn, 'usp_Transform_FactPurchase',
+                             params={'BatchDate': batch_date})
+
+        # ---- PHASE 4: REFRESH DATA MARTS ----
+        logging.info('--- PHASE 4: REFRESH DATA MARTS ---')
+        run_stored_procedure(conn, 'usp_Refresh_DM_SalesSummary')
+        run_stored_procedure(conn, 'usp_Refresh_DM_InventoryAlert')
+
+        # ---- PHASE 5: UPDATE WATERMARK ----
+        run_stored_procedure(conn, 'usp_Update_Watermark',
+                             params={'SourceName': 'Sales_Excel', 'Status': 'SUCCESS'})
+
+        logging.info('===== ETL Pipeline Completed Successfully =====')
+
+    except Exception as e:
+        logging.error(f'ETL Pipeline FAILED: {e}', exc_info=True)
+        # Ghi nhận lỗi và gửi cảnh báo
+        run_stored_procedure(conn, 'usp_Update_Watermark',
+                             params={'SourceName': 'Sales_Excel', 'Status': 'FAILED'})
+        raise
+    finally:
+        if conn:
+            conn.close()
+
+if __name__ == '__main__':
+    main()
+
+5.5. Xử lý Slowly Changing Dimension (SCD) Type 2
+Đối với bảng DimProduct (cần theo dõi lịch sử thay đổi giá), hệ thống áp dụng SCD Type 2: khi giá sản phẩm thay đổi, bản ghi cũ được đóng lại (ExpirationDate = ngày thay đổi - 1) và một bản ghi mới được tạo với giá mới.
+
+-- T-SQL: Stored Procedure xử lý SCD Type 2 cho DimProduct
+CREATE OR ALTER PROCEDURE usp_Load_DimProduct
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Bước 1: Đóng bản ghi cũ khi giá thay đổi
+    UPDATE dp
+    SET    dp.ExpirationDate = DATEADD(DAY, -1, CAST(GETDATE() AS DATE)),
+           dp.IsCurrent      = 0
+    FROM   DimProduct dp
+    INNER JOIN STG_ProductRaw s ON s.MaSP = dp.ProductCode
+    WHERE  dp.IsCurrent = 1
+      AND  (dp.UnitCostPrice <> s.GiaVon OR dp.UnitListPrice <> s.GiaNiemYet);
+
+    -- Bước 2: Chèn bản ghi mới (sản phẩm mới hoặc giá thay đổi)
+    INSERT INTO DimProduct (
+        ProductCode, ProductName, Brand, CategoryName, SubCategory,
+        UnitCostPrice, UnitListPrice, IsActive,
+        EffectiveDate, ExpirationDate, IsCurrent
+    )
+    SELECT
+        s.MaSP, s.TenSP, s.ThuongHieu, s.DanhMuc, s.DanhMucCon,
+        s.GiaVon, s.GiaNiemYet, 1,
+        CAST(GETDATE() AS DATE), NULL, 1
+    FROM STG_ProductRaw s
+    WHERE NOT EXISTS (
+        SELECT 1 FROM DimProduct dp
+        WHERE dp.ProductCode = s.MaSP AND dp.IsCurrent = 1
+    );
+
+    PRINT CONCAT('DimProduct updated: ', @@ROWCOUNT, ' new/changed records.');
+END;
+GO
+
+KẾT LUẬN
+Báo cáo Phân tích và Thiết kế Hệ thống đã trình bày một cách toàn diện và có hệ thống về giải pháp Data Warehouse cho chuỗi cửa hàng bán lẻ thiết bị công nghệ. Các nội dung chính đã được đề cập bao gồm:
+•	Phân tích thực trạng: Hệ thống dữ liệu phân mảnh hiện tại gây ra nhiều bất cập nghiêm trọng, từ sự thiếu nhất quán trong báo cáo đến khả năng ra quyết định hạn chế của ban lãnh đạo.
+•	Yêu cầu hệ thống: Đã xác định đầy đủ 15 yêu cầu chức năng và 8 yêu cầu phi chức năng, làm cơ sở cho việc đánh giá kết quả dự án.
+•	Kiến trúc phân tầng: Giải pháp kiến trúc 4 tầng (Source → ETL → DWH → BI) sử dụng SQL Server, Python và Apache Superset đảm bảo sự tách biệt trách nhiệm, dễ bảo trì và có khả năng mở rộng cao.
+•	Thiết kế CSDL: Mô hình Star Schema với 6 bảng Dimension và 3 bảng Fact được thiết kế chi tiết đến mức vật lý, kèm code PlantUML để trực quan hóa ERD.
+•	Thiết kế ETL: Quy trình ETL 3 bước (Extract → Transform → Load) được mô tả chi tiết kèm code mẫu Python và T-SQL, bao gồm cơ chế xử lý SCD Type 2 và Watermark.
+
+Hệ thống được đề xuất không chỉ giải quyết các vấn đề trước mắt mà còn tạo nền tảng vững chắc cho sự phát triển dài hạn của doanh nghiệp. Với kiến trúc mở và công nghệ được lựa chọn cẩn thận, hệ thống có thể mở rộng để tích hợp thêm nguồn dữ liệu mới, triển khai mô hình dự báo (Machine Learning) và nâng cấp lên kiến trúc Real-time Data Warehouse trong tương lai.
+
+Hướng phát triển tiếp theo
+•	Tích hợp mô hình Machine Learning cho dự báo doanh thu và nhu cầu tồn kho (sử dụng Python scikit-learn hoặc Azure ML).
+•	Nâng cấp lên kiến trúc Lambda (Batch + Streaming) với Apache Kafka cho xử lý dữ liệu gần thời gian thực.
+•	Triển khai Data Quality Framework tự động kiểm tra và báo cáo chất lượng dữ liệu sau mỗi chu kỳ ETL.
+•	Mở rộng tích hợp dữ liệu từ các kênh thương mại điện tử (website, Shopee, Lazada) thông qua API.

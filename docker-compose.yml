@@ -1,0 +1,104 @@
+version: '3.8'
+
+# ============================================================
+# DATN - Data Warehouse & BI System
+# Docker Compose: SQL Server 2022 + Superset
+# ============================================================
+
+services:
+  # ---- SQL Server 2022 ----
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: datn_mssql
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${MSSQL_SA_PASSWORD}
+      - MSSQL_PID=Express
+    ports:
+      - "${MSSQL_PORT:-1433}:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+      - ./sql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - datn_network
+
+  # ---- Superset ----
+  superset:
+    image: apache/superset:${SUPERSET_VERSION:-3.1.1}
+    container_name: datn_superset
+    command: >
+      /bin/sh -c "
+        if [ ! -f /var/lib/superset/superset_config.py ]; then
+          cp /docker/docker-entrypoint.sh /tmp/init_superset.sh 2>/dev/null || true;
+        fi;
+        superset db upgrade &&
+        superset fab create-admin --username ${SUPERSET_ADMIN_USER:-admin} --password ${SUPERSET_ADMIN_PASSWORD:-admin} --firstname Admin --lastname User --email ${SUPERSET_ADMIN_EMAIL:-admin@example.com} --role Admin ||
+        true &&
+        superset init &&
+        gunicorn --bind '0.0.0.0:8088' --workers 4 --timeout 120 --access-logfile - --error-logfile - superset.app:app
+      "
+    environment:
+      - SUPERSET_CONFIG_PATH=/var/lib/superset/superset_config.py
+      - SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://${POSTGRES_USER:-superset}:${POSTGRES_PASSWORD:-superset}@postgres:5432/superset
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    ports:
+      - "${SUPERSET_PORT:-8088}:8088"
+    volumes:
+      - superset_data:/var/lib/superset
+      - ./superset:/docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - datn_network
+
+  # ---- PostgreSQL (Superset Metadata) ----
+  postgres:
+    image: postgres:15-alpine
+    container_name: datn_postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-superset}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-superset}
+      - POSTGRES_DB=superset
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-superset}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - datn_network
+
+  # ---- Redis (Superset Cache) ----
+  redis:
+    image: redis:7-alpine
+    container_name: datn_redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:-}
+    volumes:
+      - redis_data:/data
+    networks:
+      - datn_network
+
+# ============================================================
+# Networks & Volumes
+# ============================================================
+networks:
+  datn_network:
+    driver: bridge
+
+volumes:
+  mssql_data:
+  superset_data:
+  postgres_data:
+  redis_data:

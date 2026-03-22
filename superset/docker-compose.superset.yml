@@ -1,0 +1,45 @@
+# ============================================================
+# Superset standalone docker-compose
+# (Simplified - can use this instead of the full stack)
+# ============================================================
+version: '3.8'
+
+services:
+  superset:
+    image: apache/superset:3.1.1
+    container_name: datn_superset
+    command: >
+      /bin/sh -c "
+        superset db upgrade &&
+        superset fab create-admin --username admin --password admin --firstname Admin --lastname User --email admin@example.com --role Admin ||
+        true &&
+        superset init &&
+        gunicorn --bind '0.0.0.0:8088' --workers 4 --timeout 120 --access-logfile - --error-logfile - superset.app:app
+      "
+    environment:
+      - SUPERSET_SECRET_KEY=datn_superset_secret_key_2025_change_in_production
+      - SQLALCHEMY_DATABASE_URI=sqlite:////var/lib/superset/superset.db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - "8088:8088"
+    volumes:
+      - superset_home:/var/lib/superset
+    networks:
+      - superset_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: datn_redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - superset_network
+
+networks:
+  superset_network:
+    driver: bridge
+
+volumes:
+  superset_home:
+  redis_data:
