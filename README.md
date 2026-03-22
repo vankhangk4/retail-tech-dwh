@@ -113,7 +113,12 @@ pip install -r etl/requirements.txt
 ### 5.2. Sinh mock data
 ```bash
 cd data/samples
-python generate_mock_data.py
+
+# Sinh dữ liệu mới mỗi lần (ngẫu nhiên)
+python generate_mock_data.py --fresh
+
+# Sinh với seed cố định (để reproduce)
+python generate_mock_data.py --seed 42
 ```
 
 Script sinh:
@@ -133,7 +138,7 @@ cp *.xlsx *.csv ../sources/
 cd /home/khang/Desktop/datn
 
 # Chạy một lần
-python -m etl.main_etl
+python -m etl.main_etl --fresh
 
 # Chạy với ngày cụ thể
 python -m etl.main_etl --date 2025-03-22
