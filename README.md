@@ -68,10 +68,10 @@ Tất cả cấu hình nằm trong file `.env` — **chỉ cần sửa ở đây
 
 ### 4.1. Khởi động Docker
 ```bash
-docker compose up -d
-
-# Kiểm tra trạng thái
-docker compose ps
+curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
+curl -fsSL https://packages.microsoft.com/config/debian/12/prod.list | sudo tee /etc/apt/sources.list.d/mssql-release.list
+sudo apt-get update
+sudo ACCEPT_EULA=Y apt-get install -y msodbcsql17
 ```
 
 ### 4.2. Chạy SQL scripts (tạo schema)
