@@ -89,14 +89,14 @@ docker compose logs mssql
 
 # Kiểm tra database đã được tạo
 docker run --rm --network datn_datn_network \
-    mcr.microsoft.com/mssql-tools18 \
+    mcr.microsoft.com/mssql-tools18:2022-latest \
     /opt/mssql-tools18/bin/sqlcmd \
     -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
     -Q "SELECT name FROM sys.databases"
 
 # Kiểm tra DimDate (~5840 rows)
 docker run --rm --network datn_datn_network \
-    mcr.microsoft.com/mssql-tools18 \
+    mcr.microsoft.com/mssql-tools18:2022-latest \
     /opt/mssql-tools18/bin/sqlcmd \
     -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
     -d DWH_RetailTech \
@@ -152,15 +152,19 @@ tail -f logs/etl_$(date +%Y%m%d).log
 
 ### Kiểm tra dữ liệu sau ETL
 ```bash
-docker exec -i datn_mssql /opt/mssql-tools18/bin/sqlcmd \
-  -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
-  -d DWH_RetailTech \
-  -Q "SELECT COUNT(*) FROM FactSales"
+docker run --rm --network datn_datn_network \
+    mcr.microsoft.com/mssql-tools18:2022-latest \
+    /opt/mssql-tools18/bin/sqlcmd \
+    -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
+    -d DWH_RetailTech \
+    -Q "SELECT COUNT(*) FROM FactSales"
 
-docker exec -i datn_mssql /opt/mssql-tools18/bin/sqlcmd \
-  -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
-  -d DWH_RetailTech \
-  -Q "SELECT * FROM ETL_RunLog ORDER BY LoadDatetime DESC"
+docker run --rm --network datn_datn_network \
+    mcr.microsoft.com/mssql-tools18:2022-latest \
+    /opt/mssql-tools18/bin/sqlcmd \
+    -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
+    -d DWH_RetailTech \
+    -Q "SELECT * FROM ETL_RunLog ORDER BY LoadDatetime DESC"
 ```
 
 ## 7. Kết nối Superset
@@ -201,10 +205,12 @@ docker compose up -d
 ### Reset chỉ dữ liệu (giữ schema)
 ```bash
 # Xóa dữ liệu trong các bảng
-docker exec -i datn_mssql /opt/mssql-tools18/bin/sqlcmd \
-  -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
-  -d DWH_RetailTech \
-  -Q "TRUNCATE TABLE FactSales; TRUNCATE TABLE FactInventory; TRUNCATE TABLE FactPurchase;"
+docker run --rm --network datn_datn_network \
+    mcr.microsoft.com/mssql-tools18:2022-latest \
+    /opt/mssql-tools18/bin/sqlcmd \
+    -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
+    -d DWH_RetailTech \
+    -Q "TRUNCATE TABLE FactSales; TRUNCATE TABLE FactInventory; TRUNCATE TABLE FactPurchase;"
 
 # Chạy lại ETL
 python -m etl.main_etl --full
@@ -215,7 +221,6 @@ python -m etl.main_etl --full
 ```
 datn/
 ├── docker-compose.yml           # Docker Compose (SQL Server, Superset, Redis, Postgres)
-├── Dockerfile.mssql             # Custom SQL Server image (có mssql-tools)
 ├── .env                        # ⚠️ Cấu hình DUY NHẤT - tất cả passwords ở đây
 ├── run_sql.sh                  # Script chạy tất cả SQL scripts
 ├── README.md                   # File này

@@ -23,7 +23,7 @@ chmod +x run_sql.sh
 ```bash
 docker run --rm --network datn_datn_network \
     -v "$(pwd):/scripts" \
-    mcr.microsoft.com/mssql-tools18 \
+    mcr.microsoft.com/mssql-tools18:2022-latest \
     /opt/mssql-tools18/bin/sqlcmd \
     -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
     -i "/scripts/sql/01_init/init_database.sql"
@@ -33,7 +33,7 @@ docker run --rm --network datn_datn_network \
 ```bash
 docker run --rm --network datn_datn_network \
     -v "$(pwd):/scripts" \
-    mcr.microsoft.com/mssql-tools18 \
+    mcr.microsoft.com/mssql-tools18:2022-latest \
     /opt/mssql-tools18/bin/sqlcmd \
     -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
     -d DWH_RetailTech \
@@ -45,7 +45,7 @@ docker run --rm --network datn_datn_network \
 for f in sql/04_dim/*.sql sql/05_fact/*.sql sql/06_datamart/*.sql sql/07_indexes/*.sql sql/08_stored_procedures/*.sql; do
   docker run --rm --network datn_datn_network \
       -v "$(pwd):/scripts" \
-      mcr.microsoft.com/mssql-tools18 \
+      mcr.microsoft.com/mssql-tools18:2022-latest \
       /opt/mssql-tools18/bin/sqlcmd \
       -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
       -d DWH_RetailTech \
@@ -58,14 +58,14 @@ done
 ```bash
 # Kiểm tra databases
 docker run --rm --network datn_datn_network \
-    mcr.microsoft.com/mssql-tools18 \
+    mcr.microsoft.com/mssql-tools18:2022-latest \
     /opt/mssql-tools18/bin/sqlcmd \
     -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
     -Q "SELECT name FROM sys.databases"
 
 # Kiểm tra số bảng
 docker run --rm --network datn_datn_network \
-    mcr.microsoft.com/mssql-tools18 \
+    mcr.microsoft.com/mssql-tools18:2022-latest \
     /opt/mssql-tools18/bin/sqlcmd \
     -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
     -d DWH_RetailTech \
@@ -73,7 +73,7 @@ docker run --rm --network datn_datn_network \
 
 # Kiểm tra DimDate
 docker run --rm --network datn_datn_network \
-    mcr.microsoft.com/mssql-tools18 \
+    mcr.microsoft.com/mssql-tools18:2022-latest \
     /opt/mssql-tools18/bin/sqlcmd \
     -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
     -d DWH_RetailTech \
