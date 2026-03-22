@@ -28,7 +28,10 @@ services:
 
   # ---- Superset ----
   superset:
-    image: apache/superset:${SUPERSET_VERSION:-3.1.1}
+    build:
+      context: ./superset
+      dockerfile: Dockerfile
+    image: datn/superset:3.1.1
     container_name: datn_superset
     command: >
       /bin/sh -c "
