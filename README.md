@@ -89,15 +89,15 @@ docker compose logs mssql
 
 # Kiểm tra database đã được tạo
 docker run --rm --network datn_datn_network \
-    mcr.microsoft.com/mssql-tools18:2022-latest \
-    /opt/mssql-tools18/bin/sqlcmd \
+    mcr.microsoft.com/mssql-tools \
+    /opt/mssql-tools/bin/sqlcmd \
     -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
     -Q "SELECT name FROM sys.databases"
 
 # Kiểm tra DimDate (~5840 rows)
 docker run --rm --network datn_datn_network \
-    mcr.microsoft.com/mssql-tools18:2022-latest \
-    /opt/mssql-tools18/bin/sqlcmd \
+    mcr.microsoft.com/mssql-tools \
+    /opt/mssql-tools/bin/sqlcmd \
     -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
     -d DWH_RetailTech \
     -Q "SELECT COUNT(*) FROM DimDate"
@@ -153,15 +153,15 @@ tail -f logs/etl_$(date +%Y%m%d).log
 ### Kiểm tra dữ liệu sau ETL
 ```bash
 docker run --rm --network datn_datn_network \
-    mcr.microsoft.com/mssql-tools18:2022-latest \
-    /opt/mssql-tools18/bin/sqlcmd \
+    mcr.microsoft.com/mssql-tools \
+    /opt/mssql-tools/bin/sqlcmd \
     -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
     -d DWH_RetailTech \
     -Q "SELECT COUNT(*) FROM FactSales"
 
 docker run --rm --network datn_datn_network \
-    mcr.microsoft.com/mssql-tools18:2022-latest \
-    /opt/mssql-tools18/bin/sqlcmd \
+    mcr.microsoft.com/mssql-tools \
+    /opt/mssql-tools/bin/sqlcmd \
     -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
     -d DWH_RetailTech \
     -Q "SELECT * FROM ETL_RunLog ORDER BY LoadDatetime DESC"
@@ -206,8 +206,8 @@ docker compose up -d
 ```bash
 # Xóa dữ liệu trong các bảng
 docker run --rm --network datn_datn_network \
-    mcr.microsoft.com/mssql-tools18:2022-latest \
-    /opt/mssql-tools18/bin/sqlcmd \
+    mcr.microsoft.com/mssql-tools \
+    /opt/mssql-tools/bin/sqlcmd \
     -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C -No \
     -d DWH_RetailTech \
     -Q "TRUNCATE TABLE FactSales; TRUNCATE TABLE FactInventory; TRUNCATE TABLE FactPurchase;"
