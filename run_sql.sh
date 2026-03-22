@@ -13,30 +13,46 @@ set -a
 source "${SCRIPT_DIR}/.env"
 set +a
 
-HOST="${MSSQL_HOST:-localhost}"
+HOST="${MSSQL_HOST:-datn_mssql}"
 PORT="${MSSQL_PORT:-1433}"
 PASSWORD="${MSSQL_SA_PASSWORD}"
 DB="DWH_RetailTech"
+NETWORK="datn_datn_network"
 
 # Pull mssql-tools container
-echo "Pulling mssql-tools18 image..."
-docker pull mcr.microsoft.com/mssql-tools > /dev/null 2>&1
+echo "Pulling mssql-tools image..."
+docker pull mcr.microsoft.com/mssql-tools
 
-# Hàm chạy SQL file
+# Hàm chạy SQL file (không silent - hiện lỗi)
 run_sql() {
     local file="$1"
     local rel_path="${file#$SCRIPT_DIR/}"
     echo "  Running: $(basename "$file")"
-    docker run --rm --network datn_datn_network \
+    docker run --rm \
+        --network "${NETWORK}" \
         -v "${SCRIPT_DIR}:/scripts" \
         mcr.microsoft.com/mssql-tools \
         /opt/mssql-tools/bin/sqlcmd \
-        -S "${HOST}" -U sa -P "${PASSWORD}" -C -No \
+        -S "${HOST}" -U sa -P "${PASSWORD}" -C \
         -d "${DB}" \
-        -i "/scripts/${rel_path}" 2>/dev/null || {
-        echo "  WARNING: $(basename "$file") skipped or failed"
-    }
+        -i "/scripts/${rel_path}"
 }
+
+# Chờ SQL Server ready
+echo ""
+echo "Waiting for SQL Server to be ready..."
+for i in {1..30}; do
+    if docker run --rm --network "${NETWORK}" \
+        mcr.microsoft.com/mssql-tools \
+        /opt/mssql-tools/bin/sqlcmd \
+        -S "${HOST}" -U sa -P "${PASSWORD}" -C \
+        -Q "SELECT 1" > /dev/null 2>&1; then
+        echo "SQL Server is ready!"
+        break
+    fi
+    echo "  Waiting... ($i/30)"
+    sleep 2
+done
 
 echo ""
 echo "========================================"
@@ -45,11 +61,12 @@ echo "========================================"
 
 echo ""
 echo ">>> [1] Init Database..."
-docker run --rm --network datn_datn_network \
+docker run --rm \
+    --network "${NETWORK}" \
     -v "${SCRIPT_DIR}:/scripts" \
     mcr.microsoft.com/mssql-tools \
     /opt/mssql-tools/bin/sqlcmd \
-    -S "${HOST}" -U sa -P "${PASSWORD}" -C -No \
+    -S "${HOST}" -U sa -P "${PASSWORD}" -C \
     -i /scripts/sql/01_init/init_database.sql
 
 echo ""
@@ -82,9 +99,19 @@ run_sql "${SCRIPT_DIR}/sql/07_indexes/create_indexes.sql"
 
 echo ""
 echo ">>> [8] Stored Procedures..."
-for f in "${SCRIPT_DIR}"/sql/08_stored_procedures/*.sql; do
-    run_sql "$f"
-done
+# Watermark SPs phai chay truoc vi sp_Main_ETL goi cac SP nay
+run_sql "${SCRIPT_DIR}/sql/08_stored_procedures/sp_watermark.sql"
+# Load dimension/fact SPs
+run_sql "${SCRIPT_DIR}/sql/08_stored_procedures/sp_load_dim_customer.sql"
+run_sql "${SCRIPT_DIR}/sql/08_stored_procedures/sp_load_dim_employee.sql"
+run_sql "${SCRIPT_DIR}/sql/08_stored_procedures/sp_load_dim_product.sql"
+run_sql "${SCRIPT_DIR}/sql/08_stored_procedures/sp_load_dim_store.sql"
+run_sql "${SCRIPT_DIR}/sql/08_stored_procedures/sp_load_dim_supplier.sql"
+run_sql "${SCRIPT_DIR}/sql/08_stored_procedures/sp_load_fact_inventory.sql"
+run_sql "${SCRIPT_DIR}/sql/08_stored_procedures/sp_load_fact_purchase.sql"
+run_sql "${SCRIPT_DIR}/sql/08_stored_procedures/sp_load_fact_sales.sql"
+# Main orchestrator chay cuoi cung (phu thuoc tat ca SP tren)
+run_sql "${SCRIPT_DIR}/sql/08_stored_procedures/sp_main_etl.sql"
 
 echo ""
 echo "========================================"
@@ -92,17 +119,17 @@ echo "  All SQL Scripts Completed!"
 echo "========================================"
 echo ""
 echo "Verification:"
-docker run --rm --network datn_datn_network \
+docker run --rm --network "${NETWORK}" \
     mcr.microsoft.com/mssql-tools \
     /opt/mssql-tools/bin/sqlcmd \
-    -S "${HOST}" -U sa -P "${PASSWORD}" -C -No \
+    -S "${HOST}" -U sa -P "${PASSWORD}" -C \
     -d "${DB}" \
     -Q "SELECT COUNT(*) AS TableCount FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo'"
 
-docker run --rm --network datn_datn_network \
+docker run --rm --network "${NETWORK}" \
     mcr.microsoft.com/mssql-tools \
     /opt/mssql-tools/bin/sqlcmd \
-    -S "${HOST}" -U sa -P "${PASSWORD}" -C -No \
+    -S "${HOST}" -U sa -P "${PASSWORD}" -C \
     -d "${DB}" \
     -Q "SELECT COUNT(*) AS DimDateRows FROM DimDate"
 

@@ -1,14 +1,24 @@
 -- ============================================================
 -- Script: 04_dim/dim_date.sql
--- Mục đích: Tạo và populate DimDate (2015-01-01 → 2030-12-31)
--- Thứ tự chạy: 4
+-- Muc dich: Tao va populate DimDate (2015-01-01 -> 2030-12-31)
 -- ============================================================
 USE DWH_RetailTech;
 GO
 
+-- Xoa FK references
+DECLARE @fk_sql NVARCHAR(MAX) = N'';
+SELECT @fk_sql += 'ALTER TABLE ' + OBJECT_SCHEMA_NAME(fk.parent_object_id) + '.[' + OBJECT_NAME(fk.parent_object_id) + '] DROP CONSTRAINT [' + fk.name + '];'
+FROM sys.foreign_keys fk
+INNER JOIN sys.tables t ON fk.referenced_object_id = t.object_id
+WHERE t.name = 'DimDate';
+EXEC sp_executesql @fk_sql;
+GO
+
 IF OBJECT_ID('dbo.DimDate', 'U') IS NOT NULL DROP TABLE dbo.DimDate;
+GO
+
 CREATE TABLE dbo.DimDate (
-    DateKey           INT           NOT NULL,
+    DateKey           INT           NOT NULL PRIMARY KEY,
     FullDate          DATE          NOT NULL UNIQUE,
     DayOfWeek         TINYINT       NOT NULL,
     DayName           NVARCHAR(15)  NOT NULL,
@@ -23,112 +33,105 @@ CREATE TABLE dbo.DimDate (
     IsHoliday         BIT           NOT NULL DEFAULT 0,
     HolidayName       NVARCHAR(100) NULL,
     FiscalYear        SMALLINT      NOT NULL,
-    FiscalQuarter     TINYINT       NOT NULL,
-    PRIMARY KEY CLUSTERED (DateKey)
+    FiscalQuarter     TINYINT       NOT NULL
 );
 GO
 
--- Vietnamese day names
-DECLARE @DayNames TABLE (d INT, name NVARCHAR(15));
-INSERT INTO @DayNames VALUES
-    (1, N'Thứ Hai'), (2, N'Thứ Ba'), (3, N'Thứ Tư'),
-    (4, N'Thứ Năm'), (5, N'Thứ Sáu'), (6, N'Thứ Bảy'), (7, N'Chủ Nhật');
+CREATE TABLE #Holidays (DateKey INT PRIMARY KEY, HolidayName NVARCHAR(100));
+INSERT INTO #Holidays (DateKey, HolidayName) VALUES
+(20150101,N'Tết Dương lịch'),
+(20150219,N'Tết Nguyên Đán 2015'),(20150220,N'Tết Nguyên Đán 2015'),(20150221,N'Tết Nguyên Đán 2015'),
+(20150430,N'Ngày Giải phóng miền Nam'),(20150501,N'Ngày Quốc tế Lao động'),
+(20160101,N'Tết Dương lịch'),
+(20160208,N'Tết Nguyên Đán 2016'),(20160209,N'Tết Nguyên Đán 2016'),(20160210,N'Tết Nguyên Đán 2016'),
+(20160430,N'Ngày Giải phóng miền Nam'),(20160501,N'Ngày Quốc tế Lao động'),
+(20170101,N'Tết Dương lịch'),
+(20170128,N'Tết Nguyên Đán 2017'),(20170129,N'Tết Nguyên Đán 2017'),(20170130,N'Tết Nguyên Đán 2017'),
+(20170430,N'Ngày Giải phóng miền Nam'),(20170501,N'Ngày Quốc tế Lao động'),
+(20180101,N'Tết Dương lịch'),
+(20180216,N'Tết Nguyên Đán 2018'),(20180217,N'Tết Nguyên Đán 2018'),(20180218,N'Tết Nguyên Đán 2018'),
+(20180430,N'Ngày Giải phóng miền Nam'),(20180501,N'Ngày Quốc tế Lao động'),
+(20190101,N'Tết Dương lịch'),
+(20190205,N'Tết Nguyên Đán 2019'),(20190206,N'Tết Nguyên Đán 2019'),(20190207,N'Tết Nguyên Đán 2019'),
+(20190430,N'Ngày Giải phóng miền Nam'),(20190501,N'Ngày Quốc tế Lao động'),
+(20200101,N'Tết Dương lịch'),
+(20200125,N'Tết Nguyên Đán 2020'),(20200126,N'Tết Nguyên Đán 2020'),(20200127,N'Tết Nguyên Đán 2020'),
+(20200430,N'Ngày Giải phóng miền Nam'),(20200501,N'Ngày Quốc tế Lao động'),
+(20210101,N'Tết Dương lịch'),
+(20210212,N'Tết Nguyên Đán 2021'),(20210213,N'Tết Nguyên Đán 2021'),(20210214,N'Tết Nguyên Đán 2021'),
+(20210430,N'Ngày Giải phóng miền Nam'),(20210501,N'Ngày Quốc tế Lao động'),
+(20220101,N'Tết Dương lịch'),
+(20220201,N'Tết Nguyên Đán 2022'),(20220202,N'Tết Nguyên Đán 2022'),(20220203,N'Tết Nguyên Đán 2022'),
+(20220430,N'Ngày Giải phóng miền Nam'),(20220501,N'Ngày Quốc tế Lao động'),
+(20230101,N'Tết Dương lịch'),
+(20230122,N'Tết Nguyên Đán 2023'),(20230123,N'Tết Nguyên Đán 2023'),(20230124,N'Tết Nguyên Đán 2023'),
+(20230430,N'Ngày Giải phóng miền Nam'),(20230501,N'Ngày Quốc tế Lao động'),
+(20240101,N'Tết Dương lịch'),
+(20240210,N'Tết Nguyên Đán 2024'),(20240211,N'Tết Nguyên Đán 2024'),(20240212,N'Tết Nguyên Đán 2024'),
+(20240430,N'Ngày Giải phóng miền Nam'),(20240501,N'Ngày Quốc tế Lao động'),
+(20250101,N'Tết Dương lịch'),
+(20250129,N'Tết Nguyên Đán 2025'),(20250130,N'Tết Nguyên Đán 2025'),(20250131,N'Tết Nguyên Đán 2025'),
+(20250430,N'Ngày Giải phóng miền Nam'),(20250501,N'Ngày Quốc tế Lao động'),
+(20260101,N'Tết Dương lịch'),
+(20260217,N'Tết Nguyên Đán 2026'),(20260218,N'Tết Nguyên Đán 2026'),(20260219,N'Tết Nguyên Đán 2026'),
+(20260430,N'Ngày Giải phóng miền Nam'),(20260501,N'Ngày Quốc tế Lao động'),
+(20270101,N'Tết Dương lịch'),
+(20270206,N'Tết Nguyên Đán 2027'),(20270207,N'Tết Nguyên Đán 2027'),(20270208,N'Tết Nguyên Đán 2027'),
+(20270430,N'Ngày Giải phóng miền Nam'),(20270501,N'Ngày Quốc tế Lao động'),
+(20280101,N'Tết Dương lịch'),
+(20280126,N'Tết Nguyên Đán 2028'),(20280127,N'Tết Nguyên Đán 2028'),(20280128,N'Tết Nguyên Đán 2028'),
+(20280430,N'Ngày Giải phóng miền Nam'),(20280501,N'Ngày Quốc tế Lao động'),
+(20290101,N'Tết Dương lịch'),
+(20290213,N'Tết Nguyên Đán 2029'),(20290214,N'Tết Nguyên Đán 2029'),(20290215,N'Tết Nguyên Đán 2029'),
+(20290430,N'Ngày Giải phóng miền Nam'),(20290501,N'Ngày Quốc tế Lao động'),
+(20300101,N'Tết Dương lịch'),
+(20300203,N'Tết Nguyên Đán 2030'),(20300204,N'Tết Nguyên Đán 2030'),(20300205,N'Tết Nguyên Đán 2030'),
+(20300430,N'Ngày Giải phóng miền Nam'),(20300501,N'Ngày Quốc tế Lao động');
+GO
 
--- Vietnamese month names
-DECLARE @MonthNames TABLE (m INT, name NVARCHAR(15));
-INSERT INTO @MonthNames VALUES
-    (1, N'Tháng 1'), (2, N'Tháng 2'), (3, N'Tháng 3'),
-    (4, N'Tháng 4'), (5, N'Tháng 5'), (6, N'Tháng 6'),
-    (7, N'Tháng 7'), (8, N'Tháng 8'), (9, N'Tháng 9'),
-    (10, N'Tháng 10'), (11, N'Tháng 11'), (12, N'Tháng 12');
-
--- Vietnamsese holidays
-DECLARE @Holidays TABLE (holiday_date DATE, holiday_name NVARCHAR(100));
-INSERT INTO @Holidays VALUES
-    ('2015-01-01', N'Tết Dương lịch'),
-    ('2015-02-19', N'Tết Nguyên Đán 2015'), ('2015-02-20', N'Tết Nguyên Đán 2015'), ('2015-02-21', N'Tết Nguyên Đán 2015'),
-    ('2015-04-30', N'Ngày Giải phóng miền Nam'), ('2015-05-01', N'Ngày Quốc tế Lao động'),
-    ('2016-01-01', N'Tết Dương lịch'),
-    ('2016-02-08', N'Tết Nguyên Đán 2016'), ('2016-02-09', N'Tết Nguyên Đán 2016'), ('2016-02-10', N'Tết Nguyên Đán 2016'),
-    ('2016-04-30', N'Ngày Giải phóng miền Nam'), ('2016-05-01', N'Ngày Quốc tế Lao động'),
-    ('2017-01-01', N'Tết Dương lịch'),
-    ('2017-01-28', N'Tết Nguyên Đán 2017'), ('2017-01-29', N'Tết Nguyên Đán 2017'), ('2017-01-30', N'Tết Nguyên Đán 2017'),
-    ('2017-04-30', N'Ngày Giải phóng miền Nam'), ('2017-05-01', N'Ngày Quốc tế Lao động'),
-    ('2018-01-01', N'Tết Dương lịch'),
-    ('2018-02-16', N'Tết Nguyên Đán 2018'), ('2018-02-17', N'Tết Nguyên Đán 2018'), ('2018-02-18', N'Tết Nguyên Đán 2018'),
-    ('2018-04-30', N'Ngày Giải phóng miền Nam'), ('2018-05-01', N'Ngày Quốc tế Lao động'),
-    ('2019-01-01', N'Tết Dương lịch'),
-    ('2019-02-05', N'Tết Nguyên Đán 2019'), ('2019-02-06', N'Tết Nguyên Đán 2019'), ('2019-02-07', N'Tết Nguyên Đán 2019'),
-    ('2019-04-30', N'Ngày Giải phóng miền Nam'), ('2019-05-01', N'Ngày Quốc tế Lao động'),
-    ('2020-01-01', N'Tết Dương lịch'),
-    ('2020-01-25', N'Tết Nguyên Đán 2020'), ('2020-01-26', N'Tết Nguyên Đán 2020'), ('2020-01-27', N'Tết Nguyên Đán 2020'),
-    ('2020-04-30', N'Ngày Giải phóng miền Nam'), ('2020-05-01', N'Ngày Quốc tế Lao động'),
-    ('2021-01-01', N'Tết Dương lịch'),
-    ('2021-02-12', N'Tết Nguyên Đán 2021'), ('2021-02-13', N'Tết Nguyên Đán 2021'), ('2021-02-14', N'Tết Nguyên Đán 2021'),
-    ('2021-04-30', N'Ngày Giải phóng miền Nam'), ('2021-05-01', N'Ngày Quốc tế Lao động'),
-    ('2022-01-01', N'Tết Dương lịch'),
-    ('2022-02-01', N'Tết Nguyên Đán 2022'), ('2022-02-02', N'Tết Nguyên Đán 2022'), ('2022-02-03', N'Tết Nguyên Đán 2022'),
-    ('2022-04-30', N'Ngày Giải phóng miền Nam'), ('2022-05-01', N'Ngày Quốc tế Lao động'),
-    ('2023-01-01', N'Tết Dương lịch'),
-    ('2023-01-22', N'Tết Nguyên Đán 2023'), ('2023-01-23', N'Tết Nguyên Đán 2023'), ('2023-01-24', N'Tết Nguyên Đán 2023'),
-    ('2023-04-30', N'Ngày Giải phóng miền Nam'), ('2023-05-01', N'Ngày Quốc tế Lao động'),
-    ('2024-01-01', N'Tết Dương lịch'),
-    ('2024-02-10', N'Tết Nguyên Đán 2024'), ('2024-02-11', N'Tết Nguyên Đán 2024'), ('2024-02-12', N'Tết Nguyên Đán 2024'),
-    ('2024-04-30', N'Ngày Giải phóng miền Nam'), ('2024-05-01', N'Ngày Quốc tế Lao động'),
-    ('2025-01-01', N'Tết Dương lịch'),
-    ('2025-01-29', N'Tết Nguyên Đán 2025'), ('2025-01-30', N'Tết Nguyên Đán 2025'), ('2025-01-31', N'Tết Nguyên Đán 2025'),
-    ('2025-04-30', N'Ngày Giải phóng miền Nam'), ('2025-05-01', N'Ngày Quốc tế Lao động'),
-    ('2026-01-01', N'Tết Dương lịch'),
-    ('2026-02-17', N'Tết Nguyên Đán 2026'), ('2026-02-18', N'Tết Nguyên Đán 2026'), ('2026-02-19', N'Tết Nguyên Đán 2026'),
-    ('2026-04-30', N'Ngày Giải phóng miền Nam'), ('2026-05-01', N'Ngày Quốc tế Lao động'),
-    ('2027-01-01', N'Tết Dương lịch'),
-    ('2027-02-06', N'Tết Nguyên Đán 2027'), ('2027-02-07', N'Tết Nguyên Đán 2027'), ('2027-02-08', N'Tết Nguyên Đán 2027'),
-    ('2027-04-30', N'Ngày Giải phóng miền Nam'), ('2027-05-01', N'Ngày Quốc tế Lao động'),
-    ('2028-01-01', N'Tết Dương lịch'),
-    ('2028-01-26', N'Tết Nguyên Đán 2028'), ('2028-01-27', N'Tết Nguyên Đán 2028'), ('2028-01-28', N'Tết Nguyên Đán 2028'),
-    ('2028-04-30', N'Ngày Giải phóng miền Nam'), ('2028-05-01', N'Ngày Quốc tế Lao động'),
-    ('2029-01-01', N'Tết Dương lịch'),
-    ('2029-02-13', N'Tết Nguyên Đán 2029'), ('2029-02-14', N'Tết Nguyên Đán 2029'), ('2029-02-15', N'Tết Nguyên Đán 2029'),
-    ('2029-04-30', N'Ngày Giải phóng miền Nam'), ('2029-05-01', N'Ngày Quốc tế Lao động'),
-    ('2030-01-01', N'Tết Dương lịch'),
-    ('2030-02-03', N'Tết Nguyên Đán 2030'), ('2030-02-04', N'Tết Nguyên Đán 2030'), ('2030-02-05', N'Tết Nguyên Đán 2030'),
-    ('2030-04-30', N'Ngày Giải phóng miền Nam'), ('2030-05-01', N'Ngày Quốc tế Lao động');
-
--- Populate DimDate
-;WITH Dates AS (
+;WITH DateSeq AS (
     SELECT CAST('2015-01-01' AS DATE) AS DateValue
     UNION ALL
     SELECT DATEADD(DAY, 1, DateValue)
-    FROM Dates
-    WHERE DateValue < '2030-12-31'
+    FROM DateSeq
+    WHERE DateValue < CAST('2030-12-31' AS DATE)
 )
-INSERT INTO dbo.DimDate (
-    DateKey, FullDate, DayOfWeek, DayName, DayOfMonth,
-    WeekOfYear, MonthNumber, MonthName, Quarter, QuarterName,
-    Year, IsWeekend, IsHoliday, HolidayName, FiscalYear, FiscalQuarter
-)
+INSERT INTO dbo.DimDate (DateKey, FullDate, DayOfWeek, DayName, DayOfMonth, WeekOfYear, MonthNumber, MonthName, Quarter, QuarterName, Year, IsWeekend, IsHoliday, HolidayName, FiscalYear, FiscalQuarter)
 SELECT
-    CAST(FORMAT(DateValue, 'yyyyMMdd') AS INT)                   AS DateKey,
-    DateValue,
-    DATEPART(WEEKDAY, DateValue)                                 AS DayOfWeek,
-    dn.name                                                       AS DayName,
-    DATEPART(DAY, DateValue)                                     AS DayOfMonth,
-    DATEPART(ISO_WEEK, DateValue)                               AS WeekOfYear,
-    DATEPART(MONTH, DateValue)                                   AS MonthNumber,
-    mn.name                                                       AS MonthName,
-    DATEPART(QUARTER, DateValue)                                 AS Quarter,
-    'Q' + CAST(DATEPART(QUARTER, DateValue) AS CHAR(1))          AS QuarterName,
-    DATEPART(YEAR, DateValue)                                    AS Year,
-    CASE WHEN DATEPART(WEEKDAY, DateValue) IN (1, 7) THEN 1 ELSE 0 END AS IsWeekend,
-    CASE WHEN h.holiday_date IS NOT NULL THEN 1 ELSE 0 END       AS IsHoliday,
-    h.holiday_name                                               AS HolidayName,
-    DATEPART(YEAR, DateValue)                                    AS FiscalYear,
-    DATEPART(QUARTER, DateValue)                                 AS FiscalQuarter
-FROM Dates d
-JOIN @DayNames dn ON dn.d = DATEPART(WEEKDAY, d.DateValue)
-JOIN @MonthNames mn ON mn.m = DATEPART(MONTH, d.DateValue)
-LEFT JOIN @Holidays h ON h.holiday_date = d.DateValue
-OPTION (MAXRECURSION 6000);
+    CONVERT(INT, CONVERT(VARCHAR, d.DateValue, 112)) AS DateKey,
+    d.DateValue,
+    CASE DATEPART(WEEKDAY, d.DateValue)
+        WHEN 7 THEN 1 WHEN 1 THEN 2 WHEN 2 THEN 3 WHEN 3 THEN 4
+        WHEN 4 THEN 5 WHEN 5 THEN 6 WHEN 6 THEN 7
+    END AS DayOfWeek,
+    CASE DATEPART(WEEKDAY, d.DateValue)
+        WHEN 1 THEN N'Chủ Nhật' WHEN 2 THEN N'Thứ Hai' WHEN 3 THEN N'Thứ Ba'
+        WHEN 4 THEN N'Thứ Tư' WHEN 5 THEN N'Thứ Năm' WHEN 6 THEN N'Thứ Sáu' WHEN 7 THEN N'Thứ Bảy'
+    END AS DayName,
+    DATEPART(DAY, d.DateValue) AS DayOfMonth,
+    DATEPART(ISO_WEEK, d.DateValue) AS WeekOfYear,
+    DATEPART(MONTH, d.DateValue) AS MonthNumber,
+    CASE DATEPART(MONTH, d.DateValue)
+        WHEN 1 THEN N'Tháng 1' WHEN 2 THEN N'Tháng 2' WHEN 3 THEN N'Tháng 3'
+        WHEN 4 THEN N'Tháng 4' WHEN 5 THEN N'Tháng 5' WHEN 6 THEN N'Tháng 6'
+        WHEN 7 THEN N'Tháng 7' WHEN 8 THEN N'Tháng 8' WHEN 9 THEN N'Tháng 9'
+        WHEN 10 THEN N'Tháng 10' WHEN 11 THEN N'Tháng 11' WHEN 12 THEN N'Tháng 12'
+    END AS MonthName,
+    DATEPART(QUARTER, d.DateValue) AS Quarter,
+    'Q' + CAST(DATEPART(QUARTER, d.DateValue) AS CHAR(1)) AS QuarterName,
+    DATEPART(YEAR, d.DateValue) AS Year,
+    CASE WHEN DATEPART(WEEKDAY, d.DateValue) IN (1, 7) THEN 1 ELSE 0 END AS IsWeekend,
+    CASE WHEN h.DateKey IS NOT NULL THEN 1 ELSE 0 END AS IsHoliday,
+    h.HolidayName,
+    DATEPART(YEAR, d.DateValue) AS FiscalYear,
+    DATEPART(QUARTER, d.DateValue) AS FiscalQuarter
+FROM DateSeq d
+LEFT JOIN #Holidays h ON h.DateKey = CONVERT(INT, CONVERT(VARCHAR, d.DateValue, 112))
+OPTION (MAXRECURSION 5844);
+GO
+
+DROP TABLE #Holidays;
+GO
 
 PRINT 'DimDate populated: ' + CAST((SELECT COUNT(*) FROM DimDate) AS VARCHAR) + ' rows';
 GO

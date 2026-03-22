@@ -27,7 +27,6 @@ CREATE TABLE dbo.DM_SalesDailySummary (
     CONSTRAINT UQ_DM_SalesDailySummary UNIQUE (DateKey, StoreKey, ProductKey)
 );
 
-CREATE CLUSTERED INDEX IX_DM_SalesDailySummary_DateKey ON dbo.DM_SalesDailySummary(DateKey);
 CREATE NONCLUSTERED INDEX IX_DM_SalesDailySummary_StoreKey ON dbo.DM_SalesDailySummary(StoreKey);
 GO
 
@@ -51,7 +50,6 @@ CREATE TABLE dbo.DM_InventoryAlert (
     CONSTRAINT UQ_DM_InventoryAlert UNIQUE (AlertDate, ProductKey, StoreKey)
 );
 
-CREATE CLUSTERED INDEX IX_DM_InventoryAlert_AlertDate ON dbo.DM_InventoryAlert(AlertDate);
 CREATE NONCLUSTERED INDEX IX_DM_InventoryAlert_AlertLevel ON dbo.DM_InventoryAlert(AlertLevel);
 CREATE NONCLUSTERED INDEX IX_DM_InventoryAlert_IsAcknowledged ON dbo.DM_InventoryAlert(IsAcknowledged);
 GO
