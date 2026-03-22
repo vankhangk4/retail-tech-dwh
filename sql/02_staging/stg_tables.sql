@@ -86,7 +86,7 @@ CREATE TABLE dbo.STG_CustomerRaw (
     ThanhPho           NVARCHAR(100)   NULL,
     LoaiKH             VARCHAR(20)     NULL DEFAULT N'Lẻ',
     DiemTichLuy        INT             NULL DEFAULT 0,
-    NgayDangKy         DATE            NOT NULL,
+    NgayDangKy         DATE            NULL,
     LoadDatetime       DATETIME2       NOT NULL DEFAULT GETDATE()
 );
 CREATE INDEX IX_STG_CustomerRaw_MaKH ON dbo.STG_CustomerRaw(MaKH);

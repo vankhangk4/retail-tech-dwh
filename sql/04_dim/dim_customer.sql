@@ -20,7 +20,7 @@ CREATE TABLE dbo.DimCustomer (
     Province          NVARCHAR(100)   NULL,
     CustomerType      VARCHAR(20)     NOT NULL DEFAULT N'Lẻ',
     LoyaltyPoint      INT             NOT NULL DEFAULT 0,
-    MemberSince       DATE            NOT NULL,
+    MemberSince       DATE            NULL,
     IsActive          BIT             NOT NULL DEFAULT 1,
     LoadDatetime      DATETIME2       NOT NULL DEFAULT GETDATE()
 );
