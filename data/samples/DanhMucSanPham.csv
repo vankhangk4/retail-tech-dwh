@@ -1,0 +1,51 @@
+﻿MaSP,TenSP,ThuongHieu,DanhMuc,DanhMucCon,GiaVon,GiaNiemYet,DonViTinh,BaoHanh_Thang
+SP001,iPhone 15 Pro Max 256GB,Realme,Laptop,Laptop gaming,24456000.0,31405000.0,cái,6
+SP002,iPhone 15 Pro 128GB,OPPO,Phụ kiện,Giá đỡ,11842000.0,14611000.0,cái,12
+SP003,iPhone 15 128GB,Xiaomi,Phụ kiện,Cáp sạc,37882000.0,46579000.0,cái,12
+SP004,iPhone 14 128GB,JBL,Điện thoại,Smartphone tầm trung,9724000.0,12705000.0,cái,6
+SP005,Samsung Galaxy S24 Ultra,LG,Laptop,Laptop văn phòng,15178000.0,19765000.0,cái,6
+SP006,Samsung Galaxy S24+,Lenovo,Sạc dự phòng,Pin dự phòng 10000mAh,24272000.0,31323000.0,cái,24
+SP007,Samsung Galaxy Z Flip5,Mophie,Loa,Loa Bluetooth,9898000.0,12759000.0,cái,24
+SP008,Samsung Galaxy A54 5G,Apple,Laptop,Laptop đồ họa,45835000.0,66209000.0,cái,24
+SP009,Xiaomi 14 Ultra,SanDisk,Ổ cứng,SSD ngoài,2460000.0,3554000.0,cái,6
+SP010,Xiaomi Redmi Note 13 Pro,JBL,Camera,Camera hành trình,1254000.0,1800000.0,cái,12
+SP011,OPPO Find X7 Ultra,ASUS,Loa,Loa soundbar,3802000.0,4454000.0,cái,12
+SP012,OPPO Reno11 5G,Vivo,Camera,Camera hành trình,4185000.0,6063000.0,cái,6
+SP013,Vivo X100 Pro,Apple,Ổ cứng,HDD ngoài,2682000.0,3759000.0,cái,12
+SP014,Realme GT3,Western Digital,USB/TF Card,Thẻ nhớ TF,1424000.0,1838000.0,cái,12
+SP015,Samsung Galaxy A34 5G,Mophie,Máy tính bảng,Android Tablet,4801000.0,5621000.0,cái,12
+SP016,MacBook Pro 14 M3 Pro,Sony,Máy tính bảng,iPad,39490000.0,54028000.0,cái,6
+SP017,MacBook Air 15 M3,SanDisk,Laptop,MacBook,40587000.0,51052000.0,cái,12
+SP018,MacBook Pro 16 M3 Max,Anker,Điện thoại,Smartphone giá rẻ,13636000.0,19625000.0,cái,12
+SP019,Dell XPS 15 9530,OPPO,Tai nghe,Tai nghe không dây,573000.0,788000.0,cái,12
+SP020,Dell Inspiron 15 3530,OPPO,Loa,Loa mini,1509000.0,2022000.0,cái,24
+SP021,Dell Latitude 5440,Xiaomi,USB/TF Card,USB 3.0,3370000.0,4408000.0,cái,12
+SP022,Lenovo ThinkPad X1 Carbon Gen 11,Sony,Tai nghe,Tai nghe có dây,887000.0,1044000.0,cái,12
+SP023,Lenovo IdeaPad Gaming 3,ASUS,Tai nghe,Tai nghe gaming,1160000.0,1627000.0,cái,6
+SP024,ASUS ROG Zephyrus G14,Logitech,Camera,Camera hành trình,5526000.0,7190000.0,cái,12
+SP025,ASUS VivoBook 15 OLED,Western Digital,Loa,Loa soundbar,7051000.0,9009000.0,cái,6
+SP026,ASUS ProArt Studiobook,Dell,Phụ kiện,Cáp sạc,4467000.0,6115000.0,cái,12
+SP027,HP EliteBook 840 G10,Anker,Ổ cứng,HDD ngoài,7101000.0,9736000.0,cái,12
+SP028,HP Pavilion 15,Lenovo,Phụ kiện,Cáp sạc,7119000.0,10203000.0,cái,24
+SP029,HP Omen 16,Mophie,Loa,Loa mini,1784000.0,2156000.0,cái,6
+SP030,Acer Swift 3 OLED,Samsung,Điện thoại,Smartphone cao cấp,7654000.0,9182000.0,cái,6
+SP031,Acer Aspire 5,ASUS,Phụ kiện,Cáp sạc,639000.0,740000.0,cái,12
+SP032,iPad Pro 12.9 M4,Logitech,Camera,Webcam,14738000.0,18148000.0,cái,12
+SP033,iPad Air M2,Vivo,Ổ cứng,HDD ngoài,26564000.0,34799000.0,cái,6
+SP034,iPad mini A17 Pro,HP,USB/TF Card,Thẻ nhớ TF,41459000.0,54615000.0,cái,6
+SP035,Samsung Galaxy Tab S9 Ultra,Western Digital,USB/TF Card,Thẻ nhớ TF,24942000.0,29003000.0,cái,12
+SP036,Xiaomi Pad 6S Pro,JBL,Sạc dự phòng,Pin dự phòng 10000mAh,7551000.0,9677000.0,cái,12
+SP037,AirPods Pro 2,Samsung,Điện thoại,Smartphone tầm trung,6858000.0,8362000.0,cái,12
+SP038,AirPods 3,Acer,Tai nghe,Tai nghe gaming,8241000.0,11928000.0,cái,6
+SP039,AirPods 2,LG,Điện thoại,Smartphone giá rẻ,4011000.0,4719000.0,cái,6
+SP040,Samsung Galaxy Buds2 Pro,Xiaomi,Máy tính bảng,iPad,3967000.0,4957000.0,cái,12
+SP041,Samsung Galaxy Buds FE,LG,Camera,Webcam,2569000.0,3054000.0,cái,12
+SP042,Sony WF-1000XM5,Dell,Camera,Webcam,1015000.0,1444000.0,cái,12
+SP043,Sony WH-1000XM5,Lenovo,Camera,Camera hành trình,955000.0,1268000.0,cái,12
+SP044,JBL Tune 770NC,Western Digital,USB/TF Card,USB 3.0,1914000.0,2429000.0,cái,12
+SP045,JBL Flip 6,HP,Tai nghe,Tai nghe có dây,2014000.0,2742000.0,cái,24
+SP046,Xiaomi Buds 4 Pro,Lenovo,Camera,Camera hành trình,7949000.0,11462000.0,cái,24
+SP047,Baseus 3-in-1 Cable,HP,Loa,Loa mini,4772000.0,5616000.0,cái,12
+SP048,Anker PowerCore 20000,ASUS,Máy tính bảng,Android Tablet,6713000.0,7976000.0,cái,12
+SP049,Mophie 3-in-1 MagSafe,Xiaomi,Tai nghe,Tai nghe có dây,1224000.0,1450000.0,cái,12
+SP050,JBL Charge 5,ASUS,Phụ kiện,Giá đỡ,2283000.0,3303000.0,cái,12
