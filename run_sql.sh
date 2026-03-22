@@ -20,7 +20,7 @@ DB="DWH_RetailTech"
 
 # Pull mssql-tools container
 echo "Pulling mssql-tools18 image..."
-docker pull mcr.microsoft.com/mssql-tools18:2022-latest > /dev/null 2>&1
+docker pull mcr.microsoft.com/mssql-tools > /dev/null 2>&1
 
 # Hàm chạy SQL file
 run_sql() {
@@ -29,8 +29,8 @@ run_sql() {
     echo "  Running: $(basename "$file")"
     docker run --rm --network datn_datn_network \
         -v "${SCRIPT_DIR}:/scripts" \
-        mcr.microsoft.com/mssql-tools18:2022-latest \
-        /opt/mssql-tools18/bin/sqlcmd \
+        mcr.microsoft.com/mssql-tools \
+        /opt/mssql-tools/bin/sqlcmd \
         -S "${HOST}" -U sa -P "${PASSWORD}" -C -No \
         -d "${DB}" \
         -i "/scripts/${rel_path}" 2>/dev/null || {
@@ -47,8 +47,8 @@ echo ""
 echo ">>> [1] Init Database..."
 docker run --rm --network datn_datn_network \
     -v "${SCRIPT_DIR}:/scripts" \
-    mcr.microsoft.com/mssql-tools18:2022-latest \
-    /opt/mssql-tools18/bin/sqlcmd \
+    mcr.microsoft.com/mssql-tools \
+    /opt/mssql-tools/bin/sqlcmd \
     -S "${HOST}" -U sa -P "${PASSWORD}" -C -No \
     -i /scripts/sql/01_init/init_database.sql
 
@@ -93,15 +93,15 @@ echo "========================================"
 echo ""
 echo "Verification:"
 docker run --rm --network datn_datn_network \
-    mcr.microsoft.com/mssql-tools18:2022-latest \
-    /opt/mssql-tools18/bin/sqlcmd \
+    mcr.microsoft.com/mssql-tools \
+    /opt/mssql-tools/bin/sqlcmd \
     -S "${HOST}" -U sa -P "${PASSWORD}" -C -No \
     -d "${DB}" \
     -Q "SELECT COUNT(*) AS TableCount FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo'"
 
 docker run --rm --network datn_datn_network \
-    mcr.microsoft.com/mssql-tools18:2022-latest \
-    /opt/mssql-tools18/bin/sqlcmd \
+    mcr.microsoft.com/mssql-tools \
+    /opt/mssql-tools/bin/sqlcmd \
     -S "${HOST}" -U sa -P "${PASSWORD}" -C -No \
     -d "${DB}" \
     -Q "SELECT COUNT(*) AS DimDateRows FROM DimDate"
