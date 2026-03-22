@@ -271,9 +271,12 @@ def generate_sales(customers_df, employees_df, products_df, stores_df):
 
         for inv_num in range(num_invoices):
             inv_id = f"HD{current_date.strftime('%Y%m%d')}{inv_num+1:04d}"
-            store = random.choice(stores_df)
-            customer = random.choice(customers_df)
-            employee = random.choice(employees_df[employees_df["MaCH"] == store["MaCH"]])
+            store = stores_df.sample(1).iloc[0].to_dict()
+            customer = customers_df.sample(1).iloc[0].to_dict()
+            emps = employees_df[employees_df["MaCH"] == store["MaCH"]]
+            if len(emps) == 0:
+                emps = employees_df
+            employee = emps.sample(1).iloc[0].to_dict()
             if len(employee) == 0:
                 employee = employees_df.sample(1).iloc[0]
 
@@ -445,29 +448,28 @@ def main():
 
     # Save sales to Excel (split into monthly sheets)
     logger.info("Saving sales data to Excel...")
-    sales_wb = Workbook()
-    sales_wb.remove(sales_wb.active)
+    sales_path = OUTPUT_DIR / "BaoCaoDoanhThu_2025.xlsx"
 
-    monthly_groups = sales_df.groupby(pd.to_datetime(sales_df["NgayBan"]).dt.to_period("M"))
-    for period, group in monthly_groups:
-        sheet_name = str(period)[:7]  # e.g. "2025-01"
-        group[["MaHoaDon", "MaSP", "MaKH", "MaCH", "MaNV", "NgayBan",
-               "SoLuong", "DonGiaBan", "ChietKhau", "ThueSuat",
-               "PhuongThucTT", "KenhBan", "IsHoanTra"]].to_excel(
-            sales_wb, sheet_name=sheet_name, index=False, engine="openpyxl"
-        )
-        ws = sales_wb[sheet_name]
-        header_fill = PatternFill(start_color="2E75B6", end_color="2E75B6", fill_type="solid")
-        header_font = Font(color="FFFFFF", bold=True)
-        for col in range(1, ws.max_column + 1):
-            cell = ws.cell(row=1, column=col)
-            cell.fill = header_fill
-            cell.font = header_font
-            cell.alignment = Alignment(horizontal="center")
-        for col in range(1, ws.max_column + 1):
-            ws.column_dimensions[get_column_letter(col)].width = 15
+    with pd.ExcelWriter(sales_path, engine="openpyxl") as writer:
+        monthly_groups = sales_df.groupby(pd.to_datetime(sales_df["NgayBan"]).dt.to_period("M"))
+        for period, group in monthly_groups:
+            sheet_name = str(period)[:7]  # e.g. "2025-01"
+            group[["MaHoaDon", "MaSP", "MaKH", "MaCH", "MaNV", "NgayBan",
+                   "SoLuong", "DonGiaBan", "ChietKhau", "ThueSuat",
+                   "PhuongThucTT", "KenhBan", "IsHoanTra"]].to_excel(
+                writer, sheet_name=sheet_name, index=False
+            )
+            ws = writer.sheets[sheet_name]
+            header_fill = PatternFill(start_color="2E75B6", end_color="2E75B6", fill_type="solid")
+            header_font = Font(color="FFFFFF", bold=True)
+            for col in range(1, ws.max_column + 1):
+                cell = ws.cell(row=1, column=col)
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = Alignment(horizontal="center")
+            for col in range(1, ws.max_column + 1):
+                ws.column_dimensions[get_column_letter(col)].width = 15
 
-    sales_wb.save(OUTPUT_DIR / "BaoCaoDoanhThu_2025.xlsx")
     logger.info(f"Saved: BaoCaoDoanhThu_2025.xlsx ({len(sales_df):,} rows in {len(monthly_groups)} sheets)")
 
     # Generate and save inventory
@@ -475,28 +477,27 @@ def main():
     inventory_df = generate_inventory(products_df, stores_df)
     logger.info(f"  Generated {len(inventory_df):,} inventory records")
 
-    # Save inventory - sample monthly
-    inv_wb = Workbook()
-    inv_wb.remove(inv_wb.active)
+    # Save inventory - monthly
+    inv_path = OUTPUT_DIR / "QuanLyKho_2025.xlsx"
     inv_monthly = inventory_df.groupby(pd.to_datetime(inventory_df["NgayChot"]).dt.to_period("M"))
-    for period, group in inv_monthly:
-        sheet_name = str(period)[:7]
-        group[["MaPhieu", "MaSP", "MaCH", "MaNCC", "NgayChot",
-               "TonDauNgay", "TonCuoiNgay", "NhapTrongNgay", "XuatTrongNgay"]].to_excel(
-            inv_wb, sheet_name=sheet_name, index=False, engine="openpyxl"
-        )
-        ws = inv_wb[sheet_name]
-        header_fill = PatternFill(start_color="538135", end_color="538135", fill_type="solid")
-        header_font = Font(color="FFFFFF", bold=True)
-        for col in range(1, ws.max_column + 1):
-            cell = ws.cell(row=1, column=col)
-            cell.fill = header_fill
-            cell.font = header_font
-            cell.alignment = Alignment(horizontal="center")
-        for col in range(1, ws.max_column + 1):
-            ws.column_dimensions[get_column_letter(col)].width = 15
+    with pd.ExcelWriter(inv_path, engine="openpyxl") as writer:
+        for period, group in inv_monthly:
+            sheet_name = str(period)[:7]
+            group[["MaPhieu", "MaSP", "MaCH", "MaNCC", "NgayChot",
+                   "TonDauNgay", "TonCuoiNgay", "NhapTrongNgay", "XuatTrongNgay"]].to_excel(
+                writer, sheet_name=sheet_name, index=False
+            )
+            ws = writer.sheets[sheet_name]
+            header_fill = PatternFill(start_color="538135", end_color="538135", fill_type="solid")
+            header_font = Font(color="FFFFFF", bold=True)
+            for col in range(1, ws.max_column + 1):
+                cell = ws.cell(row=1, column=col)
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = Alignment(horizontal="center")
+            for col in range(1, ws.max_column + 1):
+                ws.column_dimensions[get_column_letter(col)].width = 15
 
-    inv_wb.save(OUTPUT_DIR / "QuanLyKho_2025.xlsx")
     logger.info(f"Saved: QuanLyKho_2025.xlsx ({len(inventory_df):,} rows in {len(inv_monthly)} sheets)")
 
     # Summary
