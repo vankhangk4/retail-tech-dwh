@@ -201,13 +201,16 @@ AS
 BEGIN
     SET NOCOUNT ON;
     DECLARE @Today DATE = CAST(GETDATE() AS DATE);
+    DECLARE @DateKeyToday INT = CONVERT(INT, FORMAT(@Today, 'yyyyMMdd'));
+    DECLARE @DateKey30DaysAgo INT = CONVERT(INT, FORMAT(DATEADD(DAY, -30, @Today), 'yyyyMMdd'));
 
     BEGIN TRY
-        -- Detect low stock alerts
+        -- Tinh AvgDailySales = Tong StockSold trong 30 ngay / 30
+        -- DaysOfSupply = ClosingStock / AvgDailySales
         MERGE dbo.DM_InventoryAlert AS target
         USING (
             SELECT
-                @Today                          AS AlertDate,
+                @Today                                             AS AlertDate,
                 fi.ProductKey,
                 fi.StoreKey,
                 CASE
@@ -215,26 +218,32 @@ BEGIN
                     WHEN fi.ClosingStock <= 5 THEN 'HIGH'
                     WHEN fi.ClosingStock <= 10 THEN 'MEDIUM'
                     ELSE 'LOW'
-                END                             AS AlertLevel,
-                fi.ClosingStock                AS CurrentStock,
+                END                                                AS AlertLevel,
+                fi.ClosingStock                                   AS CurrentStock,
                 fi.ReorderPoint,
                 CASE
-                    WHEN AVG(fi2.StockSold * 1.0 / NULLIF(DATEDIFF(DAY,
-                        (SELECT MIN(DateKey) FROM dbo.DimDate WHERE DateKey > fi.DateKey - 30),
-                        fi.DateKey), 0)) > 0
-                    THEN CAST(fi.ClosingStock / NULLIF(AVG(fi2.StockSold * 1.0 /
-                        NULLIF(DATEDIFF(DAY,
-                        (SELECT MIN(DateKey) FROM dbo.DimDate WHERE DateKey > fi.DateKey - 30),
-                        fi.DateKey), 0)) OVER (PARTITION BY fi.ProductKey, fi.StoreKey), 0) AS DECIMAL(10,1))
+                    WHEN avg_sales.AvgDailySales > 0
+                    THEN CAST(fi.ClosingStock / NULLIF(avg_sales.AvgDailySales, 0) AS DECIMAL(10,1))
                     ELSE NULL
-                END                             AS DaysOfSupply,
-                CASE WHEN fi.ReorderPoint IS NOT NULL AND fi.ClosingStock < fi.ReorderPoint
-                     THEN fi.ReorderPoint - fi.ClosingStock + 10
-                     ELSE 10
-                END                             AS SuggestedOrderQty,
-                NULL                            AS AvgDailySales
+                END                                                AS DaysOfSupply,
+                CASE
+                    WHEN fi.ReorderPoint IS NOT NULL AND fi.ClosingStock < fi.ReorderPoint
+                    THEN fi.ReorderPoint - fi.ClosingStock + 10
+                    ELSE 10
+                END                                                AS SuggestedOrderQty,
+                avg_sales.AvgDailySales                           AS AvgDailySales
             FROM dbo.FactInventory fi
-            WHERE fi.DateKey = CONVERT(INT, FORMAT(@Today, 'yyyyMMdd'))
+            INNER JOIN (
+                SELECT
+                    ProductKey,
+                    StoreKey,
+                    SUM(StockSold) / 30.0 AS AvgDailySales
+                FROM dbo.FactInventory
+                WHERE DateKey BETWEEN @DateKey30DaysAgo AND @DateKeyToday
+                GROUP BY ProductKey, StoreKey
+            ) avg_sales ON avg_sales.ProductKey = fi.ProductKey
+                        AND avg_sales.StoreKey = fi.StoreKey
+            WHERE fi.DateKey = @DateKeyToday
               AND fi.ClosingStock < 15
         ) AS source (
             AlertDate, ProductKey, StoreKey, AlertLevel, CurrentStock,
