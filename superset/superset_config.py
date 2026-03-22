@@ -1,20 +1,18 @@
 # ============================================================
 # superset_config.py - Superset configuration
+# All sensitive values MUST be set via environment variables
 # ============================================================
 import os
 
 # ---- Secret Key ----
-SECRET_KEY = os.environ.get("SUPERSET_SECRET_KEY", "datn_dev_secret_key_change_in_prod")
+SECRET_KEY = os.environ.get("SUPERSET_SECRET_KEY", "")
 
 # ---- Database ----
-SQLALCHEMY_DATABASE_URI = os.environ.get(
-    "SQLALCHEMY_DATABASE_URI",
-    "postgresql+psycopg2://superset:superset@datn_postgres:5432/superset"
-)
+SQLALCHEMY_DATABASE_URI = os.environ.get("SQLALCHEMY_DATABASE_URI", "")
 
 # ---- Redis ----
 REDIS_HOST = os.environ.get("REDIS_HOST", "datn_redis")
-REDIS_PORT = os.environ.get("REDIS_PORT", "6379")
+REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
 REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", "")
 
 CACHE_CONFIG = {
