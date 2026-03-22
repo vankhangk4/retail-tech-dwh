@@ -81,7 +81,7 @@ def extract_store(file_path: str | Path, watermark: Optional = None) -> pd.DataF
             df[c] = None
 
     if "NgayKhaiTruong" in df.columns:
-        df["NgayKhaiTruong"] = pd.to_datetime(df["NgayKhaiTruong"], dayfirst=True, errors="coerce")
+        df["NgayKhaiTruong"] = pd.to_datetime(df["NgayKhaiTruong"], dayfirst=False, errors="coerce")
     if "DienTich_m2" in df.columns:
         df["DienTich_m2"] = pd.to_numeric(df["DienTich_m2"], errors="coerce")
 

@@ -1,6 +1,7 @@
 -- ============================================================
 -- Script: 08_stored_procedures/sp_load_fact_inventory.sql
 -- Mục đích: Load FactInventory
+-- Fix: Thêm @FullLoad để load tất cả ngày khi --full
 -- ============================================================
 USE DWH_RetailTech;
 GO
@@ -8,7 +9,8 @@ GO
 IF OBJECT_ID('dbo.sp_Load_FactInventory', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_Load_FactInventory;
 GO
 CREATE PROCEDURE dbo.sp_Load_FactInventory
-    @BatchDate DATE = NULL
+    @BatchDate DATE = NULL,
+    @FullLoad  BIT = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -39,7 +41,7 @@ BEGIN
         INNER JOIN dbo.DimStore st ON st.StoreCode = s.MaCH
         LEFT  JOIN dbo.DimProduct p ON p.ProductCode = s.MaSP AND p.IsCurrent = 1
         LEFT  JOIN dbo.DimSupplier sup ON sup.SupplierCode = s.MaNCC
-        WHERE CAST(s.NgayChot AS DATE) = @ProcessDate
+        WHERE (@FullLoad = 1 OR CAST(s.NgayChot AS DATE) = @ProcessDate)
           AND NOT EXISTS (
               SELECT 1 FROM dbo.FactInventory fi
               WHERE fi.DateKey = CONVERT(INT, FORMAT(s.NgayChot, 'yyyyMMdd'))

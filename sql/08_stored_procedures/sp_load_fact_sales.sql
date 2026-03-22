@@ -1,6 +1,7 @@
 -- ============================================================
 -- Script: 08_stored_procedures/sp_load_fact_sales.sql
 -- Mục đích: Load FactSales
+-- Fix: Thêm @FullLoad để load tất cả ngày khi --full
 -- ============================================================
 USE DWH_RetailTech;
 GO
@@ -8,7 +9,8 @@ GO
 IF OBJECT_ID('dbo.sp_Load_FactSales', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_Load_FactSales;
 GO
 CREATE PROCEDURE dbo.sp_Load_FactSales
-    @BatchDate DATE = NULL
+    @BatchDate DATE = NULL,
+    @FullLoad  BIT = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -16,7 +18,6 @@ BEGIN
     DECLARE @ProcessDate DATE = @BatchDate;
 
     DECLARE @RowsLoaded INT = 0;
-    DECLARE @RowsRejected INT = 0;
 
     BEGIN TRY
         -- Log start
@@ -34,7 +35,7 @@ BEGIN
             @ProcessDate,
             GETDATE()
         FROM dbo.STG_SalesRaw s
-        WHERE CAST(s.NgayBan AS DATE) = @ProcessDate
+        WHERE (@FullLoad = 1 OR CAST(s.NgayBan AS DATE) = @ProcessDate)
           AND NOT EXISTS (
               SELECT 1 FROM dbo.DimProduct p
               WHERE p.ProductCode = s.MaSP AND p.IsCurrent = 1
@@ -49,7 +50,7 @@ BEGIN
             @ProcessDate,
             GETDATE()
         FROM dbo.STG_SalesRaw s
-        WHERE CAST(s.NgayBan AS DATE) = @ProcessDate
+        WHERE (@FullLoad = 1 OR CAST(s.NgayBan AS DATE) = @ProcessDate)
           AND NOT EXISTS (SELECT 1 FROM dbo.DimStore st WHERE st.StoreCode = s.MaCH);
 
         -- Step 3: Load FactSales (idempotent - skip if exists)
@@ -62,18 +63,18 @@ BEGIN
         SELECT
             CONVERT(INT, FORMAT(s.NgayBan, 'yyyyMMdd'))          AS DateKey,
             ISNULL(p.ProductKey, -1)                              AS ProductKey,
-            ISNULL(c.CustomerKey, -1)                             AS CustomerKey,
+            ISNULL(c.CustomerKey, -1)                            AS CustomerKey,
             st.StoreKey,
-            ISNULL(e.EmployeeKey, -1)                              AS EmployeeKey,
+            ISNULL(e.EmployeeKey, -1)                            AS EmployeeKey,
             UPPER(LTRIM(RTRIM(s.MaHoaDon)))                     AS InvoiceNumber,
             s.SoLuong                                            AS Quantity,
             s.DonGiaBan                                          AS UnitPrice,
-            ISNULL(s.ChietKhau, 0)                               AS DiscountAmount,
+            ISNULL(s.ChietKhau, 0)                              AS DiscountAmount,
             s.SoLuong * s.DonGiaBan                             AS GrossSalesAmount,
             (s.SoLuong * s.DonGiaBan) - ISNULL(s.ChietKhau, 0) AS NetSalesAmount,
             s.SoLuong * ISNULL(p.UnitCostPrice, 0)             AS CostAmount,
             ((s.SoLuong * s.DonGiaBan) - ISNULL(s.ChietKhau, 0))
-                - (s.SoLuong * ISNULL(p.UnitCostPrice, 0))      AS GrossProfitAmount,
+                - (s.SoLuong * ISNULL(p.UnitCostPrice, 0))     AS GrossProfitAmount,
             ISNULL(s.ThueSuat, 0.10) * (s.SoLuong * s.DonGiaBan) AS TaxAmount,
             ISNULL(s.PhuongThucTT, N'Tiền mặt')                AS PaymentMethod,
             ISNULL(s.KenhBan, 'InStore')                         AS SalesChannel,
@@ -84,7 +85,7 @@ BEGIN
         LEFT  JOIN dbo.DimProduct p  ON p.ProductCode  = s.MaSP  AND p.IsCurrent = 1
         LEFT  JOIN dbo.DimCustomer c ON c.CustomerCode = s.MaKH
         LEFT  JOIN dbo.DimEmployee e ON e.EmployeeCode = s.MaNV
-        WHERE CAST(s.NgayBan AS DATE) = @ProcessDate
+        WHERE (@FullLoad = 1 OR CAST(s.NgayBan AS DATE) = @ProcessDate)
           AND NOT EXISTS (
               SELECT 1 FROM dbo.FactSales f
               WHERE f.InvoiceNumber = UPPER(LTRIM(RTRIM(s.MaHoaDon)))
@@ -101,7 +102,9 @@ BEGIN
                Duration_Seconds = DATEDIFF(SECOND, LoadDatetime, GETDATE())
         WHERE  RunLogID = @RunLogID;
 
-        PRINT 'sp_Load_FactSales: ' + CAST(@RowsLoaded AS VARCHAR) + ' rows loaded for ' + CAST(@ProcessDate AS VARCHAR);
+        PRINT 'sp_Load_FactSales: ' + CAST(@RowsLoaded AS VARCHAR)
+            + ' rows loaded (BatchDate=' + CAST(@ProcessDate AS VARCHAR)
+            + ', FullLoad=' + CAST(@FullLoad AS VARCHAR) + ')';
 
     END TRY
     BEGIN CATCH
