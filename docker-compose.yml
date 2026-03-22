@@ -1,5 +1,3 @@
-version: '3.8'
-
 # ============================================================
 # DATN - Data Warehouse & BI System
 # Docker Compose: SQL Server 2022 + Superset
@@ -20,7 +18,7 @@ services:
       - mssql_data:/var/opt/mssql
       - ./sql:/docker-entrypoint-initdb.d
     healthcheck:
-      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -Q "SELECT 1" || exit 1
+      test: ["CMD-SHELL", "pgrep -x sqlservr || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
