@@ -48,10 +48,13 @@ class StagingLoader:
                     conn.execute(text(f"TRUNCATE TABLE dbo.{table_name}"))
                     logger.debug(f"Truncated table {table_name}")
 
-            # Bulk insert
+            # Bulk insert in small batches (pyodbc limit: ~2100 params)
+            # Each row needs (#cols) params, so batch_size must keep params < 2100
+            num_cols = len(df.columns)
+            sql_batch_size = max(1, min(self.batch_size, 2000 // num_cols))
             total_rows = 0
-            for start in range(0, len(df), self.batch_size):
-                chunk = df.iloc[start:start + self.batch_size]
+            for start in range(0, len(df), sql_batch_size):
+                chunk = df.iloc[start:start + sql_batch_size]
                 chunk.to_sql(
                     name=table_name,
                     con=self.engine,
@@ -59,7 +62,7 @@ class StagingLoader:
                     if_exists="append",
                     index=False,
                     method="multi",
-                    chunksize=self.batch_size
+                    chunksize=sql_batch_size
                 )
                 total_rows += len(chunk)
                 logger.debug(f"Loaded {total_rows}/{len(df)} rows to {table_name}")

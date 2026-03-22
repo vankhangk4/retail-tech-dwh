@@ -82,9 +82,9 @@ def extract_customer(file_path: str | Path, watermark: Optional = None) -> pd.Da
             df[c] = None
 
     if "NgaySinh" in df.columns:
-        df["NgaySinh"] = pd.to_datetime(df["NgaySinh"], dayfirst=True, errors="coerce")
+        df["NgaySinh"] = pd.to_datetime(df["NgaySinh"], dayfirst=False, errors="coerce")
     if "NgayDangKy" in df.columns:
-        df["NgayDangKy"] = pd.to_datetime(df["NgayDangKy"], dayfirst=True, errors="coerce")
+        df["NgayDangKy"] = pd.to_datetime(df["NgayDangKy"], dayfirst=False, errors="coerce")
     if "DiemTichLuy" in df.columns:
         df["DiemTichLuy"] = pd.to_numeric(df["DiemTichLuy"], errors="coerce").fillna(0)
 

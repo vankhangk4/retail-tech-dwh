@@ -1,6 +1,6 @@
 # ============================================================
 # extract/extract_sales.py
-# Đọc dữ liệu bán hàng từ Excel
+# Đọc dữ liệu bán hàng từ Excel (nhiều sheets)
 # ============================================================
 import pandas as pd
 import logging
@@ -10,7 +10,6 @@ from typing import Optional
 
 logger = logging.getLogger("etl.extract")
 
-# Column mapping: source column → standard column
 COLUMN_MAP = {
     "MaHoaDon": "MaHoaDon",
     "Mã Hóa Đơn": "MaHoaDon",
@@ -55,7 +54,6 @@ COLUMN_MAP = {
 
 
 def rename_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Rename columns to standard names."""
     rename_map = {}
     for col in df.columns:
         col_stripped = str(col).strip()
@@ -67,24 +65,17 @@ def rename_columns(df: pd.DataFrame) -> pd.DataFrame:
                     rename_map[col] = v
                     break
     df = df.rename(columns=rename_map)
+    df.columns = [str(c).strip() for c in df.columns]
     return df
 
 
 def extract_sales(
     file_path: str | Path,
     watermark: Optional[datetime] = None,
-    sheet_name: str = "DanhSachHoaDon"
+    sheet_name: str = None,
 ) -> pd.DataFrame:
     """
-    Đọc dữ liệu bán hàng từ file Excel.
-
-    Args:
-        file_path: Đường dẫn file Excel
-        watermark: Chỉ lấy bản ghi mới hơn watermark
-        sheet_name: Tên sheet đọc
-
-    Returns:
-        DataFrame đã được chuẩn hóa
+    Đọc dữ liệu bán hàng từ file Excel (tất cả sheets, ghép lại).
     """
     file_path = Path(file_path)
 
@@ -93,53 +84,60 @@ def extract_sales(
         return pd.DataFrame()
 
     try:
-        df = pd.read_excel(file_path, sheet_name=sheet_name, dtype=str)
+        # Doc tat ca sheets
+        if sheet_name:
+            xl = pd.ExcelFile(file_path)
+            df = pd.read_excel(xl, sheet_name=sheet_name, dtype=str)
+        else:
+            xl = pd.ExcelFile(file_path)
+            all_dfs = []
+            for sname in xl.sheet_names:
+                try:
+                    sub = pd.read_excel(xl, sheet_name=sname, dtype=str)
+                    all_dfs.append(sub)
+                    logger.info(f"  Read sheet '{sname}': {len(sub)} rows")
+                except Exception as e:
+                    logger.warning(f"  Failed to read sheet '{sname}': {e}")
+            if not all_dfs:
+                logger.error(f"No sheets could be read from {file_path}")
+                return pd.DataFrame()
+            df = pd.concat(all_dfs, ignore_index=True)
     except Exception as e:
-        # Try first sheet if specified sheet not found
-        logger.warning(f"Sheet '{sheet_name}' not found, trying default: {e}")
-        try:
-            df = pd.read_excel(file_path, dtype=str)
-        except Exception as e2:
-            logger.error(f"Failed to read sales file: {e2}")
-            return pd.DataFrame()
+        logger.error(f"Failed to read sales file: {e}")
+        return pd.DataFrame()
 
     df = rename_columns(df)
-    df.columns = df.columns.str.strip()
 
-    # Ensure required columns exist
     required = ["MaHoaDon", "MaSP", "MaCH", "NgayBan", "SoLuong", "DonGiaBan"]
-    missing = [c for c in required if c not in df.columns]
-    if missing:
-        logger.warning(f"Missing columns in sales file: {missing}. Available: {list(df.columns)}")
-        # Return with what we have
-        for c in required:
-            if c not in df.columns:
-                df[c] = None
+    for c in required:
+        if c not in df.columns:
+            df[c] = None
 
-    # Parse date
+    # Parse date - handle both string and datetime
     if "NgayBan" in df.columns:
         df["NgayBan"] = pd.to_datetime(df["NgayBan"], dayfirst=True, errors="coerce").dt.date
 
-    # Filter by watermark
     if watermark and "NgayBan" in df.columns:
         watermark_date = pd.Timestamp(watermark).date()
         before = len(df)
         df = df[df["NgayBan"] > watermark_date]
         logger.info(f"Watermark filter: {before} → {len(df)} rows (watermark={watermark_date})")
 
-    # Type casting
     if "SoLuong" in df.columns:
         df["SoLuong"] = pd.to_numeric(df["SoLuong"], errors="coerce").fillna(0).astype(int)
     if "DonGiaBan" in df.columns:
-        df["DonGiaBan"] = pd.to_numeric(df["DonGiaBan"], errors="coerce").fillna(0)
+        df["DonGiaBan"] = pd.to_numeric(df["DonGiaBan"], errors="coerce").fillna(0.0)
     if "ChietKhau" in df.columns:
-        df["ChietKhau"] = pd.to_numeric(df["ChietKhau"], errors="coerce").fillna(0)
+        df["ChietKhau"] = pd.to_numeric(df["ChietKhau"], errors="coerce").fillna(0.0)
     if "ThueSuat" in df.columns:
         df["ThueSuat"] = pd.to_numeric(df["ThueSuat"], errors="coerce").fillna(0.10)
 
-    # Trim string columns
+    # Trim string columns (chỉ những cột nào là string thật)
     for col in df.select_dtypes(include=["object"]).columns:
-        df[col] = df[col].str.strip() if df[col].dtype == "object" else df[col]
+        if df[col].dtype == "object":
+            df[col] = df[col].apply(
+                lambda x: str(x).strip() if pd.notna(x) and isinstance(x, str) else x
+            )
 
     logger.info(f"Extracted {len(df)} sales records from {file_path.name}")
     return df

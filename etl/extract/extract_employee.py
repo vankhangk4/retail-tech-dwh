@@ -72,7 +72,7 @@ def extract_employee(file_path: str | Path, watermark: Optional = None) -> pd.Da
             df[c] = None
 
     if "NgayVaoLam" in df.columns:
-        df["NgayVaoLam"] = pd.to_datetime(df["NgayVaoLam"], dayfirst=True, errors="coerce")
+        df["NgayVaoLam"] = pd.to_datetime(df["NgayVaoLam"], dayfirst=False, errors="coerce")
 
     for col in df.select_dtypes(include=["object"]).columns:
         df[col] = df[col].str.strip() if df[col].dtype == "object" else df[col]

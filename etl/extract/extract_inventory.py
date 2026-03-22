@@ -1,6 +1,6 @@
 # ============================================================
 # extract/extract_inventory.py
-# Đọc dữ liệu tồn kho từ Excel
+# Đọc dữ liệu tồn kho từ Excel (nhiều sheets)
 # ============================================================
 import pandas as pd
 import logging
@@ -42,16 +42,22 @@ def rename_columns(df: pd.DataFrame) -> pd.DataFrame:
         col_stripped = str(col).strip()
         if col_stripped in COLUMN_MAP:
             rename_map[col] = COLUMN_MAP[col_stripped]
+        elif col_stripped.lower() in [k.lower() for k in COLUMN_MAP]:
+            for k, v in COLUMN_MAP.items():
+                if k.lower() == col_stripped.lower():
+                    rename_map[col] = v
+                    break
     df = df.rename(columns=rename_map)
+    df.columns = [str(c).strip() for c in df.columns]
     return df
 
 
 def extract_inventory(
     file_path: str | Path,
     watermark: Optional[datetime] = None,
-    sheet_name: str = "QuanLyKho"
+    sheet_name: str = None,
 ) -> pd.DataFrame:
-    """Đọc dữ liệu tồn kho từ file Excel."""
+    """Đọc dữ liệu tồn kho từ file Excel (tất cả sheets)."""
     file_path = Path(file_path)
 
     if not file_path.exists():
@@ -59,17 +65,24 @@ def extract_inventory(
         return pd.DataFrame()
 
     try:
-        df = pd.read_excel(file_path, sheet_name=sheet_name, dtype=str)
-    except Exception as e:
-        logger.warning(f"Sheet '{sheet_name}' not found: {e}")
-        try:
-            df = pd.read_excel(file_path, dtype=str)
-        except Exception as e2:
-            logger.error(f"Failed to read inventory file: {e2}")
+        xl = pd.ExcelFile(file_path)
+        all_dfs = []
+        for sname in xl.sheet_names:
+            try:
+                sub = pd.read_excel(xl, sheet_name=sname, dtype=str)
+                all_dfs.append(sub)
+                logger.info(f"  Read sheet '{sname}': {len(sub)} rows")
+            except Exception as e:
+                logger.warning(f"  Failed to read sheet '{sname}': {e}")
+        if not all_dfs:
+            logger.error(f"No sheets could be read from {file_path}")
             return pd.DataFrame()
+        df = pd.concat(all_dfs, ignore_index=True)
+    except Exception as e:
+        logger.error(f"Failed to read inventory file: {e}")
+        return pd.DataFrame()
 
     df = rename_columns(df)
-    df.columns = df.columns.str.strip()
 
     required = ["MaPhieu", "MaSP", "MaCH", "NgayChot", "TonCuoiNgay"]
     for c in required:
@@ -89,7 +102,10 @@ def extract_inventory(
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
     for col in df.select_dtypes(include=["object"]).columns:
-        df[col] = df[col].str.strip() if df[col].dtype == "object" else df[col]
+        if df[col].dtype == "object":
+            df[col] = df[col].apply(
+                lambda x: str(x).strip() if pd.notna(x) and isinstance(x, str) else x
+            )
 
     logger.info(f"Extracted {len(df)} inventory records from {file_path.name}")
     return df

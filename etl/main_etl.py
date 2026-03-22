@@ -227,8 +227,8 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False):
         logger.info(">>> [PHASE 3] LOAD FACTS")
 
         fact_sps = [
-            ("sp_Load_FactSales", {"BatchDate": batch_date_str}),
-            ("sp_Load_FactInventory", {"BatchDate": batch_date_str}),
+            ("sp_Load_FactSales", {"BatchDate": batch_date_str, "FullLoad": 1 if full_load else 0}),
+            ("sp_Load_FactInventory", {"BatchDate": batch_date_str, "FullLoad": 1 if full_load else 0}),
             ("sp_Load_FactPurchase", {"BatchDate": batch_date_str}),
         ]
         for sp_name, params in fact_sps:
@@ -259,29 +259,48 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False):
         logger.info("")
         logger.info(">>> [PHASE 5] UPDATE WATERMARKS")
 
-        sources = [
-            "STG_SalesRaw", "STG_InventoryRaw", "STG_ProductRaw",
-            "STG_CustomerRaw", "STG_StoreRaw",
-            "STG_EmployeeRaw", "STG_SupplierRaw"
-        ]
-        for src in sources:
-            try:
-                conn = pyodbc.connect(config.CONN_STR)
-                cursor = conn.cursor()
-                cursor.execute(
-                    """UPDATE ETL_Watermark
-                       SET LastRunStatus = 'SUCCESS',
-                           LastRunDatetime = GETDATE(),
-                           WatermarkValue = GETDATE(),
-                           RowsExtracted = ?
-                       WHERE SourceName = ?""",
-                    (total_rows, src)
-                )
-                conn.commit()
-                cursor.close()
-                conn.close()
-            except Exception as e:
-                logger.error(f"  Watermark update failed for {src}: {e}")
+        try:
+            conn = pyodbc.connect(config.CONN_STR)
+            cursor = conn.cursor()
+            # Get actual max dates from staging data
+            cursor.execute("SELECT ISNULL(MAX(NgayBan), GETDATE()) FROM STG_SalesRaw")
+            max_sales_date = cursor.fetchone()[0]
+            cursor.execute("SELECT ISNULL(MAX(NgayChot), GETDATE()) FROM STG_InventoryRaw")
+            max_inv_date = cursor.fetchone()[0]
+            cursor.close()
+            conn.close()
+
+            # Update watermarks with actual data dates
+            updates = [
+                ("STG_SalesRaw",     max_sales_date, total_rows),
+                ("STG_InventoryRaw", max_inv_date,    total_rows),
+                ("STG_ProductRaw",   datetime.now(),  total_rows),
+                ("STG_CustomerRaw",  datetime.now(),  total_rows),
+                ("STG_StoreRaw",     datetime.now(),  total_rows),
+                ("STG_EmployeeRaw",  datetime.now(),  total_rows),
+                ("STG_SupplierRaw",  datetime.now(),  total_rows),
+            ]
+            for src, wm_date, rows in updates:
+                try:
+                    conn = pyodbc.connect(config.CONN_STR)
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        """UPDATE ETL_Watermark
+                           SET LastRunStatus = 'SUCCESS',
+                               LastRunDatetime = GETDATE(),
+                               WatermarkValue = ?,
+                               RowsExtracted = ?
+                           WHERE SourceName = ?""",
+                        (wm_date, rows, src)
+                    )
+                    conn.commit()
+                    cursor.close()
+                    conn.close()
+                    logger.info(f"  Watermark updated: {src} = {wm_date}")
+                except Exception as e:
+                    logger.error(f"  Watermark update failed for {src}: {e}")
+        except Exception as e:
+            logger.error(f"  Failed to get max dates: {e}")
 
         logger.info("")
         logger.info("=" * 60)
