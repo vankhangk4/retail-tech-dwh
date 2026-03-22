@@ -32,26 +32,22 @@ services:
     container_name: datn_superset
     command: >
       /bin/sh -c "
-        if [ ! -f /var/lib/superset/superset_config.py ]; then
-          cp /docker/docker-entrypoint.sh /tmp/init_superset.sh 2>/dev/null || true;
-        fi;
         superset db upgrade &&
-        superset fab create-admin --username ${SUPERSET_ADMIN_USER:-admin} --password ${SUPERSET_ADMIN_PASSWORD:-admin} --firstname Admin --lastname User --email ${SUPERSET_ADMIN_EMAIL:-admin@example.com} --role Admin ||
-        true &&
+        (superset fab create-admin --username ${SUPERSET_ADMIN_USER:-admin} --password ${SUPERSET_ADMIN_PASSWORD:-admin} --firstname Admin --lastname User --email ${SUPERSET_ADMIN_EMAIL:-admin@example.com} || true) &&
         superset init &&
-        gunicorn --bind '0.0.0.0:8088' --workers 4 --timeout 120 --access-logfile - --error-logfile - superset.app:app
+        gunicorn --bind '0.0.0.0:8088' --workers 4 --timeout 120 --access-logfile - --error-logfile - 'superset.app:create_app()'
       "
     environment:
       - SUPERSET_CONFIG_PATH=/var/lib/superset/superset_config.py
-      - SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://${POSTGRES_USER:-superset}:${POSTGRES_PASSWORD:-superset}@postgres:5432/superset
-      - REDIS_HOST=redis
+      - SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://${POSTGRES_USER:-superset}:${POSTGRES_PASSWORD:-superset}@datn_postgres:5432/superset?password=Dk%4017092004
+      - REDIS_HOST=datn_redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
     ports:
       - "${SUPERSET_PORT:-8088}:8088"
     volumes:
       - superset_data:/var/lib/superset
-      - ./superset:/docker
+      - ./superset/superset_config.py:/var/lib/superset/superset_config.py:ro
     depends_on:
       postgres:
         condition: service_healthy
