@@ -53,9 +53,9 @@ def create_tenant_database(db_name: str) -> bool:
     )
     try:
         conn = pyodbc.connect(conn_str, timeout=30)
+        conn.autocommit = True
         cursor = conn.cursor()
         cursor.execute(f"CREATE DATABASE [{db_name}]")
-        conn.commit()
         cursor.close()
         conn.close()
         return True
@@ -75,13 +75,10 @@ def delete_tenant_database(db_name: str) -> bool:
     )
     try:
         conn = pyodbc.connect(conn_str, timeout=30)
+        conn.autocommit = True
         cursor = conn.cursor()
-        cursor.execute(f"""
-            USE master;
-            ALTER DATABASE [{db_name}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-            DROP DATABASE [{db_name}];
-        """)
-        conn.commit()
+        cursor.execute(f"ALTER DATABASE [{db_name}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE")
+        cursor.execute(f"DROP DATABASE [{db_name}]")
         cursor.close()
         conn.close()
         return True
