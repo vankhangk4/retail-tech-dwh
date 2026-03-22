@@ -11,26 +11,27 @@ services:
     command: >
       /bin/sh -c "
         superset db upgrade &&
-        superset fab create-admin --username admin --password admin --firstname Admin --lastname User --email admin@example.com --role Admin ||
-        true &&
+        (superset fab create-admin --username ${SUPERSET_ADMIN_USER} --password ${SUPERSET_ADMIN_PASSWORD} --firstname Admin --lastname User --email ${SUPERSET_ADMIN_EMAIL} || true) &&
         superset init &&
-        gunicorn --bind '0.0.0.0:8088' --workers 4 --timeout 120 --access-logfile - --error-logfile - superset.app:app
+        gunicorn --bind '0.0.0.0:8088' --workers 4 --timeout 120 --access-logfile - --error-logfile - 'superset.app:create_app()'
       "
     environment:
-      - SUPERSET_SECRET_KEY=datn_superset_secret_key_2025_change_in_production
+      - SUPERSET_SECRET_KEY=${SUPERSET_SECRET_KEY}
       - SQLALCHEMY_DATABASE_URI=sqlite:////var/lib/superset/superset.db
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     ports:
-      - "8088:8088"
+      - "${SUPERSET_PORT:-8088}:8088"
     volumes:
       - superset_home:/var/lib/superset
+      - ./superset_config.py:/var/lib/superset/superset_config.py:ro
     networks:
       - superset_network
 
   redis:
     image: redis:7-alpine
     container_name: datn_redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:-}
     volumes:
       - redis_data:/data
     networks:

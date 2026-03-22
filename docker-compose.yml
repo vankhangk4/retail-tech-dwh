@@ -1,6 +1,6 @@
 # ============================================================
 # DATN - Data Warehouse & BI System
-# Docker Compose: SQL Server 2022 + Superset
+# Docker Compose: SQL Server 2022 + Superset + Backend
 # ============================================================
 
 services:
@@ -36,16 +36,17 @@ services:
     command: >
       /bin/sh -c "
         superset db upgrade &&
-        (superset fab create-admin --username ${SUPERSET_ADMIN_USER:-admin} --password ${SUPERSET_ADMIN_PASSWORD:-admin} --firstname Admin --lastname User --email ${SUPERSET_ADMIN_EMAIL:-admin@example.com} || true) &&
+        (superset fab create-admin --username ${SUPERSET_ADMIN_USER} --password ${SUPERSET_ADMIN_PASSWORD} --firstname Admin --lastname User --email ${SUPERSET_ADMIN_EMAIL} || true) &&
         superset init &&
         gunicorn --bind '0.0.0.0:8088' --workers 4 --timeout 120 --access-logfile - --error-logfile - 'superset.app:create_app()'
       "
     environment:
       - SUPERSET_CONFIG_PATH=/var/lib/superset/superset_config.py
-      - SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://${POSTGRES_USER:-superset}:${POSTGRES_PASSWORD:-superset}@datn_postgres:5432/superset?password=Dk%4017092004
+      - SUPERSET_SECRET_KEY=${SUPERSET_SECRET_KEY}
+      - SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@datn_postgres:5432/superset?password=${POSTGRES_PASSWORD}
       - REDIS_HOST=datn_redis
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     ports:
       - "${SUPERSET_PORT:-8088}:8088"
     volumes:
@@ -64,13 +65,13 @@ services:
     image: postgres:15-alpine
     container_name: datn_postgres
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-superset}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-superset}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=superset
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-superset}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -81,9 +82,79 @@ services:
   redis:
     image: redis:7-alpine
     container_name: datn_redis
-    command: redis-server --requirepass ${REDIS_PASSWORD:-}
+    command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
+    networks:
+      - datn_network
+
+  # ---- PostgreSQL Master (Multi-tenant Metadata) ----
+  postgres_master:
+    image: postgres:15-alpine
+    container_name: datn_postgres_master
+    environment:
+      - POSTGRES_USER=${MASTER_DB_USER}
+      - POSTGRES_PASSWORD=${MASTER_DB_PASSWORD}
+      - POSTGRES_DB=${MASTER_DB_NAME:-DWH_Master}
+    volumes:
+      - postgres_master_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MASTER_DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - datn_network
+
+  # ---- Backend API ----
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: datn/backend:1.0.0
+    container_name: datn_backend
+    environment:
+      - PYTHONPATH=/app
+      - MASTER_DB_HOST=datn_postgres_master
+      - MASTER_DB_PORT=5432
+      - MASTER_DB_USER=${MASTER_DB_USER}
+      - MASTER_DB_PASSWORD=${MASTER_DB_PASSWORD}
+      - MASTER_DB_NAME=${MASTER_DB_NAME:-DWH_Master}
+      - MSSQL_HOST=datn_mssql
+      - MSSQL_PORT=1433
+      - MSSQL_USER=sa
+      - MSSQL_PASSWORD=${MSSQL_SA_PASSWORD}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ALGORITHM=HS256
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=1440
+      - UPLOAD_DIR=/app/uploads
+      - SUPERSET_URL=http://datn_superset:8088
+      - SUPERSET_ADMIN_USER=${SUPERSET_ADMIN_USER}
+      - SUPERSET_ADMIN_PASSWORD=${SUPERSET_ADMIN_PASSWORD}
+      - DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - backend_uploads:/app/uploads
+    depends_on:
+      postgres_master:
+        condition: service_healthy
+      mssql:
+        condition: service_started
+    networks:
+      - datn_network
+
+  # ---- Frontend (React + Nginx) ----
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: datn/frontend:1.0.0
+    container_name: datn_frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - backend
     networks:
       - datn_network
 
@@ -99,3 +170,5 @@ volumes:
   superset_data:
   postgres_data:
   redis_data:
+  postgres_master_data:
+  backend_uploads:

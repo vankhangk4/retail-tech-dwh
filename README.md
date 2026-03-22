@@ -18,6 +18,7 @@ Xây dựng hệ thống Data Warehouse và trực quan hóa dữ liệu kinh do
 7. [Kết nối Superset](#7-kết-nối-superset)
 8. [Reset hệ thống](#8-reset-hệ-thống)
 9. [Cấu trúc thư mục](#9-cấu-trúc-thư-mục)
+10. [Nâng cấp SaaS Platform](#10-nâng-cấp-multi-tenant-saas-platform)
 
 ---
 
@@ -110,7 +111,7 @@ docker run --rm --network datn_datn_network \
 pip install -r etl/requirements.txt
 ```
 
-### 5.2. Sinh mock data
+### 5.2. Sinh mock data (sạch)
 ```bash
 cd data/samples
 
@@ -120,6 +121,21 @@ python generate_mock_data.py --fresh
 # Sinh với seed cố định (để reproduce)
 python generate_mock_data.py --seed 42
 ```
+
+### 5.2b. Sinh mock data (bẩn - để test ETL)
+```bash
+# Sinh dữ liệu chưa làm sạch
+python generate_dirty_data.py --fresh
+```
+
+Dữ liệu bẩn bao gồm:
+- Trailing/leading spaces
+- Duplicate rows
+- NULL values
+- Inconsistent date formats (YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY)
+- Missing foreign key references
+- Inconsistent case (ch006 vs CH006)
+- Empty string values
 
 Script sinh:
 - 5 cửa hàng, 50 sản phẩm, 30 khách hàng, 20 nhân viên, 10 nhà cung cấp
@@ -267,13 +283,175 @@ datn/
 
 | Thành phần | Công nghệ | Ghi chú |
 |---|---|---|
-| Database | SQL Server 2022 | Docker, custom image có mssql-tools |
+| Database | SQL Server 2022 | Docker, per-tenant databases |
 | ETL Engine | Python 3.10+ | pandas, pyodbc, sqlalchemy |
 | Transform | T-SQL Stored Procedures | SCD Type 2 cho DimProduct |
 | Scheduling | APScheduler | Chạy tự động hàng ngày |
-| BI Platform | Apache Superset 3.1.1 | Docker |
+| BI Platform | Apache Superset 3.1.1 | Docker, embedded |
 | Cache | Redis 7 | Docker |
 | Metadata DB | PostgreSQL 15 | Docker (cho Superset) |
+| Backend API | FastAPI | Python, JWT auth, multi-tenant |
+| Frontend | React + Vite | TypeScript, TailwindCSS |
+
+---
+
+## 10. Nâng cấp: Multi-tenant SaaS Platform
+
+### 10.1. Tổng quan
+
+Nâng cấp hệ thống từ single-tenant → **SaaS Multi-tenant**:
+- **Admin Portal**: Quản lý tenants, users, upload, ETL
+- **User Portal**: Xem dashboard, upload file
+- **Per-tenant isolation**: Mỗi tenant = 1 database riêng
+- **Superset embedded**: BI charts nhúng trong React
+
+### 10.2. Kiến trúc
+
+```
+                    INTERNET
+                       │
+         ┌─────────────┴─────────────┐
+         │                             │
+    Admin Portal                  User Portal
+    (React, :3000/admin)      (React, :3000/user)
+         │                             │
+         └──────────────┬────────────┘
+                        │
+                  FastAPI Backend
+                   (:8000/api)
+                        │
+        ┌───────────────┼───────────────┐
+        │               │               │
+   TenantDB_001    TenantDB_002    TenantDB_003
+   (SQL Server)    (SQL Server)    (SQL Server)
+        │               │               │
+        ▼               ▼               ▼
+   Superset      Superset       Superset
+```
+
+### 10.3. User Roles
+
+| Role | Quyền |
+|------|--------|
+| SuperAdmin | Quản lý tenants, tạo user, upload file, chạy ETL, xem log |
+| TenantAdmin | Quản lý user trong tenant, upload file, chạy ETL |
+| User | Upload file, xem dashboard (Superset embed) |
+
+### 10.4. API Endpoints
+
+```bash
+# Auth
+POST /api/auth/login     # Login → JWT token
+POST /api/auth/logout    # Logout
+GET  /api/auth/me        # Current user
+
+# SuperAdmin
+GET    /api/admin/tenants           # List tenants
+POST   /api/admin/tenants           # Tạo tenant + DB
+DELETE /api/admin/tenants/{id}     # Xóa tenant
+GET    /api/admin/users             # List all users
+POST   /api/admin/users            # Tạo user
+DELETE /api/admin/users/{id}       # Xóa user
+
+# Tenant Admin
+GET    /api/tenant/users           # Users trong tenant
+POST   /api/tenant/users           # Tạo user trong tenant
+DELETE /api/tenant/users/{id}     # Xóa user
+
+# Upload & ETL
+POST /api/upload                   # Upload file
+GET  /api/upload                   # List files
+POST /api/etl/run                 # Trigger ETL
+GET  /api/etl/status             # ETL status
+GET  /api/etl/history             # ETL history
+
+# Embed & Stats
+GET /api/embed/guest-token        # Superset guest token
+GET /api/stats                    # KPIs tổng quan
+```
+
+### 10.5. Database Design
+
+```sql
+-- DWH_Master (metadata)
+CREATE TABLE Tenants (
+    TenantId     VARCHAR(50) PRIMARY KEY,
+    TenantName  NVARCHAR(200) NOT NULL,
+    DatabaseName VARCHAR(100) NOT NULL UNIQUE,
+    Plan        VARCHAR(20) DEFAULT 'trial',
+    IsActive    BIT DEFAULT 1,
+    CreatedAt   DATETIME2 DEFAULT GETDATE()
+);
+
+CREATE TABLE Users (
+    UserId       INT IDENTITY PRIMARY KEY,
+    TenantId    VARCHAR(50) NOT NULL,
+    Username    VARCHAR(100) NOT NULL,
+    PasswordHash VARCHAR(255) NOT NULL,
+    Role        VARCHAR(20) NOT NULL, -- SuperAdmin, TenantAdmin, User
+    IsActive    BIT DEFAULT 1,
+    CreatedAt   DATETIME2 DEFAULT GETDATE()
+);
+
+-- DWH_TenantXXX (per tenant - giống schema hiện tại)
+-- STG_*, Dim*, Fact*, DM_* per tenant
+```
+
+### 10.6. Superset Embedding
+
+```bash
+# Frontend gọi API lấy guest token
+GET /api/embed/guest-token?dashboard=1
+
+# Backend tạo Superset guest token cho tenant
+# Frontend nhúng vào React:
+<iframe src="http://superset:8088/superset/dashboard/1/?guest_token=xxx" />
+```
+
+### 10.7. Cấu trúc thư mục
+
+```
+backend/                  # FastAPI (Port 8000)
+├── main.py              # FastAPI app
+├── auth.py             # JWT authentication
+├── models/
+│   ├── master.py      # Tenants, Users tables
+│   └── database.py    # Multi-DB connection manager
+├── api/
+│   ├── tenants.py     # /api/admin/tenants/*
+│   ├── users.py       # /api/admin/users/*, /api/tenant/users/*
+│   ├── upload.py      # /api/upload/*
+│   ├── etl.py         # /api/etl/*
+│   └── embed.py       # /api/embed/*
+└── services/
+    ├── db_service.py       # Tạo DB per tenant
+    └── etl_service.py     # Chạy ETL subprocess
+
+frontend/                 # React + Vite (Port 3000)
+├── src/pages/
+│   ├── Login.tsx
+│   ├── admin/
+│   │   ├── Tenants.tsx    # Quản lý tenants
+│   │   ├── Users.tsx     # Quản lý users
+│   │   └── ETLRuns.tsx    # Lịch sử ETL
+│   └── user/
+│       ├── Dashboard.tsx  # KPIs dashboard
+│       ├── Upload.tsx     # Upload file
+│       └── Reports.tsx    # Superset embed
+└── Dockerfile
+```
+
+### 10.8. Khởi động SaaS Platform
+
+```bash
+# Build & start tất cả
+docker compose -f docker-compose.saas.yml up -d
+
+# Tạo SuperAdmin đầu tiên
+docker compose exec backend python -m app.init_superadmin
+```
+
+Xem chi tiết đầy đủ tại: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 ---
 
