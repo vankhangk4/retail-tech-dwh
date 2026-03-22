@@ -1,34 +1,42 @@
 #!/bin/bash
 # ============================================================
 # run_sql.sh - Chạy tất cả SQL scripts theo thứ tự
+# Sử dụng mssql-tools container để kết nối vào SQL Server
 # Usage: ./run_sql.sh
 # ============================================================
 
 set -e
 
-CONTAINER="datn_mssql"
-PASSWORD="YourStrong@Passw0rd123"
-SQLCMD="/opt/mssql-tools18/bin/sqlcmd"
+# Load .env
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+set -a
+source "${SCRIPT_DIR}/.env"
+set +a
 
-# Kiểm tra container đang chạy
-if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER}$"; then
-    echo "ERROR: Container '${CONTAINER}' is not running."
-    echo "Run: docker compose up -d"
-    exit 1
-fi
+HOST="${MSSQL_HOST:-localhost}"
+PORT="${MSSQL_PORT:-1433}"
+PASSWORD="${MSSQL_SA_PASSWORD}"
+DB="DWH_RetailTech"
 
-# Hàm chạy 1 file SQL
+# Pull mssql-tools container
+echo "Pulling mssql-tools18 image..."
+docker pull mcr.microsoft.com/mssql-tools18 > /dev/null 2>&1
+
+# Hàm chạy SQL file
 run_sql() {
     local file="$1"
-    local dir=$(dirname "$file")
-    local basename=$(basename "$file")
-    echo "  Running: $basname"
-    docker exec -i "${CONTAINER}" ${SQLCMD} \
-        -S localhost -U sa -P "${PASSWORD}" -d DWH_RetailTech \
-        -i "/docker-entrypoint-initdb.d/${file}" > /dev/null 2>&1
+    local rel_path="${file#$SCRIPT_DIR/}"
+    echo "  Running: $(basename "$file")"
+    docker run --rm --network datn_datn_network \
+        -v "${SCRIPT_DIR}:/scripts" \
+        mcr.microsoft.com/mssql-tools18 \
+        /opt/mssql-tools18/bin/sqlcmd \
+        -S "${HOST}" -U sa -P "${PASSWORD}" -C -No \
+        -d "${DB}" \
+        -i "/scripts/${rel_path}" 2>/dev/null || {
+        echo "  WARNING: $(basename "$file") skipped or failed"
+    }
 }
-
-cd "$(dirname "$0")"
 
 echo ""
 echo "========================================"
@@ -37,51 +45,45 @@ echo "========================================"
 
 echo ""
 echo ">>> [1] Init Database..."
-docker exec -i "${CONTAINER}" ${SQLCMD} \
-    -S localhost -U sa -P "${PASSWORD}" \
-    -i /docker-entrypoint-initdb.d/sql/01_init/init_database.sql
+docker run --rm --network datn_datn_network \
+    -v "${SCRIPT_DIR}:/scripts" \
+    mcr.microsoft.com/mssql-tools18 \
+    /opt/mssql-tools18/bin/sqlcmd \
+    -S "${HOST}" -U sa -P "${PASSWORD}" -C -No \
+    -i /scripts/sql/01_init/init_database.sql
 
 echo ""
 echo ">>> [2] Staging Tables..."
-run_sql "sql/02_staging/stg_tables.sql"
+run_sql "${SCRIPT_DIR}/sql/02_staging/stg_tables.sql"
 
 echo ""
 echo ">>> [3] System Tables..."
-run_sql "sql/03_system/system_tables.sql"
+run_sql "${SCRIPT_DIR}/sql/03_system/system_tables.sql"
 
 echo ""
 echo ">>> [4] Dimension Tables..."
-for f in sql/04_dim/*.sql; do
-    echo "  $(basename $f)"
-    docker exec -i "${CONTAINER}" ${SQLCMD} \
-        -S localhost -U sa -P "${PASSWORD}" -d DWH_RetailTech \
-        -i "/docker-entrypoint-initdb.d/$f" > /dev/null 2>&1 || true
+for f in "${SCRIPT_DIR}"/sql/04_dim/*.sql; do
+    run_sql "$f"
 done
 
 echo ""
 echo ">>> [5] Fact Tables..."
-for f in sql/05_fact/*.sql; do
-    echo "  $(basename $f)"
-    docker exec -i "${CONTAINER}" ${SQLCMD} \
-        -S localhost -U sa -P "${PASSWORD}" -d DWH_RetailTech \
-        -i "/docker-entrypoint-initdb.d/$f" > /dev/null 2>&1 || true
+for f in "${SCRIPT_DIR}"/sql/05_fact/*.sql; do
+    run_sql "$f"
 done
 
 echo ""
 echo ">>> [6] Data Mart Tables..."
-run_sql "sql/06_datamart/dm_tables.sql"
+run_sql "${SCRIPT_DIR}/sql/06_datamart/dm_tables.sql"
 
 echo ""
 echo ">>> [7] Indexes & Constraints..."
-run_sql "sql/07_indexes/create_indexes.sql"
+run_sql "${SCRIPT_DIR}/sql/07_indexes/create_indexes.sql"
 
 echo ""
 echo ">>> [8] Stored Procedures..."
-for f in sql/08_stored_procedures/*.sql; do
-    echo "  $(basename $f)"
-    docker exec -i "${CONTAINER}" ${SQLCMD} \
-        -S localhost -U sa -P "${PASSWORD}" -d DWH_RetailTech \
-        -i "/docker-entrypoint-initdb.d/$f" > /dev/null 2>&1 || true
+for f in "${SCRIPT_DIR}"/sql/08_stored_procedures/*.sql; do
+    run_sql "$f"
 done
 
 echo ""
@@ -90,12 +92,18 @@ echo "  All SQL Scripts Completed!"
 echo "========================================"
 echo ""
 echo "Verification:"
-docker exec -i "${CONTAINER}" ${SQLCMD} \
-    -S localhost -U sa -P "${PASSWORD}" -d DWH_RetailTech \
+docker run --rm --network datn_datn_network \
+    mcr.microsoft.com/mssql-tools18 \
+    /opt/mssql-tools18/bin/sqlcmd \
+    -S "${HOST}" -U sa -P "${PASSWORD}" -C -No \
+    -d "${DB}" \
     -Q "SELECT COUNT(*) AS TableCount FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo'"
 
-docker exec -i "${CONTAINER}" ${SQLCMD} \
-    -S localhost -U sa -P "${PASSWORD}" -d DWH_RetailTech \
+docker run --rm --network datn_datn_network \
+    mcr.microsoft.com/mssql-tools18 \
+    /opt/mssql-tools18/bin/sqlcmd \
+    -S "${HOST}" -U sa -P "${PASSWORD}" -C -No \
+    -d "${DB}" \
     -Q "SELECT COUNT(*) AS DimDateRows FROM DimDate"
 
 echo ""

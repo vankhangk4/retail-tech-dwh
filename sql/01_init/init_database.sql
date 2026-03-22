@@ -1,11 +1,8 @@
 -- ============================================================
--- Script: 01_init/init_database.sql
+-- Script: init_database.sql
 -- Mục đích: Tạo database DWH_RetailTech
--- Thứ tự chạy: 1
+-- Chạy đầu tiên trên database master
 -- ============================================================
-USE master;
-GO
-
 IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'DWH_RetailTech')
 BEGIN
     CREATE DATABASE DWH_RetailTech;
@@ -13,16 +10,6 @@ BEGIN
 END
 ELSE
 BEGIN
-    PRINT 'Database DWH_RetailTech already exists.';
+    PRINT 'Database DWH_RetailTech already exists. Skipping.';
 END
-GO
-
-USE DWH_RetailTech;
-GO
-
--- Set database options for DWH workload
-ALTER DATABASE DWH_RetailTech SET READ_WRITE;
-GO
-
-PRINT 'Database initialization complete. Using DWH_RetailTech.';
 GO

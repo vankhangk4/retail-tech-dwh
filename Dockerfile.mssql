@@ -1,0 +1,23 @@
+# ============================================================
+# Dockerfile: SQL Server 2022 + mssql-tools18
+# Build: docker build -t mssql-with-tools -f Dockerfile.mssql .
+# ============================================================
+FROM mcr.microsoft.com/mssql/server:2022-latest
+
+USER root
+
+# Cài mssql-tools18
+RUN apt-get update \
+    && apt-get install -y curl gnupg ca-certificates \
+    && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/ubuntu/22.04/prod jammy main" > /etc/apt/sources.list.d/mssql.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y DEBIAN_FRONTEND=noninteractive apt-get install -y msodbcsql18 mssql-tools18 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Thêm mssql-tools18 vào PATH
+ENV PATH="$PATH:/opt/mssql-tools18/bin"
+
+# Trả về user mssql
+USER mssql
