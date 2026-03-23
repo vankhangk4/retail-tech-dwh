@@ -3,7 +3,7 @@
 Xây dựng hệ thống Data Warehouse và trực quan hóa dữ liệu kinh doanh cho chuỗi cửa hàng bán lẻ thiết bị công nghệ.
 
 **Sinh viên:** Nguyễn Văn Khang (MSSV: 2251162042) - Lớp 64HTTT4
-**GVHD:** Đỗ Oanh Cường, Nguyễn Tu Trung
+**GVHD:** Đỗ Oanh Cường
 
 ---
 
