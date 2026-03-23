@@ -88,20 +88,11 @@ chmod +x run_sql.sh
 # Xem logs
 docker compose logs mssql
 
-# Kiểm tra database đã được tạo
-docker run --rm --network datn_datn_network \
-    mcr.microsoft.com/mssql-tools \
-    /opt/mssql-tools/bin/sqlcmd \
-    -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C \
-    -Q "SELECT name FROM sys.databases"
+# Kiểm tra database đã được tạo (script tự detect network)
+./sql_runner.sh "SELECT name FROM sys.databases"
 
 # Kiểm tra DimDate (~5840 rows)
-docker run --rm --network datn_datn_network \
-    mcr.microsoft.com/mssql-tools \
-    /opt/mssql-tools/bin/sqlcmd \
-    -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C \
-    -d DWH_RetailTech \
-    -Q "SELECT COUNT(*) FROM DimDate"
+./sql_runner.sh "SELECT COUNT(*) FROM DimDate"
 ```
 
 ## 5. Sinh dữ liệu mẫu
@@ -151,7 +142,7 @@ cp *.xlsx *.csv ../sources/
 ## 6. Chạy ETL Pipeline
 
 ```bash
-cd /home/khang/Desktop/datn
+cd /home/khang/Desktop/retail-tech-dwh
 
 # Chạy một lần
 python -m etl.main_etl --fresh
@@ -173,19 +164,8 @@ tail -f logs/etl_$(date +%Y%m%d).log
 
 ### Kiểm tra dữ liệu sau ETL
 ```bash
-docker run --rm --network datn_datn_network \
-    mcr.microsoft.com/mssql-tools \
-    /opt/mssql-tools/bin/sqlcmd \
-    -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C \
-    -d DWH_RetailTech \
-    -Q "SELECT COUNT(*) FROM FactSales"
-
-docker run --rm --network datn_datn_network \
-    mcr.microsoft.com/mssql-tools \
-    /opt/mssql-tools/bin/sqlcmd \
-    -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C \
-    -d DWH_RetailTech \
-    -Q "SELECT * FROM ETL_RunLog ORDER BY LoadDatetime DESC"
+./sql_runner.sh "SELECT COUNT(*) FROM FactSales"
+./sql_runner.sh "SELECT * FROM ETL_RunLog ORDER BY LoadDatetime DESC"
 ```
 
 ## 7. Kết nối Superset
@@ -194,20 +174,26 @@ docker run --rm --network datn_datn_network \
 ```
 http://localhost:8088
 ```
-Login: `admin` / `admin` (hoặc credentials trong `.env`)
+Login: `admin` / `Dk@17092004` (hoặc credentials trong `.env`)
 
 ### 7.2. Thêm Database Connection
-1. **Settings** → **Database Connections** → **+ Add Database**
+1. **Settings** → **Database Connections** → **+ Database**
 2. Chọn: **Microsoft SQL Server**
-3. SQLAlchemy URI:
-   ```
-   mssql+pyodbc://sa:${MSSQL_SA_PASSWORD}@mssql:1433/DWH_RetailTech?driver=ODBC+Driver+18+for+SQL+Server
-   ```
-   Thay `${MSSQL_SA_PASSWORD}` bằng giá trị trong `.env` hoặc dùng biến môi trường nếu Superset hỗ trợ.
-4. **Test Connection** → **Save**
+3. Điền thông tin:
+
+| Trường | Giá trị |
+|---------|---------|
+| Database Name | `DWH_RetailTech` |
+| SQLAlchemy URI | `mssql+pyodbc://sa:{PASSWORD}@datn_mssql:1433/DWH_RetailTech?driver=ODBC+Driver+18+for+SQL+Server` |
+
+   - Thay `{PASSWORD}` bằng giá trị `MSSQL_SA_PASSWORD` trong `.env`
+   - Host `datn_mssql` dùng trong Docker network
+4. **Test Connection** → **Connect**
+
+> **Lưu ý:** Superset container đã được cài sẵn ODBC Driver 18 for SQL Server trong Dockerfile.
 
 ### 7.3. Tạo Datasets
-1. **+ Add** → **Import Dataset**
+1. **+ Add** → **Dataset**
 2. Chọn database `DWH_RetailTech`
 3. Chọn bảng: `FactSales`, `DimDate`, `DimProduct`, `DimStore`, ...
 
@@ -225,15 +211,7 @@ docker compose up -d
 
 ### Reset chỉ dữ liệu (giữ schema)
 ```bash
-# Xóa dữ liệu trong các bảng
-docker run --rm --network datn_datn_network \
-    mcr.microsoft.com/mssql-tools \
-    /opt/mssql-tools/bin/sqlcmd \
-    -S "${MSSQL_HOST}" -U sa -P "${MSSQL_SA_PASSWORD}" -C \
-    -d DWH_RetailTech \
-    -Q "TRUNCATE TABLE FactSales; TRUNCATE TABLE FactInventory; TRUNCATE TABLE FactPurchase;"
-
-# Chạy lại ETL
+./sql_runner.sh "TRUNCATE TABLE FactSales; TRUNCATE TABLE FactInventory; TRUNCATE TABLE FactPurchase;"
 python -m etl.main_etl --full
 ```
 
@@ -287,11 +265,11 @@ datn/
 | ETL Engine | Python 3.10+ | pandas, pyodbc, sqlalchemy |
 | Transform | T-SQL Stored Procedures | SCD Type 2 cho DimProduct |
 | Scheduling | APScheduler | Chạy tự động hàng ngày |
-| BI Platform | Apache Superset 3.1.1 | Docker, embedded |
+| BI Platform | Apache Superset 3.1.1 | Docker, embedded, ODBC Driver 18 |
 | Cache | Redis 7 | Docker |
 | Metadata DB | PostgreSQL 15 | Docker (cho Superset) |
 | Backend API | FastAPI | Python, JWT auth, multi-tenant |
-| Frontend | React + Vite | TypeScript, TailwindCSS |
+| Frontend | React + Vite | TailwindCSS, Lucide Icons, Responsive |
 
 ---
 

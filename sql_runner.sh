@@ -15,10 +15,23 @@ source "${SCRIPT_DIR}/.env"
 set +a
 
 PASSWORD="${MSSQL_SA_PASSWORD}"
-HOST="${MSSQL_HOST:-localhost}"
+HOST="${MSSQL_HOST:-datn_mssql}"
 PORT="${MSSQL_PORT:-1433}"
 
-TOOLS_CONTAINER="datn_mssql_tools"
+# Tự động detect network của container MSSQL
+NETWORK=$(docker network ls --format '{{.Name}}' | while read n; do
+    if docker network inspect "$n" --format '{{range .Containers}}{{.Name}}{{end}}' 2>/dev/null | grep -q "datn_mssql"; then
+        echo "$n"
+    fi
+done | head -1)
+
+if [ -z "$NETWORK" ]; then
+    echo "ERROR: Không tìm thấy network của container datn_mssql"
+    echo "Đảm bảo docker compose đang chạy: docker compose up -d"
+    exit 1
+fi
+
+echo "Detected network: $NETWORK"
 
 # Nếu có file SQL
 if [ "$1" = "--file" ]; then
@@ -28,19 +41,19 @@ if [ "$1" = "--file" ]; then
         exit 1
     fi
     echo "Running SQL file: $SQL_FILE"
-    docker run --rm --network datn_datn_network \
+    docker run --rm --network "${NETWORK}" \
         -v "${SCRIPT_DIR}:/scripts" \
-        mcr.microsoft.com/mssql-tools18 \
-        /opt/mssql-tools18/bin/sqlcmd \
-        -S "${HOST}" -U sa -P "${PASSWORD}" -C -No \
+        mcr.microsoft.com/mssql-tools \
+        /opt/mssql-tools/bin/sqlcmd \
+        -S "${HOST}" -U sa -P "${PASSWORD}" -C \
         -i "/scripts/${SQL_FILE}"
 else
     # Chạy query trực tiếp
     QUERY="$1"
     echo "Running query: $QUERY"
-    docker run --rm --network datn_datn_network \
-        mcr.microsoft.com/mssql-tools18 \
-        /opt/mssql-tools18/bin/sqlcmd \
-        -S "${HOST}" -U sa -P "${PASSWORD}" -C -No \
+    docker run --rm --network "${NETWORK}" \
+        mcr.microsoft.com/mssql-tools \
+        /opt/mssql-tools/bin/sqlcmd \
+        -S "${HOST}" -U sa -P "${PASSWORD}" -C \
         -Q "${QUERY}"
 fi

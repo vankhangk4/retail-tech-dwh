@@ -17,11 +17,25 @@ HOST="${MSSQL_HOST:-datn_mssql}"
 PORT="${MSSQL_PORT:-1433}"
 PASSWORD="${MSSQL_SA_PASSWORD}"
 DB="DWH_RetailTech"
-NETWORK="datn_datn_network"
+
+# Tự động detect network của container MSSQL
+NETWORK=$(docker network ls --format '{{.Name}}' | while read n; do
+    if docker network inspect "$n" --format '{{range .Containers}}{{.Name}}{{end}}' 2>/dev/null | grep -q "datn_mssql"; then
+        echo "$n"
+    fi
+done | head -1)
+
+if [ -z "$NETWORK" ]; then
+    echo "ERROR: Không tìm thấy network của container datn_mssql"
+    echo "Đảm bảo docker compose đang chạy: docker compose up -d"
+    exit 1
+fi
+
+echo "Detected network: $NETWORK"
 
 # Pull mssql-tools container
 echo "Pulling mssql-tools image..."
-docker pull mcr.microsoft.com/mssql-tools
+docker pull mcr.microsoft.com/mssql-tools:latest
 
 # Hàm chạy SQL file (không silent - hiện lỗi)
 run_sql() {
