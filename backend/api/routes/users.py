@@ -5,6 +5,8 @@ from schemas import UserCreate, UserUpdate, UserResponse
 from api.deps import get_db, get_current_admin, get_current_superadmin
 from core.security import hash_password, get_current_active_user
 from models.master import User as UserModel
+from services.superset_admin import get_superset_admin
+import asyncio
 
 router = APIRouter(tags=["Users"])
 
@@ -46,6 +48,16 @@ async def create_user(
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # Auto-setup Superset for tenant users (TenantAdmin/User)
+    if body.TenantId and body.Role in ("TenantAdmin", "User"):
+        try:
+            admin = get_superset_admin()
+            await admin.ensure_tenant_superset_setup(body.TenantId)
+        except Exception as e:
+            import logging
+            logging.warning(f"Superset auto-setup failed for tenant {body.TenantId}: {e}")
+
     return user
 
 
@@ -124,6 +136,15 @@ async def create_tenant_user(
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # Auto-setup Superset for tenant (one-time: registers DB/user/role/RLS)
+    try:
+        admin = get_superset_admin()
+        await admin.ensure_tenant_superset_setup(current_user.TenantId)
+    except Exception as e:
+        import logging
+        logging.warning(f"Superset auto-setup failed for tenant {current_user.TenantId}: {e}")
+
     return user
 
 

@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from models.master import User
 from api.deps import get_db, get_current_active_user
 from config import get_settings
+from services.superset_admin import get_superset_admin
 
 router = APIRouter(prefix="/api/embed", tags=["Embed"])
 settings = get_settings()
@@ -26,10 +27,13 @@ async def _get_superset_session() -> str:
         return data.get("access_token", "")
 
 
-async def _create_guest_token(tenant_id: str, db_name: str) -> str:
-    """Tạo Superset guest token cho tenant."""
+async def _create_guest_token(tenant_id: str, db_name: str, db_id: int | None = None) -> str:
+    """Tạo Superset guest token cho tenant với RLS filter."""
     token = await _get_superset_session()
     guest_url = f"{settings.SUPERSET_URL}/api/v1/security/guest_token"
+
+    # Use registered database id, or fallback to 1
+    resources = [{"type": "database", "id": db_id or 1}]
 
     payload = {
         "user": {
@@ -37,7 +41,7 @@ async def _create_guest_token(tenant_id: str, db_name: str) -> str:
             "first_name": "Tenant",
             "last_name": "User",
         },
-        "resources": [{"type": "database", "id": 1}],
+        "resources": resources,
         "rls": [
             {
                 "clause": f"tenant_id = '{tenant_id}'",
@@ -69,7 +73,18 @@ async def get_superset_guest_token(
     if not tenant_id:
         raise HTTPException(status_code=400, detail="User phải thuộc tenant")
 
-    token = await _create_guest_token(tenant_id, f"DWH_{tenant_id}")
+    db_name = f"DWH_{tenant_id}"
+
+    # Lazy provision: ensure tenant is set up in Superset on first access
+    db_id = None
+    try:
+        admin = get_superset_admin()
+        result = await admin.ensure_tenant_superset_setup(tenant_id)
+        db_id = result.get("db_id")
+    except Exception:
+        pass  # Guest token fallback still works without explicit DB registration
+
+    token = await _create_guest_token(tenant_id, db_name, db_id)
     return {
         "token": token,
         "superset_url": settings.SUPERSET_URL,
@@ -87,8 +102,18 @@ async def get_dashboard_embed_info(
     if not tenant_id:
         raise HTTPException(status_code=400, detail="User phải thuộc tenant")
 
+    db_name = f"DWH_{tenant_id}"
+
+    db_id = None
+    try:
+        admin = get_superset_admin()
+        result = await admin.ensure_tenant_superset_setup(tenant_id)
+        db_id = result.get("db_id")
+    except Exception:
+        pass
+
     return {
         "dashboard_id": dashboard_id,
         "superset_url": settings.SUPERSET_URL,
-        "guest_token": await _create_guest_token(tenant_id, f"DWH_{tenant_id}"),
+        "guest_token": await _create_guest_token(tenant_id, db_name, db_id),
     }

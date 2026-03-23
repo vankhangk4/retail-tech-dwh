@@ -154,27 +154,16 @@ export default function ReportsPage() {
         </div>
         <div className="card-body" style={{ lineHeight: 2 }}>
           <p style={{ fontSize: 14, color: '#334155', marginBottom: 12 }}>
-            <strong>1.</strong> Đảm bảo Superset đang chạy tại{' '}
-            <code style={{ background: '#f1f5f9', padding: '1px 6px', borderRadius: 4, fontSize: 13 }}>{supersetUrl}</code>
+            <strong>1.</strong> Nhấn <strong>"Mở Dashboard"</strong> để kết nối — Superset được tự động cấu hình cho tenant của bạn
           </p>
           <p style={{ fontSize: 14, color: '#334155', marginBottom: 12 }}>
-            <strong>2.</strong> Đăng nhập Superset với:{' '}
-            <code style={{ background: '#f1f5f9', padding: '1px 6px', borderRadius: 4, fontSize: 13 }}>admin</code>
-            {' / '}
-            <code style={{ background: '#f1f5f9', padding: '1px 6px', borderRadius: 4, fontSize: 13 }}>Dk@17092004</code>
+            <strong>2.</strong> Dữ liệu được lọc tự động theo tenant qua <strong>Row-Level Security (RLS)</strong> — bạn chỉ thấy dữ liệu của doanh nghiệp mình
           </p>
           <p style={{ fontSize: 14, color: '#334155', marginBottom: 12 }}>
-            <strong>3.</strong> Superset Admin tạo kết nối database:{' '}
-            <code style={{ background: '#eff6ff', padding: '1px 6px', borderRadius: 4, fontSize: 13, color: '#1d4ed8' }}>{'DWH_{'}{'tenant_id'}{'}'}</code>
-          </p>
-          <p style={{ fontSize: 14, color: '#334155', marginBottom: 12 }}>
-            <strong>4.</strong> Tạo dataset từ các bảng Fact/Dim
-          </p>
-          <p style={{ fontSize: 14, color: '#334155', marginBottom: 12 }}>
-            <strong>5.</strong> Tạo chart và dashboard trong Superset
+            <strong>3.</strong> Bạn <strong>không thể truy cập Superset trực tiếp</strong> — chỉ xem dashboard được nhúng trong portal
           </p>
           <p style={{ fontSize: 14, color: '#334155' }}>
-            <strong>6.</strong> Dashboard được nhúng vào portal qua guest token (RLS đảm bảo tenant isolation)
+            <strong>4.</strong> Dashboard được nhúng qua <strong>guest token</strong> với bảo mật RLS đảm bảo cô lập dữ liệu giữa các tenant
           </p>
         </div>
       </div>

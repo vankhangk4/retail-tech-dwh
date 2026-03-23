@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 import logging
-from core.security import verify_password, create_access_token, get_current_active_user, blacklist_token, oauth2_scheme
+from core.security import verify_password, create_access_token, get_current_active_user, blacklist_token, oauth2_scheme, _cache_invalidate
 from core.tenant import get_master_session
 from models.master import User
 from schemas import LoginRequest, Token, UserResponse
@@ -17,10 +17,16 @@ router = APIRouter(prefix="/api/auth", tags=["Auth"])
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     with get_master_session() as db:
         user = db.query(User).filter(User.Username == form_data.username).first()
-        if not user or not verify_password(form_data.password, user.PasswordHash):
+        if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Sai username hoặc password",
+                detail="Tài khoản không tồn tại",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        if not verify_password(form_data.password, user.PasswordHash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Sai password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         if not user.IsActive:
@@ -40,10 +46,15 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 async def login_json(body: LoginRequest):
     with get_master_session() as db:
         user = db.query(User).filter(User.Username == body.username).first()
-        if not user or not verify_password(body.password, user.PasswordHash):
+        if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Sai username hoặc password",
+                detail="Tài khoản không tồn tại",
+            )
+        if not verify_password(body.password, user.PasswordHash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Sai password",
             )
         if not user.IsActive:
             raise HTTPException(status_code=400, detail="Tài khoản đã bị vô hiệu hóa")
@@ -66,5 +77,6 @@ async def get_me(current_user: User = Depends(get_current_active_user)):
 @router.post("/logout")
 async def logout(token: str = Depends(oauth2_scheme)):
     blacklist_token(token)
-    logger.info(f"Token blacklisted: {token[:20]}...")
+    _cache_invalidate(token)
+    logger.info(f"Token blacklisted and cache invalidated: {token[:20]}...")
     return {"msg": "Đăng xuất thành công"}
