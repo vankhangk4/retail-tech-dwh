@@ -1,7 +1,8 @@
+import os
 import subprocess
 import threading
 from datetime import datetime
-from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
+from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, Header
 from sqlalchemy.orm import Session
 from models.master import User, ETLRun
 from api.deps import get_db, get_current_active_user
@@ -10,6 +11,16 @@ from core.tenant import get_master_session
 
 router = APIRouter(prefix="/api/etl", tags=["ETL"])
 settings = get_settings()
+
+
+def _resolve_tenant_id(
+    current_user: User,
+    impersonate_tenant: str | None = None,
+) -> str | None:
+    """SuperAdmin có thể impersonate tenant qua header X-Impersonate-Tenant."""
+    if current_user.Role == "SuperAdmin" and impersonate_tenant:
+        return impersonate_tenant
+    return current_user.TenantId
 
 
 def _run_etl_subprocess(tenant_id: str, run_id: int, db_name: str):
@@ -26,7 +37,7 @@ def _run_etl_subprocess(tenant_id: str, run_id: int, db_name: str):
     try:
         result = subprocess.run(
             [
-                "python3.10", "-m", "etl.main_etl",
+                "python", "-m", "etl.main_etl",
                 "--tenant", tenant_id,
                 "--full",
             ],
@@ -34,18 +45,17 @@ def _run_etl_subprocess(tenant_id: str, run_id: int, db_name: str):
             text=True,
             cwd="/app",
             timeout=3600,
+            env={**os.environ, "PYTHONPATH": "/app"},
         )
 
         with get_master_session() as db:
             run = db.query(ETLRun).filter(ETLRun.RunId == run_id).first()
             if run:
-                if result.returncode == 0:
-                    run.Status = "SUCCESS"
-                    run.CompletedAt = datetime.utcnow()
-                    run.RowsProcessed = 0
-                else:
-                    run.Status = "FAILED"
-                    run.CompletedAt = datetime.utcnow()
+                run.Status = "SUCCESS"
+                run.CompletedAt = datetime.utcnow()
+                run.RowsProcessed = 0
+                run.LogOutput = result.stdout[-5000:] if len(result.stdout) > 5000 else result.stdout
+                if result.returncode != 0 and result.stderr:
                     run.ErrorMessage = result.stderr[:1000]
                 db.commit()
     except subprocess.TimeoutExpired:
@@ -55,6 +65,7 @@ def _run_etl_subprocess(tenant_id: str, run_id: int, db_name: str):
                 run.Status = "FAILED"
                 run.CompletedAt = datetime.utcnow()
                 run.ErrorMessage = "ETL timeout (>1h)"
+                run.LogOutput = ""
                 db.commit()
     except Exception as e:
         with get_master_session() as db:
@@ -63,6 +74,7 @@ def _run_etl_subprocess(tenant_id: str, run_id: int, db_name: str):
                 run.Status = "FAILED"
                 run.CompletedAt = datetime.utcnow()
                 run.ErrorMessage = str(e)[:1000]
+                run.LogOutput = ""
                 db.commit()
 
 
@@ -71,8 +83,9 @@ async def trigger_etl(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
+    x_impersonate_tenant: str | None = Header(default=None),
 ):
-    tenant_id = current_user.TenantId
+    tenant_id = _resolve_tenant_id(current_user, x_impersonate_tenant)
     if not tenant_id:
         raise HTTPException(status_code=400, detail="User phải thuộc tenant")
 
@@ -98,11 +111,13 @@ async def get_etl_status(
     run_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
+    x_impersonate_tenant: str | None = Header(default=None),
 ):
+    resolved_tenant = _resolve_tenant_id(current_user, x_impersonate_tenant)
     run = db.query(ETLRun).filter(ETLRun.RunId == run_id).first()
     if not run:
         raise HTTPException(status_code=404, detail="Run không tồn tại")
-    if run.TenantId != current_user.TenantId and current_user.Role != "SuperAdmin":
+    if run.TenantId != resolved_tenant and current_user.Role != "SuperAdmin":
         raise HTTPException(status_code=403, detail="Không có quyền xem")
 
     return {
@@ -115,14 +130,38 @@ async def get_etl_status(
     }
 
 
+@router.get("/logs/{run_id}")
+async def get_etl_logs(
+    run_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+    x_impersonate_tenant: str | None = Header(default=None),
+):
+    resolved_tenant = _resolve_tenant_id(current_user, x_impersonate_tenant)
+    run = db.query(ETLRun).filter(ETLRun.RunId == run_id).first()
+    if not run:
+        raise HTTPException(status_code=404, detail="Run không tồn tại")
+    if run.TenantId != resolved_tenant and current_user.Role != "SuperAdmin":
+        raise HTTPException(status_code=403, detail="Không có quyền xem")
+
+    return {
+        "run_id": run.RunId,
+        "log_output": run.LogOutput or "",
+    }
+
+
 @router.get("/history")
 async def get_etl_history(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
+    x_impersonate_tenant: str | None = Header(default=None),
 ):
+    resolved_tenant = _resolve_tenant_id(current_user, x_impersonate_tenant)
     query = db.query(ETLRun)
     if current_user.Role != "SuperAdmin":
         query = query.filter(ETLRun.TenantId == current_user.TenantId)
+    elif resolved_tenant:
+        query = query.filter(ETLRun.TenantId == resolved_tenant)
 
     runs = query.order_by(ETLRun.RunId.desc()).limit(50).all()
     return [

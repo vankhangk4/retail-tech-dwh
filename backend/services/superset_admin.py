@@ -9,6 +9,7 @@ Note: Row-Level Security (RLS) is applied via guest_token's embedded clause
 parameter (not a separate API endpoint).
 """
 
+import asyncio
 import httpx
 import logging
 from config import get_settings
@@ -28,26 +29,42 @@ class SupersetAdminService:
         self.admin_user = settings.SUPERSET_ADMIN_USER
         self.admin_pass = settings.SUPERSET_ADMIN_PASSWORD
         self._admin_token: str | None = None
+        self._setup_cache: dict[str, dict] = {}  # tenant_id -> setup result
 
     async def _admin_login(self) -> str:
-        """Login as Superset admin and return access token."""
+        """Login as Superset admin and return access token. Cached per instance."""
         if self._admin_token:
-            return self._admin_token
+            return self._admin_token  # type: ignore[return-value]
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(
-                f"{self.base_url}/api/v1/security/login",
-                json={
-                    "username": self.admin_user,
-                    "password": self.admin_pass,
-                    "provider": "db",
-                },
-            )
-            if resp.status_code != 200:
-                logger.error(f"Superset admin login failed: {resp.status_code} {resp.text}")
-                raise Exception(f"Không thể đăng nhập Superset: {resp.status_code}")
-            self._admin_token = resp.json().get("access_token", "")
-            return self._admin_token
+        last_error: Exception | None = None
+        for attempt in range(3):
+            try:
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    resp = await client.post(
+                        f"{self.base_url}/api/v1/security/login",
+                        json={
+                            "username": self.admin_user,
+                            "password": self.admin_pass,
+                            "provider": "db",
+                        },
+                    )
+                    resp.raise_for_status()
+                    token = resp.json().get("access_token")
+                    if not token:
+                        raise Exception("Superset login response missing access_token")
+                    self._admin_token = token
+                    return token
+            except httpx.HTTPStatusError as e:
+                last_error = e
+                if e.response.status_code == 429 and attempt < 2:
+                    delay = 1.0 * (2 ** attempt)
+                    logger.warning(f"Rate limited, retrying in {delay}s (attempt {attempt + 1}/3)")
+                    await asyncio.sleep(delay)
+                else:
+                    break
+
+        logger.error(f"Superset admin login failed: {last_error}")
+        raise Exception(f"Không thể đăng nhập Superset")
 
     async def _admin_headers(self) -> dict:
         token = await self._admin_login()
@@ -71,7 +88,7 @@ class SupersetAdminService:
                         return db
             return None
 
-    async def register_tenant_database(self, tenant_id: str, db_name: str) -> int:
+    async def register_tenant_database(self, tenant_id: str, db_name: str) -> int:  # type: ignore[return]
         """
         Register or get tenant's SQL Server database in Superset.
         Returns Superset database id.
@@ -122,7 +139,7 @@ class SupersetAdminService:
             else:
                 raise Exception(f"Không thể đăng ký database Superset: {resp.status_code}")
 
-    async def _create_or_get_tenant_user(self, tenant_id: str) -> dict:
+    async def _create_or_get_tenant_user(self, tenant_id: str) -> dict:  # type: ignore[return]
         """
         Create or get Superset user for tenant.
         Returns dict with username and id.
@@ -164,7 +181,7 @@ class SupersetAdminService:
             else:
                 raise Exception(f"Không thể tạo Superset user: {create_resp.text}")
 
-    async def _create_or_get_tenant_role(self, tenant_id: str) -> dict:
+    async def _create_or_get_tenant_role(self, tenant_id: str) -> dict:  # type: ignore[return]
         """
         Create or get tenant-specific role.
         Returns dict with name and id.
@@ -226,6 +243,11 @@ class SupersetAdminService:
         RLS filtering is handled by guest_token's embedded clause parameter.
         Returns dict with {db_id, role_id, username, db_name} on success.
         """
+        # Return cached result if already provisioned
+        if tenant_id in self._setup_cache:
+            logger.info(f"Superset setup for tenant '{tenant_id}' already cached")
+            return self._setup_cache[tenant_id]
+
         db_name = f"DWH_{tenant_id}"
 
         # Step 1: Register tenant database
@@ -242,12 +264,14 @@ class SupersetAdminService:
 
         logger.info(f"Superset setup complete for tenant '{tenant_id}'")
 
-        return {
+        result = {
             "db_id": db_id,
             "role_id": role_data["id"],
             "username": user_data["username"],
             "db_name": db_name,
         }
+        self._setup_cache[tenant_id] = result
+        return result
 
 
 # Singleton instance

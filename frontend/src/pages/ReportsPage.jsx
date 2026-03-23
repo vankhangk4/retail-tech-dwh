@@ -115,16 +115,29 @@ export default function ReportsPage() {
 
         {!token && !error && (
           <div className="card-body">
-            <div className="empty-state">
-              <BarChart3 size={56} style={{ color: '#cbd5e1' }} />
-              <p style={{ marginTop: 14, fontWeight: 600, fontSize: 15, color: '#334155' }}>
-                Kết nối Superset Dashboard
-              </p>
-              <p style={{ marginTop: 6, fontSize: 13, color: '#94a3b8', maxWidth: 380, margin: '6px auto 0' }}>
-                Nhấn "Mở Dashboard" để truy cập báo cáo trực quan từ Superset.
-                <br />Đảm bảo Superset đang chạy tại <strong>{supersetUrl}</strong>
-              </p>
-            </div>
+            {loading ? (
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '40px 20px',
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div className="skeleton" style={{ width: 56, height: 56, borderRadius: 12, margin: '0 auto 12px' }} />
+                  <div className="skeleton" style={{ width: 200, height: 14, margin: '0 auto 8px' }} />
+                  <div className="skeleton" style={{ width: 280, height: 10, margin: '0 auto' }} />
+                </div>
+              </div>
+            ) : (
+              <div className="empty-state">
+                <BarChart3 size={56} style={{ color: '#cbd5e1' }} />
+                <p style={{ marginTop: 14, fontWeight: 600, fontSize: 15, color: '#334155' }}>
+                  Kết nối Superset Dashboard
+                </p>
+                <p style={{ marginTop: 6, fontSize: 13, color: '#94a3b8', maxWidth: 380, margin: '6px auto 0' }}>
+                  Nhấn "Mở Dashboard" để truy cập báo cáo trực quan từ Superset.
+                  <br />Đảm bảo Superset đang chạy tại <strong>{supersetUrl}</strong>
+                </p>
+              </div>
+            )}
           </div>
         )}
 

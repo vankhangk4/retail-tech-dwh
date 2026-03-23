@@ -9,27 +9,15 @@ router = APIRouter(prefix="/api/embed", tags=["Embed"])
 settings = get_settings()
 
 
-async def _get_superset_session() -> str:
-    """Đăng nhập Superset và lấy CSRF token."""
-    login_url = f"{settings.SUPERSET_URL}/api/v1/security/login"
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.post(
-            login_url,
-            json={
-                "username": settings.SUPERSET_ADMIN_USER,
-                "password": settings.SUPERSET_ADMIN_PASSWORD,
-                "provider": "db",
-            },
-        )
-        if resp.status_code != 200:
-            raise HTTPException(status_code=500, detail="Không thể đăng nhập Superset")
-        data = resp.json()
-        return data.get("access_token", "")
-
-
 async def _create_guest_token(tenant_id: str, db_name: str, db_id: int | None = None) -> str:
-    """Tạo Superset guest token cho tenant với RLS filter."""
-    token = await _get_superset_session()
+    """Tạo Superset guest token cho tenant với RLS filter.
+
+    Reuses the cached admin token from SupersetAdminService singleton
+    to avoid hitting Superset login rate limits.
+    """
+    admin = get_superset_admin()
+    token = await admin._admin_login()  # reuse cached token
+
     guest_url = f"{settings.SUPERSET_URL}/api/v1/security/guest_token"
 
     # Use registered database id, or fallback to 1

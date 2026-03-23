@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getETLHistory, triggerETL, getETLStatus } from '../services/api';
+import { getETLHistory, triggerETL, getETLStatus, getETLLogs } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import {
   RefreshCw,
@@ -9,16 +9,23 @@ import {
   XCircle,
   AlertCircle,
   Activity,
+  Eye,
+  FileText,
+  X,
 } from 'lucide-react';
 
 export default function ETLPage() {
-  const { user } = useAuth();
+  const { user, impersonatedTenant } = useAuth();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [triggering, setTriggering] = useState(false);
   const [latestRunId, setLatestRunId] = useState(null);
   const [polling, setPolling] = useState(false);
   const [error, setError] = useState('');
+  const [showLogModal, setShowLogModal] = useState(false);
+  const [logRunId, setLogRunId] = useState(null);
+  const [logContent, setLogContent] = useState('');
+  const [logLoading, setLogLoading] = useState(false);
 
   useEffect(() => {
     // Initial state is loading=true, skeleton renders immediately
@@ -53,6 +60,20 @@ export default function ETLPage() {
     }
   };
 
+  const openLogModal = async (runId) => {
+    setShowLogModal(true);
+    setLogRunId(runId);
+    setLogLoading(true);
+    try {
+      const res = await getETLLogs(runId);
+      setLogContent(res.data.log_output || '(Không có log)');
+    } catch {
+      setLogContent('Không thể tải log');
+    } finally {
+      setLogLoading(false);
+    }
+  };
+
   const handleTrigger = async () => {
     setTriggering(true);
     try {
@@ -79,6 +100,22 @@ export default function ETLPage() {
 
   return (
     <div>
+      {impersonatedTenant && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: '#fffbeb', border: '1px solid #fcd34d',
+          borderRadius: 10, padding: '10px 14px', marginBottom: 20,
+        }}>
+          <Eye size={16} style={{ color: '#d97706' }} />
+          <span style={{ fontSize: 13, color: '#92400e', fontWeight: 500 }}>
+            Đang xem dữ liệu của tenant <strong>{impersonatedTenant}</strong>
+          </span>
+          <span style={{ fontSize: 12, color: '#b45309' }}>
+            (SuperAdmin impersonation)
+          </span>
+        </div>
+      )}
+
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1>
@@ -157,6 +194,7 @@ export default function ETLPage() {
                   <th>Bắt đầu</th>
                   <th>Hoàn thành</th>
                   <th>Lỗi</th>
+                  <th>Log</th>
                 </tr>
               </thead>
               <tbody>
@@ -186,6 +224,7 @@ export default function ETLPage() {
                   <th>Bắt đầu</th>
                   <th>Hoàn thành</th>
                   <th>Lỗi</th>
+                  <th>Log</th>
                 </tr>
               </thead>
               <tbody>
@@ -226,12 +265,22 @@ export default function ETLPage() {
                           <span style={{ color: '#cbd5e1' }}>-</span>
                         )}
                       </td>
+                      <td>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => openLogModal(r.run_id)}
+                          style={{ fontSize: 12, padding: '2px 8px' }}
+                          title="Xem log"
+                        >
+                          <FileText size={12} />
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
                 {history.length === 0 && (
                   <tr>
-                    <td colSpan={user.Role === 'SuperAdmin' ? 7 : 6}>
+                    <td colSpan={user.Role === 'SuperAdmin' ? 8 : 7}>
                       <div className="empty-state">
                         <RefreshCw size={40} />
                         <p>Chưa có ETL run nào</p>
@@ -244,6 +293,39 @@ export default function ETLPage() {
           </div>
         )}
       </div>
+
+      {/* Log Modal */}
+      {showLogModal && (
+        <div className="modal-overlay" onClick={() => setShowLogModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 800 }}>
+            <div className="modal-header">
+              <h3>ETL Log — Run #{logRunId}</h3>
+              <button className="modal-close" onClick={() => setShowLogModal(false)}>
+                <X size={16} />
+              </button>
+            </div>
+            <div style={{ padding: '16px 20px', maxHeight: 500, overflow: 'auto' }}>
+              {logLoading ? (
+                <div style={{ textAlign: 'center', padding: 20 }}>
+                  <div className="spinner" style={{ margin: '0 auto' }}></div>
+                  <p style={{ marginTop: 12, color: '#94a3b8' }}>Đang tải log...</p>
+                </div>
+              ) : (
+                <pre style={{
+                  fontFamily: 'monospace', fontSize: 12,
+                  background: '#0f172a', color: '#e2e8f0',
+                  padding: 16, borderRadius: 8,
+                  overflow: 'auto', maxHeight: 450,
+                  whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+                  lineHeight: 1.6, margin: 0,
+                }}>
+                  {logContent || '(Không có log)'}
+                </pre>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

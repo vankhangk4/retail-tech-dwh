@@ -11,6 +11,7 @@ import TenantUsersPage from './pages/TenantUsersPage';
 import ETLPage from './pages/ETLPage';
 import UploadPage from './pages/UploadPage';
 import ReportsPage from './pages/ReportsPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 
 function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth();
@@ -52,7 +53,7 @@ function AppRoutes() {
           <AdminLayout />
         </ProtectedRoute>
       }>
-        <Route index element={<Navigate to="tenants" replace />} />
+        <Route index element={<AdminDashboardPage />} />
         <Route path="tenants" element={<TenantsPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="etl" element={<ETLPage />} />

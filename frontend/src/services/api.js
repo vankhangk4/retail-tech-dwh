@@ -14,11 +14,18 @@ const logoutClient = axios.create({
   timeout: 10000,
 });
 
-// Request interceptor: attach JWT token
+// Read persisted impersonation on init
+const getImpersonatedTenant = () => localStorage.getItem('impersonated_tenant');
+
+// Request interceptor: attach JWT token + impersonation header
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  const imp = getImpersonatedTenant();
+  if (imp) {
+    config.headers['X-Impersonate-Tenant'] = imp;
   }
   return config;
 });
@@ -60,6 +67,7 @@ export const logout = (token) => {
 export const getTenants = () => api.get('/api/admin/tenants');
 export const createTenant = (data) => api.post('/api/admin/tenants', data);
 export const deleteTenant = (tenantId) => api.delete(`/api/admin/tenants/${tenantId}`);
+export const getAdminStats = () => api.get('/api/admin/stats');
 
 // ─── Users ──────────────────────────────────────────────────────────────────
 
@@ -82,6 +90,7 @@ export const getSummary = () => api.get('/api/stats/summary');
 export const triggerETL = () => api.post('/api/etl/run');
 export const getETLStatus = (runId) => api.get(`/api/etl/status/${runId}`);
 export const getETLHistory = () => api.get('/api/etl/history');
+export const getETLLogs = (runId) => api.get(`/api/etl/logs/${runId}`);
 
 // ─── Upload ──────────────────────────────────────────────────────────────────
 
