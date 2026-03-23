@@ -17,6 +17,7 @@ set +a
 PASSWORD="${MSSQL_SA_PASSWORD}"
 HOST="${MSSQL_HOST:-datn_mssql}"
 PORT="${MSSQL_PORT:-1433}"
+DB="${MSSQL_DB:-DWH_RetailTech}"
 
 # Tự động detect network của container MSSQL
 NETWORK=$(docker network ls --format '{{.Name}}' | while read n; do
@@ -46,6 +47,7 @@ if [ "$1" = "--file" ]; then
         mcr.microsoft.com/mssql-tools \
         /opt/mssql-tools/bin/sqlcmd \
         -S "${HOST}" -U sa -P "${PASSWORD}" -C \
+        -d "${DB}" \
         -i "/scripts/${SQL_FILE}"
 else
     # Chạy query trực tiếp
@@ -55,5 +57,6 @@ else
         mcr.microsoft.com/mssql-tools \
         /opt/mssql-tools/bin/sqlcmd \
         -S "${HOST}" -U sa -P "${PASSWORD}" -C \
+        -d "${DB}" \
         -Q "${QUERY}"
 fi

@@ -23,7 +23,7 @@ class User(Base):
     __tablename__ = "Users"
 
     UserId = Column(Integer, primary_key=True, autoincrement=True)
-    TenantId = Column(String(50), ForeignKey("Tenants.TenantId"), nullable=True)  # SuperAdmin has null
+    TenantId = Column(String(50), ForeignKey("Tenants.TenantId", ondelete="CASCADE"), nullable=True)  # SuperAdmin has null
     Username = Column(String(100), nullable=False, unique=False)
     Email = Column(String(150), nullable=True)
     PasswordHash = Column(String(255), nullable=False)
@@ -38,8 +38,8 @@ class ETLRun(Base):
     __tablename__ = "ETLRuns"
 
     RunId = Column(Integer, primary_key=True, autoincrement=True)
-    TenantId = Column(String(50), ForeignKey("Tenants.TenantId"), nullable=False)
-    TriggeredBy = Column(Integer, ForeignKey("Users.UserId"), nullable=True)
+    TenantId = Column(String(50), ForeignKey("Tenants.TenantId", ondelete="CASCADE"), nullable=False)
+    TriggeredBy = Column(Integer, ForeignKey("Users.UserId", ondelete="SET NULL"), nullable=True)
     Status = Column(String(20), default="PENDING")  # PENDING, RUNNING, SUCCESS, FAILED
     RowsProcessed = Column(Integer, default=0)
     ErrorMessage = Column(String(1000), nullable=True)

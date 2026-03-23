@@ -24,7 +24,7 @@ services:
       retries: 10
       start_period: 30s
     networks:
-      - datn_network
+      - default
 
   # ---- Superset ----
   superset:
@@ -58,7 +58,7 @@ services:
       redis:
         condition: service_started
     networks:
-      - datn_network
+      - default
 
   # ---- PostgreSQL (Superset Metadata) ----
   postgres:
@@ -76,7 +76,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - datn_network
+      - default
 
   # ---- Redis (Superset Cache) ----
   redis:
@@ -86,7 +86,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - datn_network
+      - default
 
   # ---- PostgreSQL Master (Multi-tenant Metadata) ----
   postgres_master:
@@ -104,7 +104,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - datn_network
+      - default
 
   # ---- Backend API ----
   backend:
@@ -142,7 +142,7 @@ services:
       mssql:
         condition: service_started
     networks:
-      - datn_network
+      - default
 
   # ---- Frontend (React + Nginx) ----
   frontend:
@@ -156,13 +156,14 @@ services:
     depends_on:
       - backend
     networks:
-      - datn_network
+      - default
 
 # ============================================================
 # Networks & Volumes
 # ============================================================
 networks:
-  datn_network:
+  default:
+    name: datn_network
     driver: bridge
 
 volumes:

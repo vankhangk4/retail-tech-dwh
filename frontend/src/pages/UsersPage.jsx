@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getUsers, createUser, updateUser, deleteUser } from '../services/api';
+import { getUsers, createUser, updateUser, deleteUser, getTenants } from '../services/api';
 import {
   Users as UsersIcon,
   Plus,
@@ -15,6 +15,7 @@ import {
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
+  const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editUser, setEditUser] = useState(null);
@@ -23,7 +24,14 @@ export default function UsersPage() {
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => { loadUsers(); }, []);
+  useEffect(() => { loadUsers(); loadTenants(); }, []);
+
+  const loadTenants = async () => {
+    try {
+      const res = await getTenants();
+      setTenants(res.data);
+    } catch {}
+  };
 
   const loadUsers = async () => {
     setLoading(true);
@@ -64,6 +72,7 @@ export default function UsersPage() {
     setEditUser(user);
     setForm({ Username: user.Username, Password: '', Email: user.Email || '', Role: user.Role, TenantId: user.TenantId || '' });
     setShowPassword(false);
+    loadTenants();
     setShowModal(true);
   };
 
@@ -98,6 +107,7 @@ export default function UsersPage() {
             setEditUser(null);
             setForm({ Username: '', Password: '', Email: '', Role: 'User', TenantId: '' });
             setShowPassword(false);
+            loadTenants();
             setShowModal(true);
           }}
         >
@@ -221,7 +231,18 @@ export default function UsersPage() {
               </div>
               <div className="form-group">
                 <label>Role</label>
-                <select value={form.Role} onChange={(e) => setForm({ ...form, Role: e.target.value })} className="form-select">
+                <select
+                  value={form.Role}
+                  onChange={(e) => {
+                    const newRole = e.target.value;
+                    setForm({
+                      ...form,
+                      Role: newRole,
+                      TenantId: newRole === 'SuperAdmin' ? '' : form.TenantId,
+                    });
+                  }}
+                  className="form-select"
+                >
                   <option value="User">User</option>
                   <option value="TenantAdmin">TenantAdmin</option>
                   <option value="SuperAdmin">SuperAdmin</option>
@@ -229,14 +250,29 @@ export default function UsersPage() {
               </div>
               <div className="form-group">
                 <label>Tenant ID {form.Role === 'SuperAdmin' && '(bỏ trống)'}</label>
-                <input
-                  type="text"
-                  value={form.TenantId}
-                  onChange={(e) => setForm({ ...form, TenantId: e.target.value })}
-                  className="form-input"
-                  placeholder={form.Role === 'SuperAdmin' ? 'SuperAdmin' : 'ví dụ: techstore_hcm'}
-                  disabled={form.Role === 'SuperAdmin'}
-                />
+                {form.Role === 'SuperAdmin' ? (
+                  <input
+                    type="text"
+                    value="SuperAdmin"
+                    className="form-input"
+                    disabled
+                    style={{ background: '#f1f5f9', color: '#059669', fontWeight: 600 }}
+                  />
+                ) : (
+                  <select
+                    value={form.TenantId}
+                    onChange={(e) => setForm({ ...form, TenantId: e.target.value })}
+                    className="form-select"
+                    required
+                  >
+                    <option value="">-- Chọn Tenant --</option>
+                    {tenants.map((t) => (
+                      <option key={t.TenantId} value={t.TenantId}>
+                        {t.TenantId} - {t.TenantName}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div className="modal-actions">
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowModal(false)}>Hủy</button>
