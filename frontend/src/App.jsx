@@ -15,8 +15,20 @@ import ReportsPage from './pages/ReportsPage';
 function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth();
 
-  // Only block when still validating stored token
-  if (loading) return null;
+  // Show spinner while validating stored token
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        height: '100vh', background: 'var(--color-bg)',
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="spinner" style={{ margin: '0 auto 16px', width: 36, height: 36 }}></div>
+          <p style={{ color: '#94a3b8', fontSize: 14 }}>Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) return <Navigate to="/login" replace />;
   if (roles && !roles.includes(user.Role)) return <Navigate to="/" replace />;

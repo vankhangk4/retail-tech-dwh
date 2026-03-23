@@ -19,7 +19,10 @@ export default function UploadPage() {
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef(null);
 
-  useEffect(() => { loadFiles(); }, []);
+  useEffect(() => {
+    // Initial state is loading=true, skeleton renders immediately
+    loadFiles();
+  }, []);
 
   const loadFiles = async () => {
     setLoading(true);

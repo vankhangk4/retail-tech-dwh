@@ -18,8 +18,12 @@ export default function ETLPage() {
   const [triggering, setTriggering] = useState(false);
   const [latestRunId, setLatestRunId] = useState(null);
   const [polling, setPolling] = useState(false);
+  const [error, setError] = useState('');
 
-  useEffect(() => { loadHistory(); }, []);
+  useEffect(() => {
+    // Initial state is loading=true, skeleton renders immediately
+    loadHistory();
+  }, []);
 
   useEffect(() => {
     if (!latestRunId) return;
@@ -38,10 +42,13 @@ export default function ETLPage() {
 
   const loadHistory = async () => {
     setLoading(true);
+    setError('');
     try {
       const res = await getETLHistory();
       setHistory(res.data);
-    } catch {} finally {
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Không thể tải lịch sử ETL');
+    } finally {
       setLoading(false);
     }
   };
@@ -99,6 +106,16 @@ export default function ETLPage() {
         </button>
       </div>
 
+      {/* Error banner */}
+      {error && (
+        <div className="card" style={{ marginBottom: 20, borderLeft: '4px solid #dc2626' }}>
+          <div className="card-body" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <AlertCircle size={20} style={{ color: '#dc2626' }} />
+            <p style={{ fontWeight: 600, color: '#dc2626' }}>{error}</p>
+          </div>
+        </div>
+      )}
+
       {/* Status bar when polling */}
       {polling && (
         <div className="card" style={{ animationDelay: '0ms', borderLeft: '4px solid #3b82f6' }}>
@@ -129,7 +146,34 @@ export default function ETLPage() {
         </div>
 
         {loading ? (
-          <div className="loading"><div className="spinner"></div></div>
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Run ID</th>
+                  {user.Role === 'SuperAdmin' && <th>Tenant</th>}
+                  <th>Trạng thái</th>
+                  <th>Bản ghi</th>
+                  <th>Bắt đầu</th>
+                  <th>Hoàn thành</th>
+                  <th>Lỗi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[1, 2, 3].map((i) => (
+                  <tr key={i}>
+                    <td><div className="skeleton" style={{ width: 120, height: 16 }} /></td>
+                    {user.Role === 'SuperAdmin' && <td><div className="skeleton" style={{ width: 80, height: 22, borderRadius: 6 }} /></td>}
+                    <td><div className="skeleton" style={{ width: 90, height: 22, borderRadius: 999 }} /></td>
+                    <td><div className="skeleton" style={{ width: 60, height: 16 }} /></td>
+                    <td><div className="skeleton" style={{ width: 130, height: 16 }} /></td>
+                    <td><div className="skeleton" style={{ width: 130, height: 16 }} /></td>
+                    <td><div className="skeleton" style={{ width: 80, height: 16 }} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <div className="table-wrapper">
             <table>
