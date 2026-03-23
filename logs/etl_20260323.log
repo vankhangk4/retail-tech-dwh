@@ -337,3 +337,389 @@
 2026-03-23 11:17:08 [INFO] etl.main | etl_run:308 |   Total rows processed: 47877
 2026-03-23 11:17:08 [INFO] etl.main | etl_run:309 | ============================================================
 2026-03-23 11:17:08 [INFO] etl.main | etl_run:309 | ============================================================
+2026-03-23 20:49:59 [INFO] etl.main | etl_run:111 | 
+2026-03-23 20:49:59 [INFO] etl.main | etl_run:111 | 
+2026-03-23 20:49:59 [INFO] etl.main | etl_run:112 | ============================================================
+2026-03-23 20:49:59 [INFO] etl.main | etl_run:112 | ============================================================
+2026-03-23 20:49:59 [INFO] etl.main | etl_run:113 |   ETL PIPELINE STARTED | BatchDate: 2026-03-23
+2026-03-23 20:49:59 [INFO] etl.main | etl_run:113 |   ETL PIPELINE STARTED | BatchDate: 2026-03-23
+2026-03-23 20:49:59 [INFO] etl.main | etl_run:114 | ============================================================
+2026-03-23 20:49:59 [INFO] etl.main | etl_run:114 | ============================================================
+2026-03-23 20:49:59 [INFO] etl.main | etl_run:124 | 
+2026-03-23 20:49:59 [INFO] etl.main | etl_run:124 | 
+2026-03-23 20:49:59 [INFO] etl.main | etl_run:125 | >>> [PHASE 1] EXTRACT & LOAD TO STAGING
+2026-03-23 20:49:59 [INFO] etl.main | etl_run:125 | >>> [PHASE 1] EXTRACT & LOAD TO STAGING
+2026-03-23 20:50:00 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-01': 2465 rows
+2026-03-23 20:50:00 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-02': 1840 rows
+2026-03-23 20:50:00 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-03': 2348 rows
+2026-03-23 20:50:01 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-04': 2147 rows
+2026-03-23 20:50:01 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-05': 2226 rows
+2026-03-23 20:50:01 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-06': 2505 rows
+2026-03-23 20:50:02 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-07': 2359 rows
+2026-03-23 20:50:02 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-08': 2422 rows
+2026-03-23 20:50:02 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-09': 2168 rows
+2026-03-23 20:50:02 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-10': 2352 rows
+2026-03-23 20:50:03 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-11': 3004 rows
+2026-03-23 20:50:03 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-12': 3064 rows
+2026-03-23 20:50:03 [INFO] etl.extract | extract_sales:124 | Watermark filter: 28900 → 11762 rows (watermark=2020-01-01)
+2026-03-23 20:50:03 [INFO] etl.extract | extract_sales:142 | Extracted 11762 sales records from BaoCaoDoanhThu_2025.xlsx
+2026-03-23 20:50:06 [INFO] etl.load | load:70 | Loaded 11762 rows to STG table: STG_SalesRaw
+2026-03-23 20:50:06 [INFO] etl.main | etl_run:140 |   Sales: 11762 rows loaded
+2026-03-23 20:50:06 [INFO] etl.main | etl_run:140 |   Sales: 11762 rows loaded
+2026-03-23 20:50:07 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-01': 7750 rows
+2026-03-23 20:50:07 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-02': 7000 rows
+2026-03-23 20:50:08 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-03': 7750 rows
+2026-03-23 20:50:09 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-04': 7500 rows
+2026-03-23 20:50:09 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-05': 7750 rows
+2026-03-23 20:50:10 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-06': 7500 rows
+2026-03-23 20:50:11 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-07': 7750 rows
+2026-03-23 20:50:12 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-08': 7750 rows
+2026-03-23 20:50:12 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-09': 7500 rows
+2026-03-23 20:50:13 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-10': 7750 rows
+2026-03-23 20:50:14 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-11': 7500 rows
+2026-03-23 20:50:15 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-12': 7750 rows
+2026-03-23 20:50:15 [INFO] etl.extract | extract_inventory:110 | Extracted 36000 inventory records from QuanLyKho_2025.xlsx
+2026-03-23 20:50:21 [INFO] etl.load | load:70 | Loaded 36000 rows to STG table: STG_InventoryRaw
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:150 |   Inventory: 36000 rows loaded
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:150 |   Inventory: 36000 rows loaded
+2026-03-23 20:50:21 [INFO] etl.extract | extract_product:90 | Product deduplication: 50 → 50 rows
+2026-03-23 20:50:21 [INFO] etl.extract | extract_product:92 | Extracted 50 products from DanhMucSanPham.csv
+2026-03-23 20:50:21 [INFO] etl.load | load:70 | Loaded 50 rows to STG table: STG_ProductRaw
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:160 |   Product: 50 rows loaded
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:160 |   Product: 50 rows loaded
+2026-03-23 20:50:21 [INFO] etl.extract | extract_customer:96 | Customer deduplication: 30 → 30 rows
+2026-03-23 20:50:21 [INFO] etl.extract | extract_customer:98 | Extracted 30 customers from DanhSachKhachHang.csv
+2026-03-23 20:50:21 [INFO] etl.load | load:70 | Loaded 30 rows to STG table: STG_CustomerRaw
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:170 |   Customer: 30 rows loaded
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:170 |   Customer: 30 rows loaded
+2026-03-23 20:50:21 [INFO] etl.extract | extract_store:93 | Store deduplication: 5 → 5 rows
+2026-03-23 20:50:21 [INFO] etl.extract | extract_store:95 | Extracted 5 stores from DanhSachCuaHang.csv
+2026-03-23 20:50:21 [INFO] etl.load | load:70 | Loaded 5 rows to STG table: STG_StoreRaw
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:180 |   Store: 5 rows loaded
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:180 |   Store: 5 rows loaded
+2026-03-23 20:50:21 [INFO] etl.extract | extract_employee:82 | Employee deduplication: 20 → 20 rows
+2026-03-23 20:50:21 [INFO] etl.extract | extract_employee:84 | Extracted 20 employees from DanhSachNhanVien.csv
+2026-03-23 20:50:21 [INFO] etl.load | load:70 | Loaded 20 rows to STG table: STG_EmployeeRaw
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:190 |   Employee: 20 rows loaded
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:190 |   Employee: 20 rows loaded
+2026-03-23 20:50:21 [INFO] etl.extract | extract_supplier:83 | Supplier deduplication: 10 → 10 rows
+2026-03-23 20:50:21 [INFO] etl.extract | extract_supplier:85 | Extracted 10 suppliers from DanhSachNhaCungCap.csv
+2026-03-23 20:50:21 [INFO] etl.load | load:70 | Loaded 10 rows to STG table: STG_SupplierRaw
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:200 |   Supplier: 10 rows loaded
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:200 |   Supplier: 10 rows loaded
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:207 | 
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:207 | 
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:208 | >>> [PHASE 2] LOAD DIMENSIONS
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:208 | >>> [PHASE 2] LOAD DIMENSIONS
+2026-03-23 20:50:21 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimSupplier
+2026-03-23 20:50:21 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimSupplier
+2026-03-23 20:50:21 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimProduct
+2026-03-23 20:50:21 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimProduct
+2026-03-23 20:50:21 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimCustomer
+2026-03-23 20:50:21 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimCustomer
+2026-03-23 20:50:21 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimStore
+2026-03-23 20:50:21 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimStore
+2026-03-23 20:50:21 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimEmployee
+2026-03-23 20:50:21 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimEmployee
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:226 | 
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:226 | 
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:227 | >>> [PHASE 3] LOAD FACTS
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:227 | >>> [PHASE 3] LOAD FACTS
+2026-03-23 20:50:21 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_FactSales
+2026-03-23 20:50:21 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_FactSales
+2026-03-23 20:50:21 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_FactInventory
+2026-03-23 20:50:21 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_FactInventory
+2026-03-23 20:50:21 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_FactPurchase
+2026-03-23 20:50:21 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_FactPurchase
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:243 | 
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:243 | 
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:244 | >>> [PHASE 4] REFRESH DATA MARTS
+2026-03-23 20:50:21 [INFO] etl.main | etl_run:244 | >>> [PHASE 4] REFRESH DATA MARTS
+2026-03-23 20:50:22 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Refresh_DM_SalesSummary
+2026-03-23 20:50:22 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Refresh_DM_SalesSummary
+2026-03-23 20:50:22 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Refresh_DM_InventoryAlert
+2026-03-23 20:50:22 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Refresh_DM_InventoryAlert
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:259 | 
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:259 | 
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:260 | >>> [PHASE 5] UPDATE WATERMARKS
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:260 | >>> [PHASE 5] UPDATE WATERMARKS
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_SalesRaw = 2025-12-12
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_SalesRaw = 2025-12-12
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_InventoryRaw = 2025-12-12
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_InventoryRaw = 2025-12-12
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_ProductRaw = 2026-03-23 20:50:22.408836
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_ProductRaw = 2026-03-23 20:50:22.408836
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_CustomerRaw = 2026-03-23 20:50:22.408844
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_CustomerRaw = 2026-03-23 20:50:22.408844
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_StoreRaw = 2026-03-23 20:50:22.408844
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_StoreRaw = 2026-03-23 20:50:22.408844
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_EmployeeRaw = 2026-03-23 20:50:22.408845
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_EmployeeRaw = 2026-03-23 20:50:22.408845
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_SupplierRaw = 2026-03-23 20:50:22.408846
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_SupplierRaw = 2026-03-23 20:50:22.408846
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:305 | 
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:305 | 
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:306 | ============================================================
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:306 | ============================================================
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:307 |   ETL PIPELINE COMPLETED | Status: SUCCESS
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:307 |   ETL PIPELINE COMPLETED | Status: SUCCESS
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:308 |   Total rows processed: 47877
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:308 |   Total rows processed: 47877
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:309 | ============================================================
+2026-03-23 20:50:22 [INFO] etl.main | etl_run:309 | ============================================================
+2026-03-23 20:59:15 [INFO] etl.main | etl_run:111 | 
+2026-03-23 20:59:15 [INFO] etl.main | etl_run:111 | 
+2026-03-23 20:59:15 [INFO] etl.main | etl_run:112 | ============================================================
+2026-03-23 20:59:15 [INFO] etl.main | etl_run:112 | ============================================================
+2026-03-23 20:59:15 [INFO] etl.main | etl_run:113 |   ETL PIPELINE STARTED | BatchDate: 2026-03-23
+2026-03-23 20:59:15 [INFO] etl.main | etl_run:113 |   ETL PIPELINE STARTED | BatchDate: 2026-03-23
+2026-03-23 20:59:15 [INFO] etl.main | etl_run:114 | ============================================================
+2026-03-23 20:59:15 [INFO] etl.main | etl_run:114 | ============================================================
+2026-03-23 20:59:15 [INFO] etl.main | etl_run:124 | 
+2026-03-23 20:59:15 [INFO] etl.main | etl_run:124 | 
+2026-03-23 20:59:15 [INFO] etl.main | etl_run:125 | >>> [PHASE 1] EXTRACT & LOAD TO STAGING
+2026-03-23 20:59:15 [INFO] etl.main | etl_run:125 | >>> [PHASE 1] EXTRACT & LOAD TO STAGING
+2026-03-23 20:59:16 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-01': 2465 rows
+2026-03-23 20:59:16 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-02': 1840 rows
+2026-03-23 20:59:16 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-03': 2348 rows
+2026-03-23 20:59:16 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-04': 2147 rows
+2026-03-23 20:59:17 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-05': 2226 rows
+2026-03-23 20:59:17 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-06': 2505 rows
+2026-03-23 20:59:17 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-07': 2359 rows
+2026-03-23 20:59:18 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-08': 2422 rows
+2026-03-23 20:59:18 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-09': 2168 rows
+2026-03-23 20:59:18 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-10': 2352 rows
+2026-03-23 20:59:19 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-11': 3004 rows
+2026-03-23 20:59:19 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-12': 3064 rows
+2026-03-23 20:59:19 [INFO] etl.extract | extract_sales:124 | Watermark filter: 28900 → 0 rows (watermark=2025-12-12)
+2026-03-23 20:59:19 [INFO] etl.extract | extract_sales:142 | Extracted 0 sales records from BaoCaoDoanhThu_2025.xlsx
+2026-03-23 20:59:20 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-01': 7750 rows
+2026-03-23 20:59:20 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-02': 7000 rows
+2026-03-23 20:59:21 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-03': 7750 rows
+2026-03-23 20:59:22 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-04': 7500 rows
+2026-03-23 20:59:23 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-05': 7750 rows
+2026-03-23 20:59:24 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-06': 7500 rows
+2026-03-23 20:59:24 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-07': 7750 rows
+2026-03-23 20:59:25 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-08': 7750 rows
+2026-03-23 20:59:26 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-09': 7500 rows
+2026-03-23 20:59:26 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-10': 7750 rows
+2026-03-23 20:59:27 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-11': 7500 rows
+2026-03-23 20:59:28 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-12': 7750 rows
+2026-03-23 20:59:28 [INFO] etl.extract | extract_inventory:110 | Extracted 0 inventory records from QuanLyKho_2025.xlsx
+2026-03-23 20:59:28 [INFO] etl.extract | extract_product:90 | Product deduplication: 50 → 50 rows
+2026-03-23 20:59:28 [INFO] etl.extract | extract_product:92 | Extracted 50 products from DanhMucSanPham.csv
+2026-03-23 20:59:28 [INFO] etl.load | load:70 | Loaded 50 rows to STG table: STG_ProductRaw
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:160 |   Product: 50 rows loaded
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:160 |   Product: 50 rows loaded
+2026-03-23 20:59:28 [INFO] etl.extract | extract_customer:96 | Customer deduplication: 30 → 30 rows
+2026-03-23 20:59:28 [INFO] etl.extract | extract_customer:98 | Extracted 30 customers from DanhSachKhachHang.csv
+2026-03-23 20:59:28 [INFO] etl.load | load:70 | Loaded 30 rows to STG table: STG_CustomerRaw
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:170 |   Customer: 30 rows loaded
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:170 |   Customer: 30 rows loaded
+2026-03-23 20:59:28 [INFO] etl.extract | extract_store:93 | Store deduplication: 5 → 5 rows
+2026-03-23 20:59:28 [INFO] etl.extract | extract_store:95 | Extracted 5 stores from DanhSachCuaHang.csv
+2026-03-23 20:59:28 [INFO] etl.load | load:70 | Loaded 5 rows to STG table: STG_StoreRaw
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:180 |   Store: 5 rows loaded
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:180 |   Store: 5 rows loaded
+2026-03-23 20:59:28 [INFO] etl.extract | extract_employee:82 | Employee deduplication: 20 → 20 rows
+2026-03-23 20:59:28 [INFO] etl.extract | extract_employee:84 | Extracted 20 employees from DanhSachNhanVien.csv
+2026-03-23 20:59:28 [INFO] etl.load | load:70 | Loaded 20 rows to STG table: STG_EmployeeRaw
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:190 |   Employee: 20 rows loaded
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:190 |   Employee: 20 rows loaded
+2026-03-23 20:59:28 [INFO] etl.extract | extract_supplier:83 | Supplier deduplication: 10 → 10 rows
+2026-03-23 20:59:28 [INFO] etl.extract | extract_supplier:85 | Extracted 10 suppliers from DanhSachNhaCungCap.csv
+2026-03-23 20:59:28 [INFO] etl.load | load:70 | Loaded 10 rows to STG table: STG_SupplierRaw
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:200 |   Supplier: 10 rows loaded
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:200 |   Supplier: 10 rows loaded
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:207 | 
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:207 | 
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:208 | >>> [PHASE 2] LOAD DIMENSIONS
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:208 | >>> [PHASE 2] LOAD DIMENSIONS
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimSupplier
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimSupplier
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimProduct
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimProduct
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimCustomer
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimCustomer
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimStore
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimStore
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimEmployee
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimEmployee
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:226 | 
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:226 | 
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:227 | >>> [PHASE 3] LOAD FACTS
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:227 | >>> [PHASE 3] LOAD FACTS
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_FactSales
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_FactSales
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_FactInventory
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_FactInventory
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_FactPurchase
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_FactPurchase
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:243 | 
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:243 | 
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:244 | >>> [PHASE 4] REFRESH DATA MARTS
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:244 | >>> [PHASE 4] REFRESH DATA MARTS
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Refresh_DM_SalesSummary
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Refresh_DM_SalesSummary
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Refresh_DM_InventoryAlert
+2026-03-23 20:59:28 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Refresh_DM_InventoryAlert
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:259 | 
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:259 | 
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:260 | >>> [PHASE 5] UPDATE WATERMARKS
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:260 | >>> [PHASE 5] UPDATE WATERMARKS
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_SalesRaw = 2025-12-12
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_SalesRaw = 2025-12-12
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_InventoryRaw = 2025-12-12
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_InventoryRaw = 2025-12-12
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_ProductRaw = 2026-03-23 20:59:28.960406
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_ProductRaw = 2026-03-23 20:59:28.960406
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_CustomerRaw = 2026-03-23 20:59:28.960413
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_CustomerRaw = 2026-03-23 20:59:28.960413
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_StoreRaw = 2026-03-23 20:59:28.960414
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_StoreRaw = 2026-03-23 20:59:28.960414
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_EmployeeRaw = 2026-03-23 20:59:28.960415
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_EmployeeRaw = 2026-03-23 20:59:28.960415
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_SupplierRaw = 2026-03-23 20:59:28.960415
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_SupplierRaw = 2026-03-23 20:59:28.960415
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:305 | 
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:305 | 
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:306 | ============================================================
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:306 | ============================================================
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:307 |   ETL PIPELINE COMPLETED | Status: SUCCESS
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:307 |   ETL PIPELINE COMPLETED | Status: SUCCESS
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:308 |   Total rows processed: 115
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:308 |   Total rows processed: 115
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:309 | ============================================================
+2026-03-23 20:59:28 [INFO] etl.main | etl_run:309 | ============================================================
+2026-03-23 21:01:01 [INFO] etl.main | etl_run:111 | 
+2026-03-23 21:01:01 [INFO] etl.main | etl_run:111 | 
+2026-03-23 21:01:01 [INFO] etl.main | etl_run:112 | ============================================================
+2026-03-23 21:01:01 [INFO] etl.main | etl_run:112 | ============================================================
+2026-03-23 21:01:01 [INFO] etl.main | etl_run:113 |   ETL PIPELINE STARTED | BatchDate: 2026-03-23
+2026-03-23 21:01:01 [INFO] etl.main | etl_run:113 |   ETL PIPELINE STARTED | BatchDate: 2026-03-23
+2026-03-23 21:01:01 [INFO] etl.main | etl_run:114 | ============================================================
+2026-03-23 21:01:01 [INFO] etl.main | etl_run:114 | ============================================================
+2026-03-23 21:01:01 [INFO] etl.main | etl_run:124 | 
+2026-03-23 21:01:01 [INFO] etl.main | etl_run:124 | 
+2026-03-23 21:01:01 [INFO] etl.main | etl_run:125 | >>> [PHASE 1] EXTRACT & LOAD TO STAGING
+2026-03-23 21:01:01 [INFO] etl.main | etl_run:125 | >>> [PHASE 1] EXTRACT & LOAD TO STAGING
+2026-03-23 21:01:01 [INFO] etl.main | etl_run:130 | Full load mode: ignoring watermarks
+2026-03-23 21:01:01 [INFO] etl.main | etl_run:130 | Full load mode: ignoring watermarks
+2026-03-23 21:01:02 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-01': 2465 rows
+2026-03-23 21:01:02 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-02': 1840 rows
+2026-03-23 21:01:02 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-03': 2348 rows
+2026-03-23 21:01:03 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-04': 2147 rows
+2026-03-23 21:01:03 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-05': 2226 rows
+2026-03-23 21:01:03 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-06': 2505 rows
+2026-03-23 21:01:04 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-07': 2359 rows
+2026-03-23 21:01:04 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-08': 2422 rows
+2026-03-23 21:01:04 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-09': 2168 rows
+2026-03-23 21:01:05 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-10': 2352 rows
+2026-03-23 21:01:05 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-11': 3004 rows
+2026-03-23 21:01:06 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-12': 3064 rows
+2026-03-23 21:01:06 [INFO] etl.extract | extract_sales:124 | Watermark filter: 28900 → 11762 rows (watermark=2020-01-01)
+2026-03-23 21:01:06 [INFO] etl.extract | extract_sales:142 | Extracted 11762 sales records from BaoCaoDoanhThu_2025.xlsx
+2026-03-23 21:01:09 [INFO] etl.load | load:70 | Loaded 11762 rows to STG table: STG_SalesRaw
+2026-03-23 21:01:09 [INFO] etl.main | etl_run:140 |   Sales: 11762 rows loaded
+2026-03-23 21:01:09 [INFO] etl.main | etl_run:140 |   Sales: 11762 rows loaded
+2026-03-23 21:01:09 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-01': 7750 rows
+2026-03-23 21:01:10 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-02': 7000 rows
+2026-03-23 21:01:11 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-03': 7750 rows
+2026-03-23 21:01:11 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-04': 7500 rows
+2026-03-23 21:01:12 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-05': 7750 rows
+2026-03-23 21:01:13 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-06': 7500 rows
+2026-03-23 21:01:14 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-07': 7750 rows
+2026-03-23 21:01:14 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-08': 7750 rows
+2026-03-23 21:01:15 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-09': 7500 rows
+2026-03-23 21:01:16 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-10': 7750 rows
+2026-03-23 21:01:16 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-11': 7500 rows
+2026-03-23 21:01:17 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-12': 7750 rows
+2026-03-23 21:01:17 [INFO] etl.extract | extract_inventory:110 | Extracted 36000 inventory records from QuanLyKho_2025.xlsx
+2026-03-23 21:01:23 [INFO] etl.load | load:70 | Loaded 36000 rows to STG table: STG_InventoryRaw
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:150 |   Inventory: 36000 rows loaded
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:150 |   Inventory: 36000 rows loaded
+2026-03-23 21:01:23 [INFO] etl.extract | extract_product:90 | Product deduplication: 50 → 50 rows
+2026-03-23 21:01:23 [INFO] etl.extract | extract_product:92 | Extracted 50 products from DanhMucSanPham.csv
+2026-03-23 21:01:23 [INFO] etl.load | load:70 | Loaded 50 rows to STG table: STG_ProductRaw
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:160 |   Product: 50 rows loaded
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:160 |   Product: 50 rows loaded
+2026-03-23 21:01:23 [INFO] etl.extract | extract_customer:96 | Customer deduplication: 30 → 30 rows
+2026-03-23 21:01:23 [INFO] etl.extract | extract_customer:98 | Extracted 30 customers from DanhSachKhachHang.csv
+2026-03-23 21:01:23 [INFO] etl.load | load:70 | Loaded 30 rows to STG table: STG_CustomerRaw
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:170 |   Customer: 30 rows loaded
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:170 |   Customer: 30 rows loaded
+2026-03-23 21:01:23 [INFO] etl.extract | extract_store:93 | Store deduplication: 5 → 5 rows
+2026-03-23 21:01:23 [INFO] etl.extract | extract_store:95 | Extracted 5 stores from DanhSachCuaHang.csv
+2026-03-23 21:01:23 [INFO] etl.load | load:70 | Loaded 5 rows to STG table: STG_StoreRaw
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:180 |   Store: 5 rows loaded
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:180 |   Store: 5 rows loaded
+2026-03-23 21:01:23 [INFO] etl.extract | extract_employee:82 | Employee deduplication: 20 → 20 rows
+2026-03-23 21:01:23 [INFO] etl.extract | extract_employee:84 | Extracted 20 employees from DanhSachNhanVien.csv
+2026-03-23 21:01:23 [INFO] etl.load | load:70 | Loaded 20 rows to STG table: STG_EmployeeRaw
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:190 |   Employee: 20 rows loaded
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:190 |   Employee: 20 rows loaded
+2026-03-23 21:01:23 [INFO] etl.extract | extract_supplier:83 | Supplier deduplication: 10 → 10 rows
+2026-03-23 21:01:23 [INFO] etl.extract | extract_supplier:85 | Extracted 10 suppliers from DanhSachNhaCungCap.csv
+2026-03-23 21:01:23 [INFO] etl.load | load:70 | Loaded 10 rows to STG table: STG_SupplierRaw
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:200 |   Supplier: 10 rows loaded
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:200 |   Supplier: 10 rows loaded
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:207 | 
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:207 | 
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:208 | >>> [PHASE 2] LOAD DIMENSIONS
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:208 | >>> [PHASE 2] LOAD DIMENSIONS
+2026-03-23 21:01:23 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimSupplier
+2026-03-23 21:01:23 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimSupplier
+2026-03-23 21:01:23 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimProduct
+2026-03-23 21:01:23 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimProduct
+2026-03-23 21:01:23 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimCustomer
+2026-03-23 21:01:23 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimCustomer
+2026-03-23 21:01:23 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimStore
+2026-03-23 21:01:23 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimStore
+2026-03-23 21:01:23 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimEmployee
+2026-03-23 21:01:23 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_DimEmployee
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:226 | 
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:226 | 
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:227 | >>> [PHASE 3] LOAD FACTS
+2026-03-23 21:01:23 [INFO] etl.main | etl_run:227 | >>> [PHASE 3] LOAD FACTS
+2026-03-23 21:01:24 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_FactSales
+2026-03-23 21:01:24 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_FactSales
+2026-03-23 21:01:25 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_FactInventory
+2026-03-23 21:01:25 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_FactInventory
+2026-03-23 21:01:25 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_FactPurchase
+2026-03-23 21:01:25 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Load_FactPurchase
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:243 | 
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:243 | 
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:244 | >>> [PHASE 4] REFRESH DATA MARTS
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:244 | >>> [PHASE 4] REFRESH DATA MARTS
+2026-03-23 21:01:25 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Refresh_DM_SalesSummary
+2026-03-23 21:01:25 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Refresh_DM_SalesSummary
+2026-03-23 21:01:25 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Refresh_DM_InventoryAlert
+2026-03-23 21:01:25 [INFO] etl.main | run_stored_procedure:68 | Executed SP: sp_Refresh_DM_InventoryAlert
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:259 | 
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:259 | 
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:260 | >>> [PHASE 5] UPDATE WATERMARKS
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:260 | >>> [PHASE 5] UPDATE WATERMARKS
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_SalesRaw = 2025-12-12
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_SalesRaw = 2025-12-12
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_InventoryRaw = 2025-12-12
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_InventoryRaw = 2025-12-12
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_ProductRaw = 2026-03-23 21:01:25.456491
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_ProductRaw = 2026-03-23 21:01:25.456491
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_CustomerRaw = 2026-03-23 21:01:25.456498
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_CustomerRaw = 2026-03-23 21:01:25.456498
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_StoreRaw = 2026-03-23 21:01:25.456499
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_StoreRaw = 2026-03-23 21:01:25.456499
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_EmployeeRaw = 2026-03-23 21:01:25.456500
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_EmployeeRaw = 2026-03-23 21:01:25.456500
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_SupplierRaw = 2026-03-23 21:01:25.456500
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:299 |   Watermark updated: STG_SupplierRaw = 2026-03-23 21:01:25.456500
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:305 | 
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:305 | 
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:306 | ============================================================
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:306 | ============================================================
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:307 |   ETL PIPELINE COMPLETED | Status: SUCCESS
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:307 |   ETL PIPELINE COMPLETED | Status: SUCCESS
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:308 |   Total rows processed: 47877
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:308 |   Total rows processed: 47877
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:309 | ============================================================
+2026-03-23 21:01:25 [INFO] etl.main | etl_run:309 | ============================================================

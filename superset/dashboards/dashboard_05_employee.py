@@ -1,79 +1,75 @@
 # ============================================================
 # dashboard_05_employee.py
-# FR-14: Dashboard Hiệu suất Nhân viên
+# FR-14: Dashboard Hieu suat Nhan vien
 # ============================================================
+# KHONG dung ORDER BY vi Superset tu dong sort.
+
 DASHBOARD_CONFIG = {
-    "dashboard_title": "FR-14: Dashboard Hiệu suất Nhân viên",
-    "description": "Doanh số, hiệu quả theo nhân viên và ca làm việc",
+    "dashboard_title": "FR-14: Hieu suat Nhan vien",
+    "description": "Doanh so, hieu qua theo nhan vien va ca lam viec",
     "charts": [
         {
-            "name": "Doanh số theo Nhân viên (TOP 20)",
+            "name": "TOP 20 Nhan vien theo Doanh so",
             "viz_type": "bar",
             "datasource": "FactSales",
             "sql": """
-                SELECT TOP 20 e.FullName,
-                       e.Position,
-                       s.StoreName,
-                       SUM(f.NetSalesAmount) AS Revenue,
-                       SUM(f.GrossProfitAmount) AS Profit,
-                       COUNT(DISTINCT f.InvoiceNumber) AS InvoiceCount,
-                       SUM(f.Quantity) AS TotalQtySold
+                SELECT TOP 20
+                    e.FullName,
+                    e.Position,
+                    s.StoreName,
+                    SUM(f.NetSalesAmount) AS Revenue,
+                    SUM(f.GrossProfitAmount) AS Profit
                 FROM FactSales f
                 JOIN DimEmployee e ON e.EmployeeKey = f.EmployeeKey
                 JOIN DimStore s ON s.StoreKey = f.StoreKey
                 WHERE f.ReturnFlag = 0
                 GROUP BY e.FullName, e.Position, s.StoreName
-                ORDER BY Revenue DESC
             """,
         },
         {
-            "name": "Hiệu suất Nhân viên (Pivot Table)",
-            "viz_type": "pivot_table_v2",
-            "datasource": "FactSales",
-            "sql": """
-                SELECT
-                    e.FullName,
-                    e.Position,
-                    d.QuarterName,
-                    SUM(f.NetSalesAmount) AS Revenue,
-                    AVG(f.NetSalesAmount) AS AvgPerInvoice,
-                    COUNT(DISTINCT f.InvoiceNumber) AS InvoiceCount
-                FROM FactSales f
-                JOIN DimEmployee e ON e.EmployeeKey = f.EmployeeKey
-                JOIN DimDate d ON d.DateKey = f.DateKey
-                WHERE f.ReturnFlag = 0
-                GROUP BY e.FullName, e.Position, d.QuarterName
-            """,
-        },
-        {
-            "name": "Doanh số theo Cửa hàng",
+            "name": "Doanh so theo Bo phan",
             "viz_type": "bar",
             "datasource": "FactSales",
             "sql": """
-                SELECT s.StoreName,
-                       e.Position,
-                       SUM(f.NetSalesAmount) AS Revenue
+                SELECT
+                    e.Department,
+                    SUM(f.NetSalesAmount) AS Revenue
+                FROM FactSales f
+                JOIN DimEmployee e ON e.EmployeeKey = f.EmployeeKey
+                WHERE f.ReturnFlag = 0
+                GROUP BY e.Department
+            """,
+        },
+        {
+            "name": "Doanh so theo Cua hang",
+            "viz_type": "bar",
+            "datasource": "FactSales",
+            "sql": """
+                SELECT
+                    s.StoreName,
+                    e.Department,
+                    SUM(f.NetSalesAmount) AS Revenue
                 FROM FactSales f
                 JOIN DimStore s ON s.StoreKey = f.StoreKey
                 JOIN DimEmployee e ON e.EmployeeKey = f.EmployeeKey
                 WHERE f.ReturnFlag = 0
-                GROUP BY s.StoreName, e.Position
+                GROUP BY s.StoreName, e.Department
             """,
         },
         {
-            "name": "Phương thức Thanh toán phổ biến",
+            "name": "Phuong thuc Thanh toan",
             "viz_type": "pie",
             "datasource": "FactSales",
             "sql": """
-                SELECT PaymentMethod,
-                       COUNT(*) AS TransactionCount,
-                       SUM(f.NetSalesAmount) AS Revenue
+                SELECT
+                    PaymentMethod,
+                    COUNT(*) AS TransactionCount,
+                    SUM(f.NetSalesAmount) AS Revenue
                 FROM FactSales f
                 WHERE f.ReturnFlag = 0
                 GROUP BY PaymentMethod
-                ORDER BY Revenue DESC
             """,
         },
     ],
-    "filters": ["Time Range", "Store", "Position", "Department"],
+    "filters": ["Time Range", "Store", "Department"],
 }
