@@ -24,7 +24,7 @@ class User(Base):
 
     UserId = Column(Integer, primary_key=True, autoincrement=True)
     TenantId = Column(String(50), ForeignKey("Tenants.TenantId", ondelete="CASCADE"), nullable=True)  # SuperAdmin has null
-    Username = Column(String(100), nullable=False, unique=False)
+    Username = Column(String(100), nullable=False, index=True)  # index for fast login lookup
     Email = Column(String(150), nullable=True)
     PasswordHash = Column(String(255), nullable=False)
     Role = Column(String(20), nullable=False)  # SuperAdmin, TenantAdmin, User

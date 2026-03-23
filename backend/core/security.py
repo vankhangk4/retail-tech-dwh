@@ -4,11 +4,10 @@ from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from config import get_settings
 import logging
+import threading
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -16,11 +15,26 @@ if not logger.handlers:
     h = logging.StreamHandler()
     h.setLevel(logging.DEBUG)
     logger.addHandler(h)
-from models.database import get_master_engine
+
+from core.tenant import get_master_engine, _get_master_sessionlocal
 
 settings = get_settings()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=4)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+
+# Token blacklist for logout
+_blacklisted_tokens: set = set()
+_blacklist_lock = threading.Lock()
+
+
+def blacklist_token(token: str):
+    with _blacklist_lock:
+        _blacklisted_tokens.add(token)
+
+
+def is_token_blacklisted(token: str) -> bool:
+    with _blacklist_lock:
+        return token in _blacklisted_tokens
 
 
 def hash_password(password: str) -> str:
@@ -39,14 +53,15 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 
 def decode_token(token: str) -> dict:
-    logger.debug(f"decode_token: JWT_SECRET_KEY len={len(settings.JWT_SECRET_KEY)}, algo={settings.JWT_ALGORITHM}")
-    logger.debug(f"decode_token: token={token[:30]}...")
+    if is_token_blacklisted(token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token đã bị thu hồi",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
-        logger.debug(f"decode_token: SUCCESS: {payload}")
-        return payload
-    except JWTError as e:
-        logger.debug(f"decode_token: JWTError: {e}")
+        return jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+    except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token không hợp lệ",
@@ -55,16 +70,13 @@ def decode_token(token: str) -> dict:
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
-    logger.debug(f"get_current_user called, token prefix: {token[:20]}...")
     payload = decode_token(token)
-    logger.debug(f"payload decoded: {payload}")
     user_id = payload.get("sub")
     if user_id is None:
         raise HTTPException(status_code=401, detail="Token không hợp lệ")
 
-    # Use the cached pooled engine instead of creating a new one per request
     engine = get_master_engine()
-    SessionLocal = sessionmaker(bind=engine)
+    SessionLocal = _get_master_sessionlocal()
     db = SessionLocal()
 
     try:

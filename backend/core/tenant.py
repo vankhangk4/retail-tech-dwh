@@ -14,6 +14,20 @@ _engine_lock = threading.Lock()
 _tenant_engine_cache: dict = {}
 _tenant_engine_lock = threading.Lock()
 
+# Cached SessionLocal factory
+_MasterSessionLocal = None
+_MasterSessionLocal_lock = threading.Lock()
+
+
+def _get_master_sessionlocal():
+    global _MasterSessionLocal
+    if _MasterSessionLocal is None:
+        with _MasterSessionLocal_lock:
+            if _MasterSessionLocal is None:
+                engine = get_master_engine()
+                _MasterSessionLocal = sessionmaker(bind=engine)
+    return _MasterSessionLocal
+
 
 def get_master_engine():
     with _engine_lock:
@@ -29,8 +43,7 @@ def get_master_engine():
 
 @contextmanager
 def get_master_session() -> Generator[Session, None, None]:
-    engine = get_master_engine()
-    SessionLocal = sessionmaker(bind=engine)
+    SessionLocal = _get_master_sessionlocal()
     session = SessionLocal()
     try:
         yield session
@@ -56,10 +69,22 @@ def get_tenant_db_engine(db_name: str):
         return _tenant_engine_cache[db_name]
 
 
+_tenant_sessionlocal_cache: dict = {}
+_tenant_sessionlocal_lock = threading.Lock()
+
+
+def _get_tenant_sessionlocal(db_name: str):
+    if db_name not in _tenant_sessionlocal_cache:
+        with _tenant_sessionlocal_lock:
+            if db_name not in _tenant_sessionlocal_cache:
+                engine = get_tenant_db_engine(db_name)
+                _tenant_sessionlocal_cache[db_name] = sessionmaker(bind=engine)
+    return _tenant_sessionlocal_cache[db_name]
+
+
 @contextmanager
 def get_tenant_session(db_name: str) -> Generator[Session, None, None]:
-    engine = get_tenant_db_engine(db_name)
-    SessionLocal = sessionmaker(bind=engine)
+    SessionLocal = _get_tenant_sessionlocal(db_name)
     session = SessionLocal()
     try:
         yield session

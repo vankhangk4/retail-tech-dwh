@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard,
@@ -8,7 +8,6 @@ import {
   BarChart3,
   LogOut,
   Menu,
-  X,
   Database,
   ChevronRight,
 } from 'lucide-react';
@@ -22,12 +21,11 @@ const navItems = [
 
 export default function TenantLayout() {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    // ProtectedRoute handles redirect when user becomes null
   };
 
   const closeSidebar = () => setSidebarOpen(false);

@@ -2,12 +2,19 @@ import axios from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
+// Main axios instance — all authenticated requests
 const api = axios.create({
   baseURL: API_BASE,
   timeout: 30000,
 });
 
-// Request interceptor: add JWT token
+// Separate instance for logout — never cancelled
+const logoutClient = axios.create({
+  baseURL: API_BASE,
+  timeout: 10000,
+});
+
+// Request interceptor: attach JWT token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -16,77 +23,67 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor: handle 401
+// Request interceptor for logout: attach token from argument (not localStorage, which may be cleared)
+logoutClient.interceptors.request.use((config) => {
+  return config;
+});
+
+// Response interceptor: handle 401 → clear auth and redirect to login
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401 && err.config?.url?.includes('/api/auth/')) {
-      // Clear invalid token and redirect
+    if (err.response?.status === 401) {
       localStorage.removeItem('token');
-      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(err);
   }
 );
 
-// Auth
-export const login = (username, password) =>
+// ─── Auth ───────────────────────────────────────────────────────────────────
+
+export const apiLogin = (username, password) =>
   api.post('/api/auth/login/json', { username, password });
 
 export const getMe = () =>
   api.get('/api/auth/me');
 
-// Tenants
-export const getTenants = () =>
-  api.get('/api/admin/tenants');
+export const logout = (token) => {
+  return logoutClient.post('/api/auth/logout', {}, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
 
-export const createTenant = (data) =>
-  api.post('/api/admin/tenants', data);
+// ─── Tenants ────────────────────────────────────────────────────────────────
 
-export const deleteTenant = (tenantId) =>
-  api.delete(`/api/admin/tenants/${tenantId}`);
+export const getTenants = () => api.get('/api/admin/tenants');
+export const createTenant = (data) => api.post('/api/admin/tenants', data);
+export const deleteTenant = (tenantId) => api.delete(`/api/admin/tenants/${tenantId}`);
 
-// Users
-export const getUsers = () =>
-  api.get('/api/admin/users');
+// ─── Users ──────────────────────────────────────────────────────────────────
 
-export const createUser = (data) =>
-  api.post('/api/admin/users', data);
+export const getUsers = () => api.get('/api/admin/users');
+export const createUser = (data) => api.post('/api/admin/users', data);
+export const updateUser = (userId, data) => api.put(`/api/admin/users/${userId}`, data);
+export const deleteUser = (userId) => api.delete(`/api/admin/users/${userId}`);
 
-export const updateUser = (userId, data) =>
-  api.put(`/api/admin/users/${userId}`, data);
+export const getTenantUsers = () => api.get('/api/tenant/users');
+export const createTenantUser = (data) => api.post('/api/tenant/users', data);
+export const deleteTenantUser = (userId) => api.delete(`/api/tenant/users/${userId}`);
 
-export const deleteUser = (userId) =>
-  api.delete(`/api/admin/users/${userId}`);
+// ─── Stats ──────────────────────────────────────────────────────────────────
 
-export const getTenantUsers = () =>
-  api.get('/api/tenant/users');
+export const getStats = () => api.get('/api/stats');
+export const getSummary = () => api.get('/api/stats/summary');
 
-export const createTenantUser = (data) =>
-  api.post('/api/tenant/users', data);
+// ─── ETL ─────────────────────────────────────────────────────────────────────
 
-export const deleteTenantUser = (userId) =>
-  api.delete(`/api/tenant/users/${userId}`);
+export const triggerETL = () => api.post('/api/etl/run');
+export const getETLStatus = (runId) => api.get(`/api/etl/status/${runId}`);
+export const getETLHistory = () => api.get('/api/etl/history');
 
-// Stats
-export const getStats = () =>
-  api.get('/api/stats');
+// ─── Upload ──────────────────────────────────────────────────────────────────
 
-export const getSummary = () =>
-  api.get('/api/stats/summary');
-
-// ETL
-export const triggerETL = () =>
-  api.post('/api/etl/run');
-
-export const getETLStatus = (runId) =>
-  api.get(`/api/etl/status/${runId}`);
-
-export const getETLHistory = () =>
-  api.get('/api/etl/history');
-
-// Upload
 export const uploadFile = (file) => {
   const formData = new FormData();
   formData.append('file', file);
@@ -95,11 +92,8 @@ export const uploadFile = (file) => {
   });
 };
 
-export const listFiles = () =>
-  api.get('/api/upload');
+export const listFiles = () => api.get('/api/upload');
 
-// Embed
-export const getSupersetToken = () =>
-  api.get('/api/embed/superset-token');
+// ─── Embed ──────────────────────────────────────────────────────────────────
 
-export default api;
+export const getSupersetToken = () => api.get('/api/embed/superset-token');
