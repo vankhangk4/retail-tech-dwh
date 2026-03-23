@@ -14,7 +14,7 @@ async def get_stats(
 ):
     tenant_id = current_user.TenantId
     if not tenant_id:
-        raise HTTPException(status_code=400, detail="User phai thuoc tenant")
+        raise HTTPException(status_code=403, detail="User không thuộc tenant nào")
 
     db_name = "DWH_" + str(tenant_id)
 
@@ -65,7 +65,8 @@ async def get_stats(
             total_customers=total_customers,
             top_products=top_products,
         )
-    except Exception:
+    except Exception as e:
+        # Database chưa init hoặc chưa có data -> trả empty
         return StatsResponse(
             total_revenue=0,
             total_orders=0,
@@ -80,7 +81,7 @@ async def get_summary(
 ):
     tenant_id = current_user.TenantId
     if not tenant_id:
-        raise HTTPException(status_code=400, detail="User phai thuoc tenant")
+        raise HTTPException(status_code=403, detail="User không thuộc tenant nào")
 
     db_name = "DWH_" + str(tenant_id)
 
@@ -141,6 +142,7 @@ async def get_summary(
             "stores": store_data,
         }
     except Exception:
+        # Database chưa init hoặc chưa có data -> trả empty
         return {
             "monthly": [],
             "stores": [],

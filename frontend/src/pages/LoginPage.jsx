@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { login } from '../services/api';
+import { useNavigate } from 'react-router-dom';
+import { login, getMe } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Database, Eye, EyeOff, LogIn } from 'lucide-react';
 
 export default function LoginPage() {
   const { login: authLogin } = useAuth();
+  const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -18,10 +20,12 @@ export default function LoginPage() {
     try {
       const res = await login(username, password);
       const token = res.data.access_token;
-      // Save token first, AuthContext will call /me to validate
-      authLogin(token, { Username: username, Role: 'checking' });
-      // Navigate - AuthContext will validate and update role
-      window.location.href = '/';
+      // Save token to localStorage first so getMe() interceptor can attach it
+      localStorage.setItem('token', token);
+      // Validate token by fetching current user
+      const meRes = await getMe();
+      authLogin(token, meRes.data);
+      navigate(meRes.data.Role === 'SuperAdmin' ? '/admin' : '/dashboard', { replace: true });
     } catch (err) {
       setError(err.response?.data?.detail || 'Đăng nhập thất bại');
     } finally {

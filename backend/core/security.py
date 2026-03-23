@@ -8,6 +8,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from config import get_settings
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+if not logger.handlers:
+    h = logging.StreamHandler()
+    h.setLevel(logging.DEBUG)
+    logger.addHandler(h)
 from models.database import get_master_engine
 
 settings = get_settings()
@@ -31,9 +39,14 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 
 def decode_token(token: str) -> dict:
+    logger.debug(f"decode_token: JWT_SECRET_KEY len={len(settings.JWT_SECRET_KEY)}, algo={settings.JWT_ALGORITHM}")
+    logger.debug(f"decode_token: token={token[:30]}...")
     try:
-        return jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
-    except JWTError:
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        logger.debug(f"decode_token: SUCCESS: {payload}")
+        return payload
+    except JWTError as e:
+        logger.debug(f"decode_token: JWTError: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token không hợp lệ",
@@ -42,11 +55,14 @@ def decode_token(token: str) -> dict:
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
+    logger.debug(f"get_current_user called, token prefix: {token[:20]}...")
     payload = decode_token(token)
+    logger.debug(f"payload decoded: {payload}")
     user_id = payload.get("sub")
     if user_id is None:
         raise HTTPException(status_code=401, detail="Token không hợp lệ")
 
+    # Use the cached pooled engine instead of creating a new one per request
     engine = get_master_engine()
     SessionLocal = sessionmaker(bind=engine)
     db = SessionLocal()
@@ -57,6 +73,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         if not user:
             raise HTTPException(status_code=401, detail="User không tồn tại")
         return user
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Lỗi xác thực: {str(e)}")
     finally:
         db.close()
 
