@@ -1,19 +1,22 @@
 # ============================================================
 # dashboard_02_product.py
-# FR-11: Dashboard Phân tích Sản phẩm
+# FR-11: Dashboard Phan tich San pham
 # ============================================================
+# KHONG dung ORDER BY vi Superset tu dong sort.
+
 DASHBOARD_CONFIG = {
-    "dashboard_title": "FR-11: Dashboard Phân tích Sản phẩm",
-    "description": "TOP bán chạy, đóng góp doanh thu, biên lợi nhuận theo sản phẩm",
+    "dashboard_title": "FR-11: Phan tich San pham",
+    "description": "TOP ban chay, dong gop doanh thu, bien loi nhuan theo san pham",
     "charts": [
         {
-            "name": "TOP 10 Sản phẩm bán chạy",
+            "name": "TOP 10 San pham ban chay",
             "viz_type": "bar",
             "datasource": "FactSales",
             "sql": """
-                SELECT TOP 10 p.ProductName,
-                       SUM(f.Quantity) AS TotalQtySold,
-                       SUM(f.NetSalesAmount) AS Revenue
+                SELECT TOP 10
+                    p.ProductName,
+                    SUM(f.Quantity) AS TotalQtySold,
+                    SUM(f.NetSalesAmount) AS Revenue
                 FROM FactSales f
                 JOIN DimProduct p ON p.ProductKey = f.ProductKey
                 WHERE f.ReturnFlag = 0
@@ -22,43 +25,46 @@ DASHBOARD_CONFIG = {
             """,
         },
         {
-            "name": "Tỷ lệ Doanh thu theo Danh mục",
+            "name": "Doanh thu theo Danh muc",
             "viz_type": "pie",
             "datasource": "FactSales",
             "sql": """
-                SELECT p.CategoryName,
-                       SUM(f.NetSalesAmount) AS Revenue,
-                       ROUND(SUM(f.NetSalesAmount) * 100.0 /
-                             SUM(SUM(f.NetSalesAmount)) OVER(), 2) AS RevenuePct
+                SELECT
+                    p.CategoryName,
+                    SUM(f.NetSalesAmount) AS Revenue
                 FROM FactSales f
                 JOIN DimProduct p ON p.ProductKey = f.ProductKey
+                WHERE f.ReturnFlag = 0
                 GROUP BY p.CategoryName
             """,
         },
         {
-            "name": "Biên Lợi nhuận theo Sản phẩm",
-            "viz_type": "line",
+            "name": "Bien loi nhuan theo San pham",
+            "viz_type": "bar",
             "datasource": "FactSales",
             "sql": """
-                SELECT p.ProductName,
-                       AVG(CASE WHEN f.NetSalesAmount > 0
-                           THEN f.GrossProfitAmount / f.NetSalesAmount * 100
-                           ELSE 0 END) AS AvgProfitMarginPct
+                SELECT TOP 20
+                    p.ProductName,
+                    CASE
+                        WHEN SUM(f.NetSalesAmount) > 0
+                        THEN ROUND(SUM(f.GrossProfitAmount) * 100.0 / SUM(f.NetSalesAmount), 2)
+                        ELSE 0
+                    END AS ProfitMarginPct
                 FROM FactSales f
                 JOIN DimProduct p ON p.ProductKey = f.ProductKey
+                WHERE f.ReturnFlag = 0
                 GROUP BY p.ProductName
-                ORDER BY AvgProfitMarginPct DESC
             """,
         },
         {
-            "name": "Số lượng sản phẩm theo Thương hiệu",
-            "viz_type": "treemap",
+            "name": "San pham theo Thuong hieu",
+            "viz_type": "pie",
             "datasource": "DimProduct",
             "sql": """
-                SELECT Brand, CategoryName, COUNT(*) AS ProductCount
+                SELECT Brand, COUNT(*) AS ProductCount
                 FROM DimProduct
                 WHERE IsCurrent = 1
-                GROUP BY Brand, CategoryName
+                GROUP BY Brand
             """,
         },
     ],

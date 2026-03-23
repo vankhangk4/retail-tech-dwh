@@ -1,73 +1,68 @@
 # ============================================================
 # dashboard_03_inventory.py
-# FR-12: Dashboard Quản lý Tồn kho
+# FR-12: Dashboard Quan ly Ton kho
 # ============================================================
+# KHONG dung ORDER BY vi Superset tu dong sort.
+
 DASHBOARD_CONFIG = {
-    "dashboard_title": "FR-12: Dashboard Quản lý Tồn kho",
-    "description": "Cảnh báo tồn kho thấp, xu hướng tồn kho, dự báo",
+    "dashboard_title": "FR-12: Quan ly Ton kho",
+    "description": "Canh bao ton kho thap, xu huong ton kho",
     "charts": [
         {
-            "name": "Cảnh báo Tồn kho thấp",
-            "viz_type": "table",
-            "datasource": "DM_InventoryAlert",
-            "sql": """
-                SELECT
-                    p.ProductName,
-                    s.StoreName,
-                    da.AlertLevel,
-                    da.CurrentStock,
-                    da.ReorderPoint,
-                    da.DaysOfSupply,
-                    da.SuggestedOrderQty,
-                    da.AlertDate
-                FROM DM_InventoryAlert da
-                JOIN DimProduct p ON p.ProductKey = da.ProductKey
-                JOIN DimStore s ON s.StoreKey = da.StoreKey
-                WHERE da.IsAcknowledged = 0
-                ORDER BY
-                    CASE da.AlertLevel WHEN 'HIGH' THEN 1 WHEN 'MEDIUM' THEN 2 ELSE 3 END,
-                    da.CurrentStock ASC
-            """,
-        },
-        {
-            "name": "Giá trị Tồn kho theo Ngày",
+            "name": "Gia tri Ton kho theo Ngay",
             "viz_type": "line",
             "datasource": "FactInventory",
             "sql": """
-                SELECT d.FullDate,
-                       SUM(f.TotalInventoryValue) AS TotalInventoryValue,
-                       SUM(f.ClosingStock) AS TotalUnits
+                SELECT
+                    d.FullDate,
+                    SUM(f.TotalInventoryValue) AS TotalInventoryValue,
+                    SUM(f.ClosingStock) AS TotalUnits
                 FROM FactInventory f
                 JOIN DimDate d ON d.DateKey = f.DateKey
                 GROUP BY d.FullDate
-                ORDER BY d.FullDate
             """,
         },
         {
-            "name": "Tồn kho theo Cửa hàng",
+            "name": "Ton kho theo Cua hang",
             "viz_type": "bar",
             "datasource": "FactInventory",
             "sql": """
-                SELECT s.StoreName,
-                       SUM(f.TotalInventoryValue) AS InventoryValue,
-                       SUM(f.ClosingStock) AS TotalUnits
+                SELECT TOP 10
+                    s.StoreName,
+                    SUM(f.TotalInventoryValue) AS InventoryValue,
+                    SUM(f.ClosingStock) AS TotalUnits
                 FROM FactInventory f
                 JOIN DimStore s ON s.StoreKey = f.StoreKey
                 GROUP BY s.StoreName
-                ORDER BY InventoryValue DESC
             """,
         },
         {
-            "name": "Phân bố Cảnh báo theo Mức độ",
-            "viz_type": "pie",
-            "datasource": "DM_InventoryAlert",
+            "name": "Ton kho theo San pham (TOP 20)",
+            "viz_type": "bar",
+            "datasource": "FactInventory",
             "sql": """
-                SELECT AlertLevel, COUNT(*) AS AlertCount
-                FROM DM_InventoryAlert
-                WHERE IsAcknowledged = 0
-                GROUP BY AlertLevel
+                SELECT TOP 20
+                    p.ProductName,
+                    SUM(f.ClosingStock) AS CurrentStock
+                FROM FactInventory f
+                JOIN DimProduct p ON p.ProductKey = f.ProductKey
+                GROUP BY p.ProductName
+            """,
+        },
+        {
+            "name": "So luong ton kho theo Thang",
+            "viz_type": "line",
+            "datasource": "FactInventory",
+            "sql": """
+                SELECT
+                    d.Year,
+                    d.MonthNumber,
+                    SUM(f.ClosingStock) AS TotalClosingStock
+                FROM FactInventory f
+                JOIN DimDate d ON d.DateKey = f.DateKey
+                GROUP BY d.Year, d.MonthNumber
             """,
         },
     ],
-    "filters": ["Alert Level", "Store", "Time Range"],
+    "filters": ["Time Range", "Store", "Product"],
 }
