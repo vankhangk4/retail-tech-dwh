@@ -10,7 +10,7 @@ import {
 
 export default function TenantsPage() {
   const [tenants, setTenants] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ TenantId: '', TenantName: '', Plan: 'trial' });
   const [error, setError] = useState('');
@@ -20,8 +20,7 @@ export default function TenantsPage() {
   const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
-    // Render UI first, load data in background
-    setLoading(true);
+    // Initial state is loading=true, skeleton renders immediately
     loadTenants();
   }, []);
 
@@ -92,79 +91,81 @@ export default function TenantsPage() {
         <div className="card-header">
           <h3>
             <Building2 size={16} />
-            Danh sách Tenant ({tenants.length})
+            Danh sách Tenant ({loading ? '...' : tenants.length})
           </h3>
         </div>
 
         <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Tenant ID</th>
-                  <th>Tên</th>
-                  <th>Database</th>
-                  <th>Plan</th>
-                  <th>Trạng thái</th>
-                  <th>Ngày tạo</th>
-                  <th>Hành động</th>
+          <table>
+            <thead>
+              <tr>
+                <th>Tenant ID</th>
+                <th>Tên</th>
+                <th>Database</th>
+                <th>Plan</th>
+                <th>Trạng thái</th>
+                <th>Ngày tạo</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                [1, 2, 3].map((i) => (
+                  <tr key={i}>
+                    <td><div className="skeleton" style={{ width: 90, height: 22, borderRadius: 6 }} /></td>
+                    <td><div className="skeleton" style={{ width: 140, height: 16 }} /></td>
+                    <td><div className="skeleton" style={{ width: 120, height: 22, borderRadius: 6 }} /></td>
+                    <td><div className="skeleton" style={{ width: 50, height: 20, borderRadius: 999 }} /></td>
+                    <td><div className="skeleton" style={{ width: 60, height: 20, borderRadius: 999 }} /></td>
+                    <td><div className="skeleton" style={{ width: 80, height: 16 }} /></td>
+                    <td><div className="skeleton" style={{ width: 60, height: 28, borderRadius: 6 }} /></td>
+                  </tr>
+                ))
+              ) : tenants.map((t) => (
+                <tr key={t.TenantId}>
+                  <td>
+                    <code style={{
+                      background: '#eff6ff', color: '#1d4ed8',
+                      padding: '2px 8px', borderRadius: 6, fontSize: 13, fontWeight: 600,
+                    }}>{t.TenantId}</code>
+                  </td>
+                  <td style={{ fontWeight: 500 }}>{t.TenantName}</td>
+                  <td>
+                    <code style={{
+                      background: '#f8fafc', color: '#64748b',
+                      padding: '2px 8px', borderRadius: 6, fontSize: 12,
+                    }}>{t.DatabaseName}</code>
+                  </td>
+                  <td>{planBadge(t.Plan)}</td>
+                  <td>
+                    <span className={`badge ${t.IsActive ? 'badge-success' : 'badge-danger'}`}>
+                      {t.IsActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td style={{ color: '#64748b', fontSize: 13 }}>
+                    {new Date(t.CreatedAt).toLocaleDateString('vi-VN')}
+                  </td>
+                  <td>
+                    <button className="btn btn-danger btn-sm" onClick={() => setDeleteTenant(t)}>
+                      <Trash2 size={14} />
+                      Xóa
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {tenants.map((t) => (
-                  <tr key={t.TenantId}>
-                    <td>
-                      <code style={{
-                        background: '#eff6ff',
-                        color: '#1d4ed8',
-                        padding: '2px 8px',
-                        borderRadius: 6,
-                        fontSize: 13,
-                        fontWeight: 600,
-                      }}>{t.TenantId}</code>
-                    </td>
-                    <td style={{ fontWeight: 500 }}>{t.TenantName}</td>
-                    <td>
-                      <code style={{
-                        background: '#f8fafc',
-                        color: '#64748b',
-                        padding: '2px 8px',
-                        borderRadius: 6,
-                        fontSize: 12,
-                      }}>{t.DatabaseName}</code>
-                    </td>
-                    <td>{planBadge(t.Plan)}</td>
-                    <td>
-                      <span className={`badge ${t.IsActive ? 'badge-success' : 'badge-danger'}`}>
-                        {t.IsActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td style={{ color: '#64748b', fontSize: 13 }}>
-                      {new Date(t.CreatedAt).toLocaleDateString('vi-VN')}
-                    </td>
-                    <td>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => setDeleteTenant(t)}
-                      >
-                        <Trash2 size={14} />
-                        Xóa
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {tenants.length === 0 && (
-                  <tr>
-                    <td colSpan={7}>
-                      <div className="empty-state">
-                        <Building2 size={40} />
-                        <p>Chưa có tenant nào</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              ))}
+              {!loading && tenants.length === 0 && (
+                <tr>
+                  <td colSpan={7}>
+                    <div className="empty-state">
+                      <Building2 size={40} />
+                      <p>Chưa có tenant nào</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Create Tenant Modal */}
@@ -239,14 +240,8 @@ export default function TenantsPage() {
             <div className="card-body">
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16 }}>
                 <div style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  background: '#fef2f2',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
+                  width: 44, height: 44, borderRadius: 12,
+                  background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 }}>
                   <AlertTriangle size={22} style={{ color: '#dc2626' }} />
                 </div>
@@ -261,19 +256,10 @@ export default function TenantsPage() {
               </div>
               {deleteError && <div className="error-msg">{deleteError}</div>}
               <div className="modal-actions">
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => setDeleteTenant(null)}
-                >
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setDeleteTenant(null)}>
                   Hủy
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-danger btn-sm"
-                  onClick={handleDeleteConfirm}
-                  disabled={deleting}
-                >
+                <button type="button" className="btn btn-danger btn-sm" onClick={handleDeleteConfirm} disabled={deleting}>
                   {deleting ? 'Đang xóa...' : 'Xóa vĩnh viễn'}
                 </button>
               </div>
