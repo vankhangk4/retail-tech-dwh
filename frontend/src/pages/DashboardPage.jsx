@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getStats, getSummary } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import {
   TrendingUp,
   ShoppingCart,
@@ -9,9 +10,11 @@ import {
   ArrowDownRight,
   RefreshCw,
   AlertCircle,
+  Eye,
 } from 'lucide-react';
 
 export default function DashboardPage() {
+  const { impersonatedTenant } = useAuth();
   const [stats, setStats] = useState(null);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -69,6 +72,23 @@ export default function DashboardPage() {
 
   return (
     <div>
+      {/* Impersonation banner */}
+      {impersonatedTenant && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: '#fffbeb', border: '1px solid #fcd34d',
+          borderRadius: 10, padding: '10px 14px', marginBottom: 20,
+        }}>
+          <Eye size={16} style={{ color: '#d97706' }} />
+          <span style={{ fontSize: 13, color: '#92400e', fontWeight: 500 }}>
+            Đang xem dashboard của tenant <strong>{impersonatedTenant}</strong>
+          </span>
+          <span style={{ fontSize: 12, color: '#b45309' }}>
+            (SuperAdmin impersonation)
+          </span>
+        </div>
+      )}
+
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1>

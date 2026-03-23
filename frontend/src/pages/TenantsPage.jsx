@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getTenants, createTenant, deleteTenant } from '../services/api';
+import { createTenant, deleteTenant } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Building2,
   Plus,
@@ -9,7 +10,7 @@ import {
 } from 'lucide-react';
 
 export default function TenantsPage() {
-  const [tenants, setTenants] = useState([]);
+  const { tenants, loadTenants: loadTenantsCtx } = useAuth();
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ TenantId: '', TenantName: '', Plan: 'trial' });
@@ -25,10 +26,10 @@ export default function TenantsPage() {
   }, []);
 
   const loadTenants = async () => {
+    setLoading(true);
     try {
-      const res = await getTenants();
-      setTenants(res.data);
-    } catch (err) {
+      await loadTenantsCtx(true); // force refresh
+    } catch {
       setError('Không thể tải danh sách tenant');
     } finally {
       setLoading(false);

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.orm import declarative_base, relationship
 from datetime import datetime
 
@@ -43,5 +43,6 @@ class ETLRun(Base):
     Status = Column(String(20), default="PENDING")  # PENDING, RUNNING, SUCCESS, FAILED
     RowsProcessed = Column(Integer, default=0)
     ErrorMessage = Column(String(1000), nullable=True)
+    LogOutput = Column(Text, nullable=True)  # Full ETL log output
     StartedAt = Column(DateTime, default=datetime.utcnow)
     CompletedAt = Column(DateTime, nullable=True)

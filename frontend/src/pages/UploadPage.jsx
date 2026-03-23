@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { uploadFile, listFiles } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Upload as UploadIcon,
   FileText,
@@ -8,9 +9,11 @@ import {
   CheckCircle,
   AlertCircle,
   Download,
+  Eye,
 } from 'lucide-react';
 
 export default function UploadPage() {
+  const { impersonatedTenant } = useAuth();
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -85,6 +88,22 @@ export default function UploadPage() {
 
   return (
     <div>
+      {impersonatedTenant && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: '#fffbeb', border: '1px solid #fcd34d',
+          borderRadius: 10, padding: '10px 14px', marginBottom: 20,
+        }}>
+          <Eye size={16} style={{ color: '#d97706' }} />
+          <span style={{ fontSize: 13, color: '#92400e', fontWeight: 500 }}>
+            Đang xem dữ liệu của tenant <strong>{impersonatedTenant}</strong>
+          </span>
+          <span style={{ fontSize: 12, color: '#b45309' }}>
+            (SuperAdmin impersonation)
+          </span>
+        </div>
+      )}
+
       <div className="page-header">
         <h1>
           <UploadIcon size={24} style={{ color: '#3b82f6' }} />
@@ -157,7 +176,31 @@ export default function UploadPage() {
         </div>
 
         {loading ? (
-          <div className="loading"><div className="spinner"></div></div>
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tên file</th>
+                  <th>Kích thước</th>
+                  <th>Ngày upload</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[1, 2, 3].map((i) => (
+                  <tr key={i}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div className="skeleton" style={{ width: 18, height: 18, borderRadius: 4 }} />
+                        <div className="skeleton" style={{ width: 160, height: 14 }} />
+                      </div>
+                    </td>
+                    <td><div className="skeleton" style={{ width: 60, height: 14 }} /></td>
+                    <td><div className="skeleton" style={{ width: 140, height: 14 }} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : files.length === 0 ? (
           <div className="empty-state">
             <FileText size={48} />

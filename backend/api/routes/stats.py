@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy import text
 from models.master import User, Tenant
 from schemas import StatsResponse
-from api.deps import get_db, get_current_active_user
+from api.deps import get_db, get_current_active_user, get_current_superadmin
 from core.tenant import get_tenant_session
 import logging
 
@@ -11,11 +11,22 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/stats", tags=["Stats"])
 
 
+def _resolve_tenant_id(
+    current_user: User,
+    impersonate_tenant: str | None = None,
+) -> str | None:
+    """SuperAdmin có thể impersonate tenant qua header X-Impersonate-Tenant."""
+    if current_user.Role == "SuperAdmin" and impersonate_tenant:
+        return impersonate_tenant
+    return current_user.TenantId
+
+
 @router.get("", response_model=StatsResponse)
 async def get_stats(
     current_user: User = Depends(get_current_active_user),
+    x_impersonate_tenant: str | None = Header(default=None),
 ):
-    tenant_id = current_user.TenantId
+    tenant_id = _resolve_tenant_id(current_user, x_impersonate_tenant)
     if not tenant_id:
         raise HTTPException(status_code=403, detail="User không thuộc tenant nào")
 
@@ -24,16 +35,16 @@ async def get_stats(
     try:
         with get_tenant_session(db_name) as conn:
             revenue_row = conn.execute(
-                text("SELECT ISNULL(SUM(GrossSalesAmount), 0) FROM FactSales")
+                text("SELECT ISNULL(SUM(GrossSalesAmount), 0) FROM FactSales WHERE ReturnFlag = 0")
             ).fetchone()
             total_revenue = float(revenue_row[0]) if revenue_row else 0.0
 
             orders_row = conn.execute(
-                text("SELECT COUNT(*) FROM FactSales")
+                text("SELECT COUNT(*) FROM FactSales WHERE ReturnFlag = 0")
             ).fetchone()
             total_orders = orders_row[0] if orders_row else 0
 
-            # DimCustomer has IsActive, NOT IsCurrent
+            # Fixed: DimCustomer has IsActive
             customers_row = conn.execute(
                 text("SELECT COUNT(*) FROM DimCustomer WHERE IsActive = 1")
             ).fetchone()
@@ -42,15 +53,15 @@ async def get_stats(
             top_products_rows = conn.execute(
                 text("""
                     SELECT TOP 10
-                        dp.ProductName,
-                        dp.Category,
-                        SUM(fs.Quantity) as TotalQty,
-                        SUM(fs.GrossSalesAmount) as TotalRevenue
-                    FROM FactSales fs
-                    JOIN DimProduct dp ON fs.ProductKey = dp.ProductKey
-                    WHERE dp.IsCurrent = 1
-                    GROUP BY dp.ProductName, dp.Category
-                    ORDER BY SUM(fs.GrossSalesAmount) DESC
+                        p.ProductName,
+                        p.CategoryName,
+                        SUM(f.Quantity) AS TotalQty,
+                        SUM(f.NetSalesAmount) AS TotalRevenue
+                    FROM FactSales f
+                    JOIN DimProduct p ON p.ProductKey = f.ProductKey
+                    WHERE f.ReturnFlag = 0 AND p.IsCurrent = 1
+                    GROUP BY p.ProductName, p.CategoryName
+                    ORDER BY TotalQty DESC
                 """)
             ).fetchall()
 
@@ -82,8 +93,9 @@ async def get_stats(
 @router.get("/summary")
 async def get_summary(
     current_user: User = Depends(get_current_active_user),
+    x_impersonate_tenant: str | None = Header(default=None),
 ):
-    tenant_id = current_user.TenantId
+    tenant_id = _resolve_tenant_id(current_user, x_impersonate_tenant)
     if not tenant_id:
         raise HTTPException(status_code=403, detail="User không thuộc tenant nào")
 
@@ -91,20 +103,18 @@ async def get_summary(
 
     try:
         with get_tenant_session(db_name) as conn:
-            # Fixed: DimDate has MonthNumber, not Month
             monthly = conn.execute(
                 text("""
                     SELECT
-                        dd.Year,
-                        dd.MonthNumber,
-                        SUM(fs.GrossSalesAmount) as Revenue,
-                        SUM(fs.NetSalesAmount) as Profit,
-                        COUNT(*) as OrderCount
-                    FROM FactSales fs
-                    JOIN DimDate dd ON fs.DateKey = dd.DateKey
-                    WHERE dd.FullDate >= DATEADD(MONTH, -12, GETDATE())
-                    GROUP BY dd.Year, dd.MonthNumber
-                    ORDER BY dd.Year, dd.MonthNumber
+                        d.Year,
+                        d.MonthNumber,
+                        SUM(f.NetSalesAmount) AS Revenue,
+                        SUM(f.GrossProfitAmount) AS Profit,
+                        COUNT(*) AS OrderCount
+                    FROM FactSales f
+                    JOIN DimDate d ON d.DateKey = f.DateKey
+                    WHERE f.ReturnFlag = 0 AND d.FullDate >= DATEADD(MONTH, -12, GETDATE())
+                    GROUP BY d.Year, d.MonthNumber
                 """)
             ).fetchall()
 
@@ -121,15 +131,14 @@ async def get_summary(
             stores = conn.execute(
                 text("""
                     SELECT TOP 5
-                        ds.StoreName,
-                        ds.City,
-                        SUM(fs.GrossSalesAmount) as Revenue,
-                        COUNT(*) as Orders
-                    FROM FactSales fs
-                    JOIN DimStore ds ON fs.StoreKey = ds.StoreKey
-                    WHERE ds.IsCurrent = 1
-                    GROUP BY ds.StoreName, ds.City
-                    ORDER BY SUM(fs.GrossSalesAmount) DESC
+                        s.StoreName,
+                        s.City,
+                        SUM(f.NetSalesAmount) AS Revenue,
+                        COUNT(*) AS Orders
+                    FROM FactSales f
+                    JOIN DimStore s ON s.StoreKey = f.StoreKey
+                    WHERE f.ReturnFlag = 0
+                    GROUP BY s.StoreName, s.City
                 """)
             ).fetchall()
 
@@ -149,6 +158,6 @@ async def get_summary(
     except Exception as e:
         logger.error(f"get_summary error for tenant {tenant_id}: {e}")
         return {
-            "monthly": [],
+            "month": [],
             "stores": [],
         }

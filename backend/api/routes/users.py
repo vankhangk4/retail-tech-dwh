@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from models.master import User, Tenant
+from sqlalchemy import func
+from models.master import User, Tenant, ETLRun
 from schemas import UserCreate, UserUpdate, UserResponse
 from api.deps import get_db, get_current_admin, get_current_superadmin
 from core.security import hash_password, get_current_active_user
@@ -9,6 +10,24 @@ from services.superset_admin import get_superset_admin
 import asyncio
 
 router = APIRouter(tags=["Users"])
+
+
+# ===== SuperAdmin: Dashboard stats =====
+@router.get("/api/admin/stats")
+async def get_admin_stats(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_superadmin),
+):
+    """Trả về count nhanh cho SuperAdmin dashboard — chỉ COUNT(*), không fetch data."""
+    tenant_count = db.query(func.count(Tenant.TenantId)).scalar() or 0
+    user_count = db.query(func.count(User.UserId)).scalar() or 0
+    etl_count = db.query(func.count(ETLRun.RunId)).scalar() or 0
+
+    return {
+        "tenants": tenant_count,
+        "users": user_count,
+        "etl_runs": etl_count,
+    }
 
 
 # ===== SuperAdmin: quản lý TẤT CẢ users =====
