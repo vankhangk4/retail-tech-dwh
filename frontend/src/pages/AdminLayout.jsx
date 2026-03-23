@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Building2,
@@ -7,7 +7,6 @@ import {
   RefreshCw,
   LogOut,
   Menu,
-  Database,
   ChevronRight,
   Shield,
 } from 'lucide-react';
@@ -20,12 +19,11 @@ const navItems = [
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    // ProtectedRoute handles redirect when user becomes null
   };
 
   const closeSidebar = () => setSidebarOpen(false);

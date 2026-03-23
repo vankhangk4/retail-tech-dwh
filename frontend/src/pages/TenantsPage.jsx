@@ -10,7 +10,7 @@ import {
 
 export default function TenantsPage() {
   const [tenants, setTenants] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ TenantId: '', TenantName: '', Plan: 'trial' });
   const [error, setError] = useState('');
@@ -19,10 +19,13 @@ export default function TenantsPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
-  useEffect(() => { loadTenants(); }, []);
+  useEffect(() => {
+    // Render UI first, load data in background
+    setLoading(true);
+    loadTenants();
+  }, []);
 
   const loadTenants = async () => {
-    setLoading(true);
     try {
       const res = await getTenants();
       setTenants(res.data);
@@ -93,12 +96,7 @@ export default function TenantsPage() {
           </h3>
         </div>
 
-        {loading ? (
-          <div className="loading">
-            <div className="spinner"></div>
-          </div>
-        ) : (
-          <div className="table-wrapper">
+        <div className="table-wrapper">
             <table>
               <thead>
                 <tr>
@@ -167,7 +165,6 @@ export default function TenantsPage() {
               </tbody>
             </table>
           </div>
-        )}
       </div>
 
       {/* Create Tenant Modal */}

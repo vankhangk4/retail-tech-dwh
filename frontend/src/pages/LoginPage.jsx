@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login, getMe } from '../services/api';
+import { apiLogin, getMe } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Database, Eye, EyeOff, LogIn } from 'lucide-react';
 
 export default function LoginPage() {
-  const { login: authLogin } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -18,15 +18,23 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await login(username, password);
+      // Step 1: login to get token
+      const res = await apiLogin(username, password);
       const token = res.data.access_token;
-      // Save token to localStorage first so getMe() interceptor can attach it
+
+      // Step 2: save token so interceptor can attach it
       localStorage.setItem('token', token);
-      // Validate token by fetching current user
+
+      // Step 3: fetch user data for role
       const meRes = await getMe();
-      authLogin(token, meRes.data);
-      navigate(meRes.data.Role === 'SuperAdmin' ? '/admin' : '/dashboard', { replace: true });
+      const userData = meRes.data;
+
+      // Step 4: set auth state, then redirect (replace to avoid back-button issue)
+      login(userData);
+      const dest = userData.Role === 'SuperAdmin' ? '/admin' : '/dashboard';
+      window.location.replace(dest);
     } catch (err) {
+      localStorage.removeItem('token');
       setError(err.response?.data?.detail || 'Đăng nhập thất bại');
     } finally {
       setLoading(false);

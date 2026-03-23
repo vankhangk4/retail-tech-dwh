@@ -1,52 +1,53 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getMe } from '../services/api';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { getMe, logout as apiLogout } from '../services/api';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try {
-      const stored = localStorage.getItem('user');
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  // initializing = true means "checking stored token in background"
+  // Set to true only when a token exists, so authenticated users see a brief
+  // spinner while we validate, but unauthenticated users skip it entirely.
+  const [initializing, setInitializing] = useState(
+    () => !!localStorage.getItem('token')
+  );
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    if (!token) return;
+
     getMe()
-      .then((res) => {
-        setUser(res.data);
-        localStorage.setItem('user', JSON.stringify(res.data));
-      })
+      .then((res) => setUser(res.data))
       .catch(() => {
         localStorage.removeItem('token');
-        localStorage.removeItem('user');
         setUser(null);
       })
-      .finally(() => setLoading(false));
+      .finally(() => setInitializing(false));
   }, []);
 
-  const login = (token, userData) => {
-    localStorage.setItem('token', token);
+  // Login: set user in context (React batches this)
+  const login = useCallback((userData) => {
     setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
-  };
+    setInitializing(false);
+  }, []);
 
-  const logout = () => {
+  // Logout: clear everything
+  const logout = useCallback(async () => {
+    const token = localStorage.getItem('token');
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
     setUser(null);
-  };
+    setInitializing(false);
+    if (token) {
+      try {
+        await apiLogout(token);
+      } catch {
+        // ignore
+      }
+    }
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading: initializing }}>
       {children}
     </AuthContext.Provider>
   );

@@ -15,14 +15,8 @@ import ReportsPage from './pages/ReportsPage';
 function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="loading">
-        <div className="spinner"></div>
-        Đang tải...
-      </div>
-    );
-  }
+  // Only block when still validating stored token
+  if (loading) return null;
 
   if (!user) return <Navigate to="/login" replace />;
   if (roles && !roles.includes(user.Role)) return <Navigate to="/" replace />;
@@ -33,19 +27,11 @@ function ProtectedRoute({ children, roles }) {
 function AppRoutes() {
   const { user, loading } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="loading">
-        <div className="spinner"></div>
-        Đang tải...
-      </div>
-    );
-  }
-
+  // Always render routes; loading=false means auth is resolved
   return (
     <Routes>
       <Route path="/login" element={
-        user ? <Navigate to={user.Role === 'SuperAdmin' ? '/admin' : '/dashboard'} replace /> : <LoginPage />
+        !loading && user ? <Navigate to={user.Role === 'SuperAdmin' ? '/admin' : '/dashboard'} replace /> : <LoginPage />
       } />
 
       {/* SuperAdmin routes */}
@@ -73,7 +59,7 @@ function AppRoutes() {
       </Route>
 
       <Route path="/" element={
-        <Navigate to={user ? (user.Role === 'SuperAdmin' ? '/admin' : '/dashboard') : '/login'} replace />
+        !loading ? <Navigate to={user ? (user.Role === 'SuperAdmin' ? '/admin' : '/dashboard') : '/login'} replace /> : null
       } />
     </Routes>
   );

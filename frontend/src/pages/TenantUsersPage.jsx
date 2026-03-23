@@ -11,16 +11,19 @@ import {
 
 export default function TenantUsersPage() {
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ Username: '', Password: '', Email: '' });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { loadUsers(); }, []);
+  useEffect(() => {
+    // Render UI first, load data in background
+    setLoading(true);
+    loadUsers();
+  }, []);
 
   const loadUsers = async () => {
-    setLoading(true);
     try {
       const res = await getTenantUsers();
       setUsers(res.data);
@@ -79,9 +82,6 @@ export default function TenantUsersPage() {
           </h3>
         </div>
 
-        {loading ? (
-          <div className="loading"><div className="spinner"></div></div>
-        ) : (
           <div className="table-wrapper">
             <table>
               <thead>
@@ -121,7 +121,6 @@ export default function TenantUsersPage() {
               </tbody>
             </table>
           </div>
-        )}
       </div>
 
       {showModal && (

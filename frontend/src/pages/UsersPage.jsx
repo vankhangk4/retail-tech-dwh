@@ -16,7 +16,7 @@ import {
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [tenants, setTenants] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editUser, setEditUser] = useState(null);
   const [form, setForm] = useState({ Username: '', Password: '', Email: '', Role: 'User', TenantId: '' });
@@ -24,7 +24,12 @@ export default function UsersPage() {
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => { loadUsers(); loadTenants(); }, []);
+  useEffect(() => {
+    // Render UI first, load data in background
+    setLoading(true);
+    loadTenants();
+    loadUsers();
+  }, []);
 
   const loadTenants = async () => {
     try {
@@ -34,7 +39,6 @@ export default function UsersPage() {
   };
 
   const loadUsers = async () => {
-    setLoading(true);
     try {
       const res = await getUsers();
       setUsers(res.data);
@@ -124,9 +128,6 @@ export default function UsersPage() {
           </h3>
         </div>
 
-        {loading ? (
-          <div className="loading"><div className="spinner"></div></div>
-        ) : (
           <div className="table-wrapper">
             <table>
               <thead>
@@ -178,7 +179,6 @@ export default function UsersPage() {
               </tbody>
             </table>
           </div>
-        )}
       </div>
 
       {showModal && (

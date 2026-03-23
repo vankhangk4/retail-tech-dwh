@@ -20,6 +20,13 @@ def init_db():
     """Tạo tables trong master DB."""
     engine = get_master_engine()
     Base.metadata.create_all(bind=engine)
+    # Create index on Username if not exists (speeds up login queries)
+    with engine.connect() as conn:
+        try:
+            conn.execute("CREATE INDEX IF NOT EXISTS ix_users_username ON users(username)")
+            conn.commit()
+        except Exception:
+            conn.rollback()
     print("Master database tables created successfully.")
 
 
