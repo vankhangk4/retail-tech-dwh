@@ -5,10 +5,7 @@ import {
   Plus,
   Trash2,
   X,
-  Search,
-  Server,
-  CheckCircle,
-  XCircle,
+  AlertTriangle,
 } from 'lucide-react';
 
 export default function TenantsPage() {
@@ -18,6 +15,9 @@ export default function TenantsPage() {
   const [form, setForm] = useState({ TenantId: '', TenantName: '', Plan: 'trial' });
   const [error, setError] = useState('');
   const [creating, setCreating] = useState(false);
+  const [deleteTenant, setDeleteTenant] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => { loadTenants(); }, []);
 
@@ -49,13 +49,18 @@ export default function TenantsPage() {
     }
   };
 
-  const handleDelete = async (tenantId) => {
-    if (!confirm(`Xóa tenant "${tenantId}" và toàn bộ dữ liệu?`)) return;
+  const handleDeleteConfirm = async () => {
+    if (!deleteTenant) return;
+    setDeleting(true);
+    setDeleteError('');
     try {
-      await deleteTenant(tenantId);
+      await deleteTenant(deleteTenant.TenantId);
+      setDeleteTenant(null);
       await loadTenants();
     } catch (err) {
-      alert(err.response?.data?.detail || 'Lỗi khi xóa tenant');
+      setDeleteError(err.response?.data?.detail || 'Lỗi khi xóa tenant');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -83,7 +88,7 @@ export default function TenantsPage() {
       <div className="card">
         <div className="card-header">
           <h3>
-            <Server size={16} />
+            <Building2 size={16} />
             Danh sách Tenant ({tenants.length})
           </h3>
         </div>
@@ -132,11 +137,7 @@ export default function TenantsPage() {
                     <td>{planBadge(t.Plan)}</td>
                     <td>
                       <span className={`badge ${t.IsActive ? 'badge-success' : 'badge-danger'}`}>
-                        {t.IsActive ? (
-                          <><CheckCircle size={12} /> Active</>
-                        ) : (
-                          <><XCircle size={12} /> Inactive</>
-                        )}
+                        {t.IsActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td style={{ color: '#64748b', fontSize: 13 }}>
@@ -145,7 +146,7 @@ export default function TenantsPage() {
                     <td>
                       <button
                         className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(t.TenantId)}
+                        onClick={() => setDeleteTenant(t)}
                       >
                         <Trash2 size={14} />
                         Xóa
@@ -169,6 +170,7 @@ export default function TenantsPage() {
         )}
       </div>
 
+      {/* Create Tenant Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -223,6 +225,62 @@ export default function TenantsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTenant && (
+        <div className="modal-overlay" onClick={() => setDeleteTenant(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420 }}>
+            <div className="modal-header">
+              <h3>Xác nhận xóa</h3>
+              <button className="modal-close" onClick={() => setDeleteTenant(null)}>
+                <X size={16} />
+              </button>
+            </div>
+            <div className="card-body">
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16 }}>
+                <div style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  background: '#fef2f2',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <AlertTriangle size={22} style={{ color: '#dc2626' }} />
+                </div>
+                <div>
+                  <p style={{ fontWeight: 600, color: '#1e293b', marginBottom: 4 }}>
+                    Xóa tenant "{deleteTenant.TenantId}"?
+                  </p>
+                  <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6 }}>
+                    Tất cả dữ liệu trong database <strong>{deleteTenant.DatabaseName}</strong>, users và ETL history sẽ bị xóa vĩnh viễn.
+                  </p>
+                </div>
+              </div>
+              {deleteError && <div className="error-msg">{deleteError}</div>}
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setDeleteTenant(null)}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger btn-sm"
+                  onClick={handleDeleteConfirm}
+                  disabled={deleting}
+                >
+                  {deleting ? 'Đang xóa...' : 'Xóa vĩnh viễn'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -18,7 +18,9 @@ export default function LoginPage() {
     try {
       const res = await login(username, password);
       const token = res.data.access_token;
+      // Save token first, AuthContext will call /me to validate
       authLogin(token, { Username: username, Role: 'checking' });
+      // Navigate - AuthContext will validate and update role
       window.location.href = '/';
     } catch (err) {
       setError(err.response?.data?.detail || 'Đăng nhập thất bại');

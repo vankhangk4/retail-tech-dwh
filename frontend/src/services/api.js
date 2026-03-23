@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -21,9 +21,17 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Only logout if it's not during initial token setup
+      const token = localStorage.getItem('token');
+      if (token && err.config?.url?.includes('/auth/me')) {
+        // Token exists but /me failed - clear invalid token
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      } else if (token) {
+        // Other 401 - just reject, don't logout
+        return Promise.reject(err);
+      }
     }
     return Promise.reject(err);
   }

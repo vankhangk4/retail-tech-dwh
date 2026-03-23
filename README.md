@@ -144,8 +144,8 @@ cp *.xlsx *.csv ../sources/
 ```bash
 cd /home/khang/Desktop/retail-tech-dwh
 
-# Chạy một lần
-python -m etl.main_etl --fresh
+# Chạy một lần (load incremental theo watermark)
+python -m etl.main_etl
 
 # Chạy với ngày cụ thể
 python -m etl.main_etl --date 2025-03-22
@@ -174,7 +174,7 @@ tail -f logs/etl_$(date +%Y%m%d).log
 ```
 http://localhost:8088
 ```
-Login: `admin` / `Dk@17092004` (hoặc credentials trong `.env`)
+Login: `admin` / `password` (hoặc credentials trong `.env`)
 
 ### 7.2. Thêm Database Connection
 1. **Settings** → **Database Connections** → **+ Database**
@@ -184,7 +184,7 @@ Login: `admin` / `Dk@17092004` (hoặc credentials trong `.env`)
 | Trường | Giá trị |
 |---------|---------|
 | Database Name | `DWH_RetailTech` |
-| SQLAlchemy URI | `mssql+pyodbc://sa:{PASSWORD}@datn_mssql:1433/DWH_RetailTech?driver=ODBC+Driver+18+for+SQL+Server` |
+| SQLAlchemy URI | `mssql+pyodbc://sa:YourPassword@datn_mssql:1433/DWH_RetailTech?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes` |
 
    - Thay `{PASSWORD}` bằng giá trị `MSSQL_SA_PASSWORD` trong `.env`
    - Host `datn_mssql` dùng trong Docker network
