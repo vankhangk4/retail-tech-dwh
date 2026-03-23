@@ -69,7 +69,43 @@ def decode_token(token: str) -> dict:
         )
 
 
+# ─── Per-token user cache (avoids DB query on every /auth/me call) ───────────
+_user_cache: dict = {}
+_cache_lock = threading.Lock()
+_CACHE_TTL_SECONDS = 30  # short TTL: valid for a request burst, clears on logout
+
+
+def _cache_get(token: str):
+    with _cache_lock:
+        entry = _user_cache.get(token)
+        if entry is None:
+            return None
+        if datetime.utcnow().timestamp() - entry["cached_at"] > _CACHE_TTL_SECONDS:
+            del _user_cache[token]
+            return None
+        return entry["user"]
+
+
+def _cache_set(token: str, user):
+    with _cache_lock:
+        _user_cache[token] = {
+            "user": user,
+            "cached_at": datetime.utcnow().timestamp(),
+        }
+
+
+def _cache_invalidate(token: str):
+    """Remove a token from cache (called on logout)."""
+    with _cache_lock:
+        _user_cache.pop(token, None)
+
+
 async def get_current_user(token: str = Depends(oauth2_scheme)):
+    # Try cache first — avoids DB hit for every /auth/me request
+    cached_user = _cache_get(token)
+    if cached_user is not None:
+        return cached_user
+
     payload = decode_token(token)
     user_id = payload.get("sub")
     if user_id is None:
@@ -84,7 +120,12 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         user = db.query(User).filter(User.UserId == int(user_id)).first()
         if not user:
             raise HTTPException(status_code=401, detail="User không tồn tại")
+
+        # Cache for subsequent requests in this burst
+        _cache_set(token, user)
         return user
+    except HTTPException:
+        raise
     except Exception as e:
         import traceback
         traceback.print_exc()

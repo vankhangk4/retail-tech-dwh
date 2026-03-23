@@ -15,7 +15,7 @@ export default function TenantsPage() {
   const [form, setForm] = useState({ TenantId: '', TenantName: '', Plan: 'trial' });
   const [error, setError] = useState('');
   const [creating, setCreating] = useState(false);
-  const [deleteTenant, setDeleteTenant] = useState(null);
+  const [tenantToDelete, setTenantToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
@@ -52,12 +52,12 @@ export default function TenantsPage() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!deleteTenant) return;
+    if (!tenantToDelete) return;
     setDeleting(true);
     setDeleteError('');
     try {
-      await deleteTenant(deleteTenant.TenantId);
-      setDeleteTenant(null);
+      await deleteTenant(tenantToDelete.TenantId);
+      setTenantToDelete(null);
       await loadTenants();
     } catch (err) {
       setDeleteError(err.response?.data?.detail || 'Lỗi khi xóa tenant');
@@ -146,7 +146,7 @@ export default function TenantsPage() {
                     {new Date(t.CreatedAt).toLocaleDateString('vi-VN')}
                   </td>
                   <td>
-                    <button className="btn btn-danger btn-sm" onClick={() => setDeleteTenant(t)}>
+                    <button className="btn btn-danger btn-sm" onClick={() => setTenantToDelete(t)}>
                       <Trash2 size={14} />
                       Xóa
                     </button>
@@ -228,12 +228,12 @@ export default function TenantsPage() {
       )}
 
       {/* Delete Confirmation Modal */}
-      {deleteTenant && (
-        <div className="modal-overlay" onClick={() => setDeleteTenant(null)}>
+      {tenantToDelete && (
+        <div className="modal-overlay" onClick={() => setTenantToDelete(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420 }}>
             <div className="modal-header">
               <h3>Xác nhận xóa</h3>
-              <button className="modal-close" onClick={() => setDeleteTenant(null)}>
+              <button className="modal-close" onClick={() => setTenantToDelete(null)}>
                 <X size={16} />
               </button>
             </div>
@@ -247,16 +247,16 @@ export default function TenantsPage() {
                 </div>
                 <div>
                   <p style={{ fontWeight: 600, color: '#1e293b', marginBottom: 4 }}>
-                    Xóa tenant "{deleteTenant.TenantId}"?
+                    Xóa tenant "{tenantToDelete.TenantId}"?
                   </p>
                   <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6 }}>
-                    Tất cả dữ liệu trong database <strong>{deleteTenant.DatabaseName}</strong>, users và ETL history sẽ bị xóa vĩnh viễn.
+                    Tất cả dữ liệu trong database <strong>{tenantToDelete.DatabaseName}</strong>, users và ETL history sẽ bị xóa vĩnh viễn.
                   </p>
                 </div>
               </div>
               {deleteError && <div className="error-msg">{deleteError}</div>}
               <div className="modal-actions">
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setDeleteTenant(null)}>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setTenantToDelete(null)}>
                   Hủy
                 </button>
                 <button type="button" className="btn btn-danger btn-sm" onClick={handleDeleteConfirm} disabled={deleting}>

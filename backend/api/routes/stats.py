@@ -4,6 +4,9 @@ from models.master import User, Tenant
 from schemas import StatsResponse
 from api.deps import get_db, get_current_active_user
 from core.tenant import get_tenant_session
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/stats", tags=["Stats"])
 
@@ -30,8 +33,9 @@ async def get_stats(
             ).fetchone()
             total_orders = orders_row[0] if orders_row else 0
 
+            # DimCustomer has IsActive, NOT IsCurrent
             customers_row = conn.execute(
-                text("SELECT COUNT(*) FROM DimCustomer WHERE IsCurrent = 1")
+                text("SELECT COUNT(*) FROM DimCustomer WHERE IsActive = 1")
             ).fetchone()
             total_customers = customers_row[0] if customers_row else 0
 
@@ -66,7 +70,7 @@ async def get_stats(
             top_products=top_products,
         )
     except Exception as e:
-        # Database chưa init hoặc chưa có data -> trả empty
+        logger.error(f"get_stats error for tenant {tenant_id}: {e}")
         return StatsResponse(
             total_revenue=0,
             total_orders=0,
@@ -87,19 +91,20 @@ async def get_summary(
 
     try:
         with get_tenant_session(db_name) as conn:
+            # Fixed: DimDate has MonthNumber, not Month
             monthly = conn.execute(
                 text("""
                     SELECT
                         dd.Year,
-                        dd.Month,
+                        dd.MonthNumber,
                         SUM(fs.GrossSalesAmount) as Revenue,
                         SUM(fs.NetSalesAmount) as Profit,
                         COUNT(*) as OrderCount
                     FROM FactSales fs
                     JOIN DimDate dd ON fs.DateKey = dd.DateKey
-                    WHERE dd.Date >= DATEADD(MONTH, -12, GETDATE())
-                    GROUP BY dd.Year, dd.Month
-                    ORDER BY dd.Year, dd.Month
+                    WHERE dd.FullDate >= DATEADD(MONTH, -12, GETDATE())
+                    GROUP BY dd.Year, dd.MonthNumber
+                    ORDER BY dd.Year, dd.MonthNumber
                 """)
             ).fetchall()
 
@@ -141,8 +146,8 @@ async def get_summary(
             "monthly": monthly_data,
             "stores": store_data,
         }
-    except Exception:
-        # Database chưa init hoặc chưa có data -> trả empty
+    except Exception as e:
+        logger.error(f"get_summary error for tenant {tenant_id}: {e}")
         return {
             "monthly": [],
             "stores": [],

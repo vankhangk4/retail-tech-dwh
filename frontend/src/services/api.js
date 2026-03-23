@@ -29,10 +29,11 @@ logoutClient.interceptors.request.use((config) => {
 });
 
 // Response interceptor: handle 401 → clear auth and redirect to login
+// Skip redirect for login endpoints so error messages display properly
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    if (err.response?.status === 401 && !err.config?.url?.includes('/login')) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }

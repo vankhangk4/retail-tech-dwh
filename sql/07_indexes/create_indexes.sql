@@ -76,6 +76,17 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID('dbo.FactSa
         ON dbo.FactSales(ProductKey, DateKey)
         INCLUDE (NetSalesAmount, GrossProfitAmount, Quantity);
 
+-- Covering index for stats aggregation queries (GrossSalesAmount)
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID('dbo.FactSales') AND name = 'IX_FactSales_DateKey_GrossSales')
+    CREATE NONCLUSTERED INDEX IX_FactSales_DateKey_GrossSales
+        ON dbo.FactSales(DateKey)
+        INCLUDE (GrossSalesAmount, NetSalesAmount, Quantity);
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID('dbo.FactSales') AND name = 'IX_FactSales_StoreKey_GrossSales')
+    CREATE NONCLUSTERED INDEX IX_FactSales_StoreKey_GrossSales
+        ON dbo.FactSales(StoreKey)
+        INCLUDE (GrossSalesAmount);
+
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID('dbo.FactInventory') AND name = 'IX_FactInventory_DateClosingStock')
     CREATE NONCLUSTERED INDEX IX_FactInventory_DateClosingStock
         ON dbo.FactInventory(DateKey, ClosingStock)

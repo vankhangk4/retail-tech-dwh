@@ -19,6 +19,7 @@ Xây dựng hệ thống Data Warehouse và trực quan hóa dữ liệu kinh do
 8. [Reset hệ thống](#8-reset-hệ-thống)
 9. [Cấu trúc thư mục](#9-cấu-trúc-thư-mục)
 10. [Nâng cấp SaaS Platform](#10-nâng-cấp-multi-tenant-saas-platform)
+    - [10.6. Superset Multi-tenant](#106-superset-multi-tenant)
 
 ---
 
@@ -174,7 +175,7 @@ tail -f logs/etl_$(date +%Y%m%d).log
 ```
 http://localhost:8088
 ```
-Login: `admin` / `password` (hoặc credentials trong `.env`)
+Login với credentials trong `.env` (`SUPERSET_ADMIN_USER` / `SUPERSET_ADMIN_PASSWORD`).
 
 ### 7.2. Thêm Database Connection
 1. **Settings** → **Database Connections** → **+ Database**
@@ -184,7 +185,7 @@ Login: `admin` / `password` (hoặc credentials trong `.env`)
 | Trường | Giá trị |
 |---------|---------|
 | Database Name | `DWH_RetailTech` |
-| SQLAlchemy URI | `mssql+pyodbc://sa:YourPassword@datn_mssql:1433/DWH_RetailTech?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes` |
+| SQLAlchemy URI | `mssql+pyodbc://sa:{PASSWORD}@datn_mssql:1433/DWH_RetailTech?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes` |
 
    - Thay `{PASSWORD}` bằng giá trị `MSSQL_SA_PASSWORD` trong `.env`
    - Host `datn_mssql` dùng trong Docker network
@@ -199,6 +200,16 @@ Login: `admin` / `password` (hoặc credentials trong `.env`)
 
 ### 7.4. Tạo Charts
 Dùng SQL templates trong `superset/dashboards/` làm reference để tạo charts trong Superset UI.
+
+### 7.5. Chia sẻ Dashboard (nhúng vào portal)
+
+Sau khi tạo dashboard, bật **Embedded** để nhúng vào portal:
+
+1. Mở Dashboard → Edit → **Public** → **Enable embedded**
+2. Copy **Embedded SDK** code
+3. Dashboard sẽ được nhúng qua guest token từ backend
+
+> Trong môi trường multi-tenant, mỗi tenant sẽ thấy dashboard với dữ liệu từ database của tenant đó. Xem chi tiết ở **[10.6 Superset Multi-tenant](#106-superset-multi-tenant)**.
 
 ## 8. Reset hệ thống
 
@@ -375,16 +386,128 @@ CREATE TABLE Users (
 -- STG_*, Dim*, Fact*, DM_* per tenant
 ```
 
-### 10.6. Superset Embedding
+### 10.6. Superset Multi-tenant
+
+#### Kiến trúc chung
+
+```
+┌──────────────────────────────────────────────────────┐
+│           1 Superset Instance (duy nhất)             │
+│                                                      │
+│  Dashboard #1 ──┬── TenantA → sees DWH_TenantA data  │
+│                └── TenantB → sees DWH_TenantB data    │
+│                                                      │
+│  Một chart/dashboard — mỗi tenant thấy dữ liệu khác │
+└──────────────────────────────────────────────────────┘
+```
+
+**Điểm mấu chốt:**
+- **1 Superset** duy nhất, chia sẻ cho tất cả tenants
+- **Mỗi tenant có database riêng** trong Superset (DWH_TenantA, DWH_TenantB, ...)
+- **Guest token chỉ định database** → tenant chỉ truy vấn đúng database của mình
+- **Cô lập dữ liệu tuyệt đối** — không cần RLS clause vì mỗi tenant đã có DB riêng
+
+#### Ai làm gì
+
+| Ai | Nhiệm vụ |
+|----|-----------|
+| **SuperAdmin** | Thêm database connections, tạo datasets, charts, dashboards trong Superset UI |
+| **Backend** | Tự động đăng ký database vào Superset khi tenant cần |
+| **Tenant User** | Nhấn "Mở Dashboard" trong portal — thấy dữ liệu tenant mình |
+
+#### Bước 1: SuperAdmin cấu hình Superset (thủ công, làm 1 lần)
+
+Superset admin đăng nhập tại `http://localhost:8088` (`SUPERSET_ADMIN_USER` / `SUPERSET_ADMIN_PASSWORD` trong `.env`):
+
+```
+1. Thêm Database Connections
+   Settings → Database → + Database
+   → Thêm DWH_RetailTech (và các DWH_{tenant_id} khi tạo tenant mới)
+   → Database: Microsoft SQL Server
+   → SQLAlchemy URI:
+     mssql+pyodbc://sa:{PASSWORD}@datn_mssql:1433/DWH_TenantA
+     ?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes
+
+2. Tạo Datasets
+   + Add → Dataset → Chọn database → Chọn bảng (FactSales, DimProduct, ...)
+
+3. Tạo Charts
+   + New → Chart → Chọn dataset → Tạo chart
+
+4. Tạo Dashboard
+   Dashboards → + Dashboard → Thêm charts đã tạo
+
+5. Chia sẻ Dashboard
+   Dashboard → Edit → Public → Enable embedded
+```
+
+#### Bước 2: Tenant User truy cập Dashboard (tự động)
+
+```
+Tenant User đăng nhập portal
+  → Trang Reports → Nhấn "Mở Dashboard"
+    → Backend gọi /api/embed/superset-token
+      → Backend đăng ký DWH_{tenant_id} vào Superset (nếu chưa có)
+      → Tạo guest_token chỉ định đúng database của tenant
+      → Trả về token
+    → Frontend embed iframe với guest_token
+      → Superset chỉ truy vấn DWH_{tenant_id} của user đó
+      → User chỉ thấy dữ liệu doanh nghiệp mình
+```
+
+#### Backend auto-provisioning
+
+Backend tự động thực hiện khi tenant user cần truy cập Superset:
+
+```python
+# services/superset_admin.py
+ensure_tenant_superset_setup(tenant_id):
+  1. register_tenant_database(tenant_id, db_name)
+     → Đăng ký DWH_{tenant_id} vào Superset
+     → Lấy database_id
+
+  2. create_or_get_tenant_user(tenant_id)
+     → Tạo Superset user: tenant_{tenant_id}
+
+  3. create_or_get_tenant_role(tenant_id)
+     → Tạo Superset role: Tenant_{tenant_id}
+
+  4. assign_user_to_role(username, role_id)
+     → Gán user vào role
+```
+
+Auto-provisioning kích hoạt khi:
+- SuperAdmin tạo TenantAdmin hoặc User
+- TenantAdmin tạo User
+- User đầu tiên truy cập trang Reports
+
+#### Guest token cơ chế
+
+```json
+// Token cho TenantA → chỉ truy vấn DWH_TenantA
+{
+  "user": { "username": "tenant_TenantA" },
+  "resources": [{ "type": "database", "id": 3 }]
+}
+
+// Token cho TenantB → chỉ truy vấn DWH_TenantB
+{
+  "user": { "username": "tenant_TenantB" },
+  "resources": [{ "type": "database", "id": 4 }]
+}
+```
+
+Superset chỉ query vào **đúng database** mà token chỉ định — không cần RLS clause vì data đã cô lập ở database level.
+
+#### Cấu hình `.env`
 
 ```bash
-# Frontend gọi API lấy guest token
-GET /api/embed/guest-token?dashboard=1
-
-# Backend tạo Superset guest token cho tenant
-# Frontend nhúng vào React:
-<iframe src="http://superset:8088/superset/dashboard/1/?guest_token=xxx" />
+SUPERSET_ADMIN_USER=admin
+SUPERSET_ADMIN_PASSWORD=YourSupersetAdminPassword
+SUPERSET_URL=http://datn_superset:8088
 ```
+
+> **Lưu ý:** Superset credentials phải khớp với user được tạo lúc container khởi động (`SUPERSET_ADMIN_USER`, `SUPERSET_ADMIN_PASSWORD` trong `docker-compose.yml`).
 
 ### 10.7. Cấu trúc thư mục
 
