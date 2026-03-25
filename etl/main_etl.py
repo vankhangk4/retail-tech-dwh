@@ -32,10 +32,10 @@ from etl.extract.extract_supplier import extract_supplier
 logger = setup_logger("etl.main")
 
 
-def get_watermark(source_name: str) -> datetime:
+def get_watermark(source_name: str, conn_str: str = None) -> datetime:
     """Lấy watermark từ database."""
     try:
-        conn = pyodbc.connect(config.CONN_STR)
+        conn = pyodbc.connect(conn_str or config.CONN_STR)
         cursor = conn.cursor()
         cursor.execute(
             "SELECT WatermarkValue FROM ETL_Watermark WHERE SourceName = ?",
@@ -52,10 +52,10 @@ def get_watermark(source_name: str) -> datetime:
         return datetime(2020, 1, 1)
 
 
-def run_stored_procedure(sp_name: str, params: dict = None) -> bool:
+def run_stored_procedure(sp_name: str, params: dict = None, conn_str: str = None) -> bool:
     """Thực thi stored procedure trên SQL Server."""
     try:
-        conn = pyodbc.connect(config.CONN_STR)
+        conn = pyodbc.connect(conn_str or config.CONN_STR)
         cursor = conn.cursor()
         if params:
             param_str = ", ".join([f"@{k}=?" for k in params.keys()])
@@ -77,11 +77,12 @@ def log_run(
     step_name: str,
     status: str,
     rows_processed: int = None,
-    error: str = None
+    error: str = None,
+    conn_str: str = None
 ):
     """Ghi log vào ETL_RunLog."""
     try:
-        conn = pyodbc.connect(config.CONN_STR)
+        conn = pyodbc.connect(conn_str or config.CONN_STR)
         cursor = conn.cursor()
         cursor.execute(
             """INSERT INTO ETL_RunLog
@@ -96,24 +97,45 @@ def log_run(
         logger.error(f"Failed to write to ETL_RunLog: {e}")
 
 
-def etl_run(batch_date: Optional[date] = None, full_load: bool = False):
+def etl_run(batch_date: Optional[date] = None, full_load: bool = False, tenant_id: str = None):
     """
     Chạy toàn bộ ETL pipeline.
 
     Args:
         batch_date: Ngày xử lý (mặc định: hôm nay)
         full_load: Nếu True, bỏ qua watermark và load tất cả
+        tenant_id: Nếu có, chạy ETL cho database DWH_{tenant_id}
     """
     if batch_date is None:
         batch_date = date.today()
 
+    # Xác định connection string và file paths theo tenant
+    if tenant_id:
+        conn_str = config.get_tenant_conn_str(tenant_id)
+        file_paths = config.get_tenant_file_paths(tenant_id)
+        db_label = f"DWH_{tenant_id}"
+    else:
+        conn_str = config.CONN_STR
+        file_paths = {
+            "SALES_FILE": config.SALES_FILE,
+            "INVENTORY_FILE": config.INVENTORY_FILE,
+            "PRODUCT_FILE": config.PRODUCT_FILE,
+            "CUSTOMER_FILE": config.CUSTOMER_FILE,
+            "STORE_FILE": config.STORE_FILE,
+            "EMPLOYEE_FILE": config.EMPLOYEE_FILE,
+            "SUPPLIER_FILE": config.SUPPLIER_FILE,
+        }
+        db_label = config.MSSQL_DATABASE
+
     batch_date_str = batch_date.strftime("%Y-%m-%d")
     logger.info("")
     logger.info("=" * 60)
-    logger.info(f"  ETL PIPELINE STARTED | BatchDate: {batch_date_str}")
+    logger.info(f"  ETL PIPELINE STARTED | DB: {db_label} | BatchDate: {batch_date_str}")
+    if tenant_id:
+        logger.info(f"  Tenant: {tenant_id}")
     logger.info("=" * 60)
 
-    loader = StagingLoader()
+    loader = StagingLoader(conn_str=conn_str)
     total_rows = 0
     overall_status = "SUCCESS"
 
@@ -129,11 +151,11 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False):
             watermark = datetime(2020, 1, 1)
             logger.info("Full load mode: ignoring watermarks")
         else:
-            watermark = get_watermark("STG_SalesRaw")
+            watermark = get_watermark("STG_SalesRaw", conn_str=conn_str)
 
         # Extract & Load: Sales
         try:
-            df_sales = extract_sales(config.SALES_FILE, watermark)
+            df_sales = extract_sales(file_paths["SALES_FILE"], watermark)
             if not df_sales.empty:
                 rows = loader.load(df_sales, "STG_SalesRaw", if_exists="truncate")
                 total_rows += rows
@@ -143,7 +165,7 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False):
 
         # Extract & Load: Inventory
         try:
-            df_inv = extract_inventory(config.INVENTORY_FILE, watermark)
+            df_inv = extract_inventory(file_paths["INVENTORY_FILE"], watermark)
             if not df_inv.empty:
                 rows = loader.load(df_inv, "STG_InventoryRaw", if_exists="truncate")
                 total_rows += rows
@@ -153,7 +175,7 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False):
 
         # Extract & Load: Product
         try:
-            df_prod = extract_product(config.PRODUCT_FILE)
+            df_prod = extract_product(file_paths["PRODUCT_FILE"])
             if not df_prod.empty:
                 rows = loader.load(df_prod, "STG_ProductRaw", if_exists="truncate")
                 total_rows += rows
@@ -163,7 +185,7 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False):
 
         # Extract & Load: Customer
         try:
-            df_cust = extract_customer(config.CUSTOMER_FILE)
+            df_cust = extract_customer(file_paths["CUSTOMER_FILE"])
             if not df_cust.empty:
                 rows = loader.load(df_cust, "STG_CustomerRaw", if_exists="truncate")
                 total_rows += rows
@@ -173,7 +195,7 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False):
 
         # Extract & Load: Store
         try:
-            df_store = extract_store(config.STORE_FILE)
+            df_store = extract_store(file_paths["STORE_FILE"])
             if not df_store.empty:
                 rows = loader.load(df_store, "STG_StoreRaw", if_exists="truncate")
                 total_rows += rows
@@ -183,7 +205,7 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False):
 
         # Extract & Load: Employee
         try:
-            df_emp = extract_employee(config.EMPLOYEE_FILE)
+            df_emp = extract_employee(file_paths["EMPLOYEE_FILE"])
             if not df_emp.empty:
                 rows = loader.load(df_emp, "STG_EmployeeRaw", if_exists="truncate")
                 total_rows += rows
@@ -193,7 +215,7 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False):
 
         # Extract & Load: Supplier
         try:
-            df_sup = extract_supplier(config.SUPPLIER_FILE)
+            df_sup = extract_supplier(file_paths["SUPPLIER_FILE"])
             if not df_sup.empty:
                 rows = loader.load(df_sup, "STG_SupplierRaw", if_exists="truncate")
                 total_rows += rows
@@ -216,7 +238,7 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False):
         ]
         for sp in dim_sps:
             try:
-                run_stored_procedure(sp)
+                run_stored_procedure(sp, conn_str=conn_str)
             except Exception as e:
                 logger.error(f"  {sp} failed: {e}")
 
@@ -233,7 +255,7 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False):
         ]
         for sp_name, params in fact_sps:
             try:
-                run_stored_procedure(sp_name, params)
+                run_stored_procedure(sp_name, params, conn_str=conn_str)
             except Exception as e:
                 logger.error(f"  {sp_name} failed: {e}")
 
@@ -244,12 +266,12 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False):
         logger.info(">>> [PHASE 4] REFRESH DATA MARTS")
 
         try:
-            run_stored_procedure("sp_Refresh_DM_SalesSummary", {"BatchDate": batch_date_str})
+            run_stored_procedure("sp_Refresh_DM_SalesSummary", {"BatchDate": batch_date_str}, conn_str=conn_str)
         except Exception as e:
             logger.error(f"  sp_Refresh_DM_SalesSummary failed: {e}")
 
         try:
-            run_stored_procedure("sp_Refresh_DM_InventoryAlert")
+            run_stored_procedure("sp_Refresh_DM_InventoryAlert", conn_str=conn_str)
         except Exception as e:
             logger.error(f"  sp_Refresh_DM_InventoryAlert failed: {e}")
 
@@ -260,7 +282,7 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False):
         logger.info(">>> [PHASE 5] UPDATE WATERMARKS")
 
         try:
-            conn = pyodbc.connect(config.CONN_STR)
+            conn = pyodbc.connect(conn_str)
             cursor = conn.cursor()
             # Get actual max dates from staging data
             cursor.execute("SELECT ISNULL(MAX(NgayBan), GETDATE()) FROM STG_SalesRaw")
@@ -282,7 +304,7 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False):
             ]
             for src, wm_date, rows in updates:
                 try:
-                    conn = pyodbc.connect(config.CONN_STR)
+                    conn = pyodbc.connect(conn_str)
                     cursor = conn.cursor()
                     cursor.execute(
                         """UPDATE ETL_Watermark
@@ -304,14 +326,14 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False):
 
         logger.info("")
         logger.info("=" * 60)
-        logger.info(f"  ETL PIPELINE COMPLETED | Status: {overall_status}")
+        logger.info(f"  ETL PIPELINE COMPLETED | DB: {db_label} | Status: {overall_status}")
         logger.info(f"  Total rows processed: {total_rows}")
         logger.info("=" * 60)
 
     except Exception as e:
         overall_status = "FAILED"
         logger.error(f"ETL PIPELINE FAILED: {e}", exc_info=True)
-        log_run("ETL_Main", "Orchestrator", "FAILED", total_rows, str(e))
+        log_run("ETL_Main", "Orchestrator", "FAILED", total_rows, str(e), conn_str=conn_str)
 
     finally:
         loader.close()
@@ -341,6 +363,7 @@ if __name__ == "__main__":
     parser.add_argument("--date", type=str, help="Batch date (YYYY-MM-DD)")
     parser.add_argument("--full", action="store_true", help="Full load (ignore watermark)")
     parser.add_argument("--schedule", action="store_true", help="Run as scheduled job")
+    parser.add_argument("--tenant", type=str, help="Tenant ID (chạy ETL cho database DWH_{tenant_id})")
 
     args = parser.parse_args()
 
@@ -350,4 +373,4 @@ if __name__ == "__main__":
         batch_date = None
         if args.date:
             batch_date = datetime.strptime(args.date, "%Y-%m-%d").date()
-        etl_run(batch_date=batch_date, full_load=args.full)
+        etl_run(batch_date=batch_date, full_load=args.full, tenant_id=args.tenant)

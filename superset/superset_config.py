@@ -26,6 +26,32 @@ CACHE_CONFIG = {
 FEATURE_FLAGS = {
     "DASHBOARD_NATIVE_FILTERS": True,
     "ALERT_REPORTS": True,
+    "EMBEDDED_SUPERSET": True,  # Required for guest token embedding
+    "EMBEDDABLE_CHARTS": True,
+}
+
+# ---- Guest Token (for iframe embedding) ----
+GUEST_ROLE_NAME = "Public"
+GUEST_TOKEN_JWT_SECRET = SECRET_KEY  # Must match for token validation
+GUEST_TOKEN_JWT_ALGO = "HS256"
+GUEST_TOKEN_HEADER_NAME = "X-GuestToken"
+
+# ---- HTTP headers: allow iframe embedding ----
+HTTP_HEADERS = {"X-Frame-Options": "ALLOWALL"}
+
+# Disable Talisman frame-ancestors so iframe works
+TALISMAN_ENABLED = False
+
+# ---- CORS ----
+ENABLE_CORS = True
+CORS_OPTIONS = {
+    "supports_credentials": True,
+    "allow_headers": ["*"],
+    "resources": [r"/api/*", r"/superset/*"],
+    "origins": [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
 }
 
 # ---- Other ----

@@ -101,3 +101,45 @@ ETL_TIMEOUT_SECONDS = int(os.getenv("ETL_TIMEOUT_SECONDS", "1800"))
 print(f"[config] Server={MSSQL_SERVER}:{MSSQL_PORT}, DB={MSSQL_DATABASE}, Driver={MSSQL_DRIVER}")
 print(f"[config] Sales file: {SALES_FILE}")
 print(f"[config] Running in Docker: {RUNNING_IN_DOCKER}")
+
+
+# ---- Multi-tenant helpers ----
+def get_tenant_conn_str(tenant_id: str) -> str:
+    """Build CONN_STR cho database DWH_{tenant_id}."""
+    db_name = f"DWH_{tenant_id}"
+    return (
+        f"DRIVER={{{MSSQL_DRIVER}}};"
+        f"SERVER={MSSQL_SERVER},{MSSQL_PORT};"
+        f"DATABASE={db_name};"
+        f"UID={MSSQL_USER};PWD={MSSQL_PASSWORD};"
+        f"TrustServerCertificate=yes;Connection Timeout=30;"
+    )
+
+
+def get_tenant_data_dir(tenant_id: str) -> Path:
+    """Trả về thư mục data upload của tenant: /app/uploads/{tenant_id}/"""
+    upload_dir = Path(os.getenv("UPLOAD_DIR", "/app/uploads"))
+    return upload_dir / tenant_id
+
+
+def get_tenant_file_paths(tenant_id: str) -> dict:
+    """Trả về mapping file paths cho tenant, fallback về data/sources nếu thiếu."""
+    tenant_dir = get_tenant_data_dir(tenant_id)
+
+    file_map = {
+        "SALES_FILE": ("BaoCaoDoanhThu_2025.xlsx", SALES_FILE),
+        "INVENTORY_FILE": ("QuanLyKho_2025.xlsx", INVENTORY_FILE),
+        "PRODUCT_FILE": ("DanhMucSanPham.csv", PRODUCT_FILE),
+        "CUSTOMER_FILE": ("DanhSachKhachHang.csv", CUSTOMER_FILE),
+        "STORE_FILE": ("DanhSachCuaHang.csv", STORE_FILE),
+        "EMPLOYEE_FILE": ("DanhSachNhanVien.csv", EMPLOYEE_FILE),
+        "SUPPLIER_FILE": ("DanhSachNhaCungCap.csv", SUPPLIER_FILE),
+    }
+
+    result = {}
+    for key, (filename, fallback) in file_map.items():
+        tenant_file = tenant_dir / filename
+        result[key] = tenant_file if tenant_file.exists() else fallback
+
+    return result
+

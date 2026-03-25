@@ -10,6 +10,7 @@ import {
 
 export default function ReportsPage() {
   const [token, setToken] = useState(null);
+  const [dashboardId, setDashboardId] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const supersetUrl = 'http://localhost:8088';
@@ -20,6 +21,7 @@ export default function ReportsPage() {
     try {
       const res = await getSupersetToken();
       setToken(res.data.token);
+      if (res.data.dashboard_id) setDashboardId(res.data.dashboard_id);
     } catch (err) {
       setError(err.response?.data?.detail || 'Không thể lấy Superset token');
     } finally {
@@ -33,6 +35,7 @@ export default function ReportsPage() {
     try {
       const res = await getSupersetToken();
       setToken(res.data.token);
+      if (res.data.dashboard_id) setDashboardId(res.data.dashboard_id);
     } catch (err) {
       setError(err.response?.data?.detail || 'Không thể lấy Superset token');
     } finally {
@@ -86,7 +89,7 @@ export default function ReportsPage() {
                 Làm mới
               </button>
               <a
-                href={`${supersetUrl}/superset/dashboard/1/?guest_token=${token}`}
+                href={`${supersetUrl}/superset/dashboard/${dashboardId}/?guest_token=${token}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-secondary btn-sm"
@@ -148,7 +151,7 @@ export default function ReportsPage() {
               <h3>Superset Dashboard</h3>
             </div>
             <iframe
-              src={`${supersetUrl}/superset/dashboard/1/?guest_token=${token}`}
+              src={`${supersetUrl}/superset/dashboard/${dashboardId}/?guest_token=${token}`}
               className="superset-iframe"
               title="Superset Dashboard"
               allow="fullscreen"
