@@ -169,6 +169,53 @@ tail -f logs/etl_$(date +%Y%m%d).log
 ./sql_runner.sh "SELECT * FROM ETL_RunLog ORDER BY LoadDatetime DESC"
 ```
 
+### Xem dữ liệu trong SQL Server (docker exec)
+
+Container `datn_mssql` **không có sẵn `sqlcmd`** bên trong. Dùng `sqlcmd` từ host (đã cài qua `mssql-tools18`) hoặc dùng script `./sql_runner.sh`.
+
+**Cú pháp từ host:**
+```bash
+/opt/mssql-tools18/bin/sqlcmd \
+  -S localhost \
+  -U sa \
+  -P "${MSSQL_SA_PASSWORD}" \
+  -C \
+  -d DWH_RetailTech \
+  -Q "SELECT TOP 10 * FROM FactSales"
+```
+
+**Ví dụ truy vấn nhanh:**
+```bash
+# Đếm bản ghi tất cả bảng chính
+/opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C -d DWH_RetailTech \
+  -Q "
+    SELECT 'FactSales' AS tbl, COUNT(*) AS cnt FROM FactSales
+    UNION ALL SELECT 'FactInventory', COUNT(*) FROM FactInventory
+    UNION ALL SELECT 'FactPurchase', COUNT(*) FROM FactPurchase
+    UNION ALL SELECT 'DimDate', COUNT(*) FROM DimDate
+    UNION ALL SELECT 'DimProduct', COUNT(*) FROM DimProduct
+    UNION ALL SELECT 'DimCustomer', COUNT(*) FROM DimCustomer
+    UNION ALL SELECT 'DimStore', COUNT(*) FROM DimStore
+    UNION ALL SELECT 'DimEmployee', COUNT(*) FROM DimEmployee
+    UNION ALL SELECT 'DimSupplier', COUNT(*) FROM DimSupplier
+    UNION ALL SELECT 'DM_SalesDailySummary', COUNT(*) FROM DM_SalesDailySummary
+    UNION ALL SELECT 'DM_InventoryAlert', COUNT(*) FROM DM_InventoryAlert
+  "
+
+# Xem log ETL gần nhất
+/opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C -d DWH_RetailTech \
+  -Q "SELECT TOP 20 * FROM ETL_RunLog ORDER BY LoadDatetime DESC"
+
+# Xem tất cả các bảng trong database
+/opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C -d DWH_RetailTech \
+  -Q "SELECT TABLE_SCHEMA, TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'"
+```
+
+> **Lưu ý:** `${MSSQL_SA_PASSWORD}` là biến trong `.env` — không hardcode password ở đâu khác.
+
 ## 7. Kết nối Superset
 
 ### 7.1. Truy cập Superset
