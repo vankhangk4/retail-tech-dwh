@@ -123,19 +123,78 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False, tenant_i
             "EMPLOYEE_FILE": config.EMPLOYEE_FILE,
             "SUPPLIER_FILE": config.SUPPLIER_FILE,
         }
-    db_label = config.MSSQL_DATABASE
 
+    if not tenant_id:
+        raise ValueError("tenant_id is required for shared multi-tenant ETL")
+
+    db_label = config.MSSQL_DATABASE
     batch_date_str = batch_date.strftime("%Y-%m-%d")
+
     logger.info("")
     logger.info("=" * 60)
     logger.info(f"  ETL PIPELINE STARTED | DB: {db_label} | BatchDate: {batch_date_str}")
-    if tenant_id:
-        logger.info(f"  Tenant: {tenant_id}")
+    logger.info(f"  Tenant: {tenant_id}")
     logger.info("=" * 60)
 
     loader = StagingLoader(conn_str=conn_str)
     total_rows = 0
     overall_status = "SUCCESS"
+    stg_row_counts = {}
+    fact_ran = set()
+
+    # Registry / dependency map
+    source_configs = [
+        ("sales", "SALES_FILE", extract_sales, "STG_SalesRaw", True, "Sales"),
+        ("inventory", "INVENTORY_FILE", extract_inventory, "STG_InventoryRaw", True, "Inventory"),
+        ("product", "PRODUCT_FILE", extract_product, "STG_ProductRaw", False, "Product"),
+        ("customer", "CUSTOMER_FILE", extract_customer, "STG_CustomerRaw", False, "Customer"),
+        ("store", "STORE_FILE", extract_store, "STG_StoreRaw", False, "Store"),
+        ("employee", "EMPLOYEE_FILE", extract_employee, "STG_EmployeeRaw", False, "Employee"),
+        ("supplier", "SUPPLIER_FILE", extract_supplier, "STG_SupplierRaw", False, "Supplier"),
+    ]
+
+    dim_sp_by_stg = {
+        "STG_SupplierRaw": "sp_Load_DimSupplier",
+        "STG_ProductRaw": "sp_Load_DimProduct",
+        "STG_CustomerRaw": "sp_Load_DimCustomer",
+        "STG_StoreRaw": "sp_Load_DimStore",
+        "STG_EmployeeRaw": "sp_Load_DimEmployee",
+    }
+
+    fact_sp_by_stg = {
+        "STG_SalesRaw": (
+            "sp_Load_FactSales",
+            {
+                "BatchDate": batch_date_str,
+                "FullLoad": 1 if full_load else 0,
+                "TenantId": tenant_id,
+            },
+        ),
+        "STG_InventoryRaw": (
+            "sp_Load_FactInventory",
+            {
+                "BatchDate": batch_date_str,
+                "FullLoad": 1 if full_load else 0,
+                "TenantId": tenant_id,
+            },
+        ),
+    }
+
+    dm_sp_by_fact = {
+        "sp_Load_FactSales": (
+            "sp_Refresh_DM_SalesSummary",
+            {"BatchDate": batch_date_str, "TenantId": tenant_id},
+        ),
+        "sp_Load_FactInventory": (
+            "sp_Refresh_DM_InventoryAlert",
+            {"TenantId": tenant_id},
+        ),
+    }
+
+    watermark_date_sql_by_stg = {
+        "STG_SalesRaw": "SELECT ISNULL(MAX(NgayBan), GETDATE()) FROM STG_SalesRaw",
+        "STG_InventoryRaw": "SELECT ISNULL(MAX(NgayChot), GETDATE()) FROM STG_InventoryRaw",
+    }
 
     try:
         # =============================================
@@ -144,189 +203,105 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False, tenant_i
         logger.info("")
         logger.info(">>> [PHASE 1] EXTRACT & LOAD TO STAGING")
 
-        # Get watermarks
         if full_load:
             watermark = datetime(2020, 1, 1)
             logger.info("Full load mode: ignoring watermarks")
         else:
             watermark = get_watermark("STG_SalesRaw", conn_str=conn_str)
 
-        # Extract & Load: Sales
-        try:
-            df_sales = extract_sales(file_paths["SALES_FILE"], watermark)
-            if not df_sales.empty:
-                rows = loader.load(df_sales, "STG_SalesRaw", if_exists="truncate")
-                total_rows += rows
-                logger.info(f"  Sales: {rows} rows loaded")
-        except Exception as e:
-            logger.error(f"  Sales extraction failed: {e}")
+        for src_name, file_key, extractor_fn, stg_table, use_watermark, label in source_configs:
+            file_path = Path(file_paths[file_key])
+            if not file_path.exists():
+                logger.warning(f"{label} file not found: {file_path}")
+                continue
 
-        # Extract & Load: Inventory
-        try:
-            df_inv = extract_inventory(file_paths["INVENTORY_FILE"], watermark)
-            if not df_inv.empty:
-                rows = loader.load(df_inv, "STG_InventoryRaw", if_exists="truncate")
-                total_rows += rows
-                logger.info(f"  Inventory: {rows} rows loaded")
-        except Exception as e:
-            logger.error(f"  Inventory extraction failed: {e}")
+            try:
+                if use_watermark:
+                    df = extractor_fn(file_path, watermark)
+                else:
+                    df = extractor_fn(file_path)
 
-        # Extract & Load: Product
-        try:
-            df_prod = extract_product(file_paths["PRODUCT_FILE"])
-            if not df_prod.empty:
-                rows = loader.load(df_prod, "STG_ProductRaw", if_exists="truncate")
-                total_rows += rows
-                logger.info(f"  Product: {rows} rows loaded")
-        except Exception as e:
-            logger.error(f"  Product extraction failed: {e}")
+                if df.empty:
+                    logger.info(f"  {label}: no data extracted, skipped")
+                    continue
 
-        # Extract & Load: Customer
-        try:
-            df_cust = extract_customer(file_paths["CUSTOMER_FILE"])
-            if not df_cust.empty:
-                rows = loader.load(df_cust, "STG_CustomerRaw", if_exists="truncate")
-                total_rows += rows
-                logger.info(f"  Customer: {rows} rows loaded")
-        except Exception as e:
-            logger.error(f"  Customer extraction failed: {e}")
-
-        # Extract & Load: Store
-        try:
-            df_store = extract_store(file_paths["STORE_FILE"])
-            if not df_store.empty:
-                rows = loader.load(df_store, "STG_StoreRaw", if_exists="truncate")
-                total_rows += rows
-                logger.info(f"  Store: {rows} rows loaded")
-        except Exception as e:
-            logger.error(f"  Store extraction failed: {e}")
-
-        # Extract & Load: Employee
-        try:
-            df_emp = extract_employee(file_paths["EMPLOYEE_FILE"])
-            if not df_emp.empty:
-                rows = loader.load(df_emp, "STG_EmployeeRaw", if_exists="truncate")
-                total_rows += rows
-                logger.info(f"  Employee: {rows} rows loaded")
-        except Exception as e:
-            logger.error(f"  Employee extraction failed: {e}")
-
-        # Extract & Load: Supplier
-        try:
-            df_sup = extract_supplier(file_paths["SUPPLIER_FILE"])
-            if not df_sup.empty:
-                rows = loader.load(df_sup, "STG_SupplierRaw", if_exists="truncate")
-                total_rows += rows
-                logger.info(f"  Supplier: {rows} rows loaded")
-        except Exception as e:
-            logger.error(f"  Supplier extraction failed: {e}")
+                rows = loader.load(df, stg_table, if_exists="truncate")
+                if rows > 0:
+                    stg_row_counts[stg_table] = rows
+                    total_rows += rows
+                logger.info(f"  {label}: {rows} rows loaded")
+            except Exception as e:
+                logger.error(f"  {label} extraction failed: {e}")
 
         # =============================================
-        # PHASE 2: LOAD DIMENSIONS
+        # PHASE 2: LOAD DIMENSIONS (selective)
         # =============================================
         logger.info("")
         logger.info(">>> [PHASE 2] LOAD DIMENSIONS")
 
-        dim_sps = [
-            "sp_Load_DimSupplier",
-            "sp_Load_DimProduct",
-            "sp_Load_DimCustomer",
-            "sp_Load_DimStore",
-            "sp_Load_DimEmployee",
-        ]
-        if not tenant_id:
-            raise ValueError("tenant_id is required for shared multi-tenant ETL")
-
-        for sp in dim_sps:
+        for stg_table, sp in dim_sp_by_stg.items():
+            if stg_table not in stg_row_counts:
+                logger.info(f"  {sp} skipped (no data in {stg_table})")
+                continue
             try:
                 run_stored_procedure(sp, {"TenantId": tenant_id}, conn_str=conn_str)
             except Exception as e:
                 logger.error(f"  {sp} failed: {e}")
 
         # =============================================
-        # PHASE 3: LOAD FACTS
+        # PHASE 3: LOAD FACTS (selective)
         # =============================================
         logger.info("")
         logger.info(">>> [PHASE 3] LOAD FACTS")
 
-        fact_sps = [
-            (
-                "sp_Load_FactSales",
-                {
-                    "BatchDate": batch_date_str,
-                    "FullLoad": 1 if full_load else 0,
-                    "TenantId": tenant_id,
-                },
-            ),
-            (
-                "sp_Load_FactInventory",
-                {
-                    "BatchDate": batch_date_str,
-                    "FullLoad": 1 if full_load else 0,
-                    "TenantId": tenant_id,
-                },
-            ),
-            ("sp_Load_FactPurchase", {"BatchDate": batch_date_str, "TenantId": tenant_id}),
-        ]
-        for sp_name, params in fact_sps:
+        for stg_table, (sp_name, params) in fact_sp_by_stg.items():
+            if stg_table not in stg_row_counts:
+                logger.info(f"  {sp_name} skipped (no data in {stg_table})")
+                continue
             try:
-                run_stored_procedure(sp_name, params, conn_str=conn_str)
+                ok = run_stored_procedure(sp_name, params, conn_str=conn_str)
+                if ok:
+                    fact_ran.add(sp_name)
             except Exception as e:
                 logger.error(f"  {sp_name} failed: {e}")
 
+        # Skip FactPurchase by default (no source file in upload-driven flow)
+        logger.info("  sp_Load_FactPurchase skipped (no upload source mapping)")
+
         # =============================================
-        # PHASE 4: REFRESH DATA MARTS
+        # PHASE 4: REFRESH DATA MARTS (selective)
         # =============================================
         logger.info("")
         logger.info(">>> [PHASE 4] REFRESH DATA MARTS")
 
-        try:
-            run_stored_procedure(
-                "sp_Refresh_DM_SalesSummary",
-                {"BatchDate": batch_date_str, "TenantId": tenant_id},
-                conn_str=conn_str,
-            )
-        except Exception as e:
-            logger.error(f"  sp_Refresh_DM_SalesSummary failed: {e}")
-
-        try:
-            run_stored_procedure(
-                "sp_Refresh_DM_InventoryAlert",
-                {"TenantId": tenant_id},
-                conn_str=conn_str,
-            )
-        except Exception as e:
-            logger.error(f"  sp_Refresh_DM_InventoryAlert failed: {e}")
+        for fact_sp, (dm_sp, dm_params) in dm_sp_by_fact.items():
+            if fact_sp not in fact_ran:
+                logger.info(f"  {dm_sp} skipped ({fact_sp} not executed)")
+                continue
+            try:
+                run_stored_procedure(dm_sp, dm_params, conn_str=conn_str)
+            except Exception as e:
+                logger.error(f"  {dm_sp} failed: {e}")
 
         # =============================================
-        # PHASE 5: UPDATE WATERMARKS
+        # PHASE 5: UPDATE WATERMARKS (selective)
         # =============================================
         logger.info("")
         logger.info(">>> [PHASE 5] UPDATE WATERMARKS")
 
         try:
-            conn = pyodbc.connect(conn_str)
-            cursor = conn.cursor()
-            # Get actual max dates from staging data
-            cursor.execute("SELECT ISNULL(MAX(NgayBan), GETDATE()) FROM STG_SalesRaw")
-            max_sales_date = cursor.fetchone()[0]
-            cursor.execute("SELECT ISNULL(MAX(NgayChot), GETDATE()) FROM STG_InventoryRaw")
-            max_inv_date = cursor.fetchone()[0]
-            cursor.close()
-            conn.close()
-
-            # Update watermarks with actual data dates
-            updates = [
-                ("STG_SalesRaw",     max_sales_date, total_rows),
-                ("STG_InventoryRaw", max_inv_date,    total_rows),
-                ("STG_ProductRaw",   datetime.now(),  total_rows),
-                ("STG_CustomerRaw",  datetime.now(),  total_rows),
-                ("STG_StoreRaw",     datetime.now(),  total_rows),
-                ("STG_EmployeeRaw",  datetime.now(),  total_rows),
-                ("STG_SupplierRaw",  datetime.now(),  total_rows),
-            ]
-            for src, wm_date, rows in updates:
+            for stg_table, rows in stg_row_counts.items():
                 try:
+                    if stg_table in watermark_date_sql_by_stg:
+                        conn = pyodbc.connect(conn_str)
+                        cursor = conn.cursor()
+                        cursor.execute(watermark_date_sql_by_stg[stg_table])
+                        wm_date = cursor.fetchone()[0]
+                        cursor.close()
+                        conn.close()
+                    else:
+                        wm_date = datetime.now()
+
                     conn = pyodbc.connect(conn_str)
                     cursor = conn.cursor()
                     cursor.execute(
@@ -336,16 +311,19 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False, tenant_i
                                WatermarkValue = ?,
                                RowsExtracted = ?
                            WHERE SourceName = ?""",
-                        (wm_date, rows, src)
+                        (wm_date, rows, stg_table)
                     )
                     conn.commit()
                     cursor.close()
                     conn.close()
-                    logger.info(f"  Watermark updated: {src} = {wm_date}")
+                    logger.info(f"  Watermark updated: {stg_table} = {wm_date}")
                 except Exception as e:
-                    logger.error(f"  Watermark update failed for {src}: {e}")
+                    logger.error(f"  Watermark update failed for {stg_table}: {e}")
         except Exception as e:
-            logger.error(f"  Failed to get max dates: {e}")
+            logger.error(f"  Failed to update watermarks: {e}")
+
+        if total_rows == 0:
+            overall_status = "SKIPPED"
 
         logger.info("")
         logger.info("=" * 60)
@@ -360,6 +338,7 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False, tenant_i
 
     finally:
         loader.close()
+
 
 
 def run_scheduled():
