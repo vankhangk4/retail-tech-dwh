@@ -103,6 +103,7 @@ export const uploadFile = (file) => {
 };
 
 export const listFiles = () => api.get('/api/upload');
+export const deleteFile = (filename) => api.delete(`/api/upload/${encodeURIComponent(filename)}`);
 
 // ─── Embed ──────────────────────────────────────────────────────────────────
 

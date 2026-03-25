@@ -40,6 +40,12 @@ export default function ETLPage() {
         if (['SUCCESS', 'FAILED'].includes(res.data.status)) {
           setPolling(false);
           clearInterval(poll);
+
+          if (res.data.status === 'SUCCESS') {
+            localStorage.setItem('last_etl_success_at', String(Date.now()));
+            window.dispatchEvent(new Event('etl-success'));
+          }
+
           await loadHistory();
         }
       } catch {}

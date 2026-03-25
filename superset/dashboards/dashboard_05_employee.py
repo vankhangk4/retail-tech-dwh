@@ -20,8 +20,8 @@ DASHBOARD_CONFIG = {
                     SUM(f.NetSalesAmount) AS Revenue,
                     SUM(f.GrossProfitAmount) AS Profit
                 FROM FactSales f
-                JOIN DimEmployee e ON e.EmployeeKey = f.EmployeeKey
-                JOIN DimStore s ON s.StoreKey = f.StoreKey
+                JOIN DimEmployee e ON e.EmployeeKey = f.EmployeeKey AND e.TenantId = f.TenantId
+                JOIN DimStore s ON s.StoreKey = f.StoreKey AND s.TenantId = f.TenantId
                 WHERE f.ReturnFlag = 0
                 GROUP BY e.FullName, e.Position, s.StoreName
             """,
@@ -35,7 +35,7 @@ DASHBOARD_CONFIG = {
                     e.Department,
                     SUM(f.NetSalesAmount) AS Revenue
                 FROM FactSales f
-                JOIN DimEmployee e ON e.EmployeeKey = f.EmployeeKey
+                JOIN DimEmployee e ON e.EmployeeKey = f.EmployeeKey AND e.TenantId = f.TenantId
                 WHERE f.ReturnFlag = 0
                 GROUP BY e.Department
             """,
@@ -50,8 +50,8 @@ DASHBOARD_CONFIG = {
                     e.Department,
                     SUM(f.NetSalesAmount) AS Revenue
                 FROM FactSales f
-                JOIN DimStore s ON s.StoreKey = f.StoreKey
-                JOIN DimEmployee e ON e.EmployeeKey = f.EmployeeKey
+                JOIN DimStore s ON s.StoreKey = f.StoreKey AND s.TenantId = f.TenantId
+                JOIN DimEmployee e ON e.EmployeeKey = f.EmployeeKey AND e.TenantId = f.TenantId
                 WHERE f.ReturnFlag = 0
                 GROUP BY s.StoreName, e.Department
             """,

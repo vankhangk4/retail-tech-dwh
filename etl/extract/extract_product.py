@@ -59,12 +59,12 @@ def extract_product(file_path: str | Path, watermark: Optional = None) -> pd.Dat
         return pd.DataFrame()
 
     try:
-        df = pd.read_csv(file_path, dtype=str, encoding="utf-8-sig")
+        df = pd.read_csv(file_path, dtype=str, encoding="utf-8-sig", keep_default_na=False)
     except Exception:
         try:
-            df = pd.read_csv(file_path, dtype=str, encoding="utf-8")
+            df = pd.read_csv(file_path, dtype=str, encoding="utf-8", keep_default_na=False)
         except Exception:
-            df = pd.read_csv(file_path, dtype=str, encoding="latin-1")
+            df = pd.read_csv(file_path, dtype=str, encoding="latin-1", keep_default_na=False)
 
     df = rename_columns(df)
     df.columns = df.columns.str.strip()

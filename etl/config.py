@@ -3,8 +3,9 @@
 # Doc tu .env - KHONG hardcode bat ky gia tri nao
 # ============================================================
 import os
-import sys
+import re
 from pathlib import Path
+from typing import Iterable
 from dotenv import load_dotenv
 
 # Load .env tu thu muc project root
@@ -20,12 +21,10 @@ LOG_DIR = PROJECT_ROOT / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
 # ---- SQL Server Connection (doc tu .env) ----
-# MSSQL_HOST trong .env = container name (dung trong Docker network)
-# Khi chay tren host, dung localhost (port 1433 da map ra host)
 _MSSQL_HOST_IN_DOCKER = os.getenv("MSSQL_HOST", "datn_mssql")
 MSSQL_PORT = os.getenv("MSSQL_PORT", "1433")
 MSSQL_USER = "sa"
-MSSQL_PASSWORD = os.getenv("MSSQL_SA_PASSWORD")  # doc tu .env
+MSSQL_PASSWORD = os.getenv("MSSQL_SA_PASSWORD")
 MSSQL_DATABASE = os.getenv("MSSQL_DATABASE", "DWH_RetailTech")
 
 # ODBC Driver - auto detect
@@ -97,13 +96,11 @@ BATCH_SIZE = int(os.getenv("ETL_BATCH_SIZE", "5000"))
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 ETL_TIMEOUT_SECONDS = int(os.getenv("ETL_TIMEOUT_SECONDS", "1800"))
 
-# ---- Print config (debug) ----
 print(f"[config] Server={MSSQL_SERVER}:{MSSQL_PORT}, DB={MSSQL_DATABASE}, Driver={MSSQL_DRIVER}")
 print(f"[config] Sales file: {SALES_FILE}")
 print(f"[config] Running in Docker: {RUNNING_IN_DOCKER}")
 
 
-# ---- Multi-tenant helpers ----
 def get_tenant_conn_str(tenant_id: str) -> str:
     """Shared DB model: tenant context is logical only, connection stays the same."""
     return CONN_STR
@@ -115,24 +112,95 @@ def get_tenant_data_dir(tenant_id: str) -> Path:
     return upload_dir / tenant_id
 
 
+def _normalize_name(name: str) -> str:
+    return "".join(ch for ch in name.lower() if ch.isalnum())
+
+
+def _find_preferred_file(tenant_dir: Path, candidates: Iterable[str]) -> Path | None:
+    """Find file by exact candidate names first, then by safe fuzzy contains match."""
+    if not tenant_dir.exists():
+        return None
+
+    existing = [p for p in tenant_dir.iterdir() if p.is_file()]
+    if not existing:
+        return None
+
+    candidate_list = list(candidates)
+
+    # 1) Exact match (case-insensitive)
+    lower_map = {p.name.lower(): p for p in existing}
+    for c in candidate_list:
+        found = lower_map.get(c.lower())
+        if found:
+            return found
+
+    # 2) Safe Fuzzy Match: strip digits to get core keyword
+    norm_files = [(p, _normalize_name(p.stem)) for p in existing]
+    for c in candidate_list:
+        needle = _normalize_name(Path(c).stem)
+        if not needle:
+            continue
+
+        # Strip digits (2025, 2024...) to get core keyword for safe matching
+        core_needle = re.sub(r'\d+', '', needle)
+
+        # Only match if core keyword is long enough (>=4, avoid too-broad matches)
+        if len(core_needle) < 4:
+            continue
+
+        for p, stem_norm in norm_files:
+            # Safe contains: core keyword must be contained in the uploaded filename
+            if core_needle in stem_norm:
+                return p
+
+    return None
+
+
 def get_tenant_file_paths(tenant_id: str) -> dict:
-    """Trả về mapping file paths cho tenant, fallback về data/sources nếu thiếu."""
+    """
+    Trả về mapping file paths cho tenant.
+
+    Ưu tiên:
+    1) Tên chuẩn expected
+    2) Fuzzy theo keyword
+    3) Fallback về data/sources mặc định
+    """
     tenant_dir = get_tenant_data_dir(tenant_id)
 
     file_map = {
-        "SALES_FILE": ("BaoCaoDoanhThu_2025.xlsx", SALES_FILE),
-        "INVENTORY_FILE": ("QuanLyKho_2025.xlsx", INVENTORY_FILE),
-        "PRODUCT_FILE": ("DanhMucSanPham.csv", PRODUCT_FILE),
-        "CUSTOMER_FILE": ("DanhSachKhachHang.csv", CUSTOMER_FILE),
-        "STORE_FILE": ("DanhSachCuaHang.csv", STORE_FILE),
-        "EMPLOYEE_FILE": ("DanhSachNhanVien.csv", EMPLOYEE_FILE),
-        "SUPPLIER_FILE": ("DanhSachNhaCungCap.csv", SUPPLIER_FILE),
+        "SALES_FILE": (
+            ["BaoCaoDoanhThu_2025.xlsx", "sales.xlsx", "sales.csv", "doanhthu.xlsx"],
+            SALES_FILE,
+        ),
+        "INVENTORY_FILE": (
+            ["QuanLyKho_2025.xlsx", "inventory.xlsx", "inventory.csv", "tonkho.xlsx"],
+            INVENTORY_FILE,
+        ),
+        "PRODUCT_FILE": (
+            ["DanhMucSanPham.csv", "product.csv", "products.csv", "sanpham.csv"],
+            PRODUCT_FILE,
+        ),
+        "CUSTOMER_FILE": (
+            ["DanhSachKhachHang.csv", "customer.csv", "customers.csv", "khachhang.csv"],
+            CUSTOMER_FILE,
+        ),
+        "STORE_FILE": (
+            ["DanhSachCuaHang.csv", "store.csv", "stores.csv", "cuahang.csv"],
+            STORE_FILE,
+        ),
+        "EMPLOYEE_FILE": (
+            ["DanhSachNhanVien.csv", "employee.csv", "employees.csv", "nhanvien.csv"],
+            EMPLOYEE_FILE,
+        ),
+        "SUPPLIER_FILE": (
+            ["DanhSachNhaCungCap.csv", "supplier.csv", "suppliers.csv", "nhacungcap.csv"],
+            SUPPLIER_FILE,
+        ),
     }
 
     result = {}
-    for key, (filename, fallback) in file_map.items():
-        tenant_file = tenant_dir / filename
-        result[key] = tenant_file if tenant_file.exists() else fallback
+    for key, (candidates, fallback) in file_map.items():
+        preferred = _find_preferred_file(tenant_dir, candidates)
+        result[key] = preferred if preferred is not None else fallback
 
     return result
-

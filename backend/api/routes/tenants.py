@@ -1,3 +1,6 @@
+import os
+import shutil
+import pyodbc
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from models.master import Tenant, User, ETLRun
@@ -56,15 +59,51 @@ async def delete_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant không tồn tại")
 
-    # Shared database model: do not delete physical DB
+    # Khởi tạo SQL Server connection
+    dwh_conn_str = settings.mssql_conn_str + f"Database={settings.SHARED_DWH_DB};"
+    conn = pyodbc.connect(dwh_conn_str)
+    cursor = conn.cursor()
 
-    # Delete ETL runs for this tenant
-    db.query(ETLRun).filter(ETLRun.TenantId == tenant_id).delete()
+    try:
+        # 1. Xóa DWH data - KHÔNG commit
+        tables_to_clean = [
+            "DM_SalesDailySummary", "DM_InventoryAlert",
+            "FactSales", "FactInventory", "FactPurchase",
+            "DimProduct", "DimCustomer", "DimEmployee",
+            "DimSupplier", "DimStore",
+        ]
+        for tbl in tables_to_clean:
+            cursor.execute(f"""
+                IF OBJECT_ID('dbo.{tbl}', 'U') IS NOT NULL
+                DELETE FROM dbo.{tbl} WHERE TenantId = ?
+            """, (tenant_id,))
 
-    # Delete all users in this tenant
-    db.query(User).filter(User.TenantId == tenant_id).delete()
+        # 2. Xóa Postgres records - KHÔNG commit
+        db.query(ETLRun).filter(ETLRun.TenantId == tenant_id).delete()
+        db.query(User).filter(User.TenantId == tenant_id).delete()
+        db.query(Tenant).filter(Tenant.TenantId == tenant_id).delete()
 
-    # Delete tenant record
-    db.delete(tenant)
-    db.commit()
-    return {"message": f"Đã xóa tenant {tenant_id}"}
+        # 3. CHỐT HẠ: Cả 2 DB đều OK → commit cùng lúc
+        conn.commit()
+        db.commit()
+
+        # 4. XÓA FILE VẬT LÝ CUỐI CÙNG
+        tenant_upload_dir = os.path.join(settings.UPLOAD_DIR, tenant_id)
+        if os.path.exists(tenant_upload_dir):
+            try:
+                shutil.rmtree(tenant_upload_dir)
+            except Exception as file_e:
+                print(f"Warning: Tenant DB deleted but failed to delete files for {tenant_id}: {file_e}")
+
+        return {"message": f"Đã xóa tenant {tenant_id} và toàn bộ dữ liệu liên quan"}
+
+    except Exception as e:
+        if 'conn' in locals():
+            conn.rollback()
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Lỗi xóa tenant: {e}")
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()

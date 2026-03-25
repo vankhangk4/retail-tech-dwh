@@ -37,7 +37,7 @@ DASHBOARD_CONFIG = {
                     SUM(f.NetSalesAmount) AS Revenue,
                     SUM(f.GrossProfitAmount) AS Profit
                 FROM FactSales f
-                JOIN DimStore s ON s.StoreKey = f.StoreKey
+                JOIN DimStore s ON s.StoreKey = f.StoreKey AND s.TenantId = f.TenantId
                 WHERE f.ReturnFlag = 0
                 GROUP BY s.StoreName
             """,
@@ -51,7 +51,7 @@ DASHBOARD_CONFIG = {
                     p.CategoryName,
                     SUM(f.NetSalesAmount) AS Revenue
                 FROM FactSales f
-                JOIN DimProduct p ON p.ProductKey = f.ProductKey
+                JOIN DimProduct p ON p.ProductKey = f.ProductKey AND p.TenantId = f.TenantId
                 WHERE f.ReturnFlag = 0
                 GROUP BY p.CategoryName
             """,

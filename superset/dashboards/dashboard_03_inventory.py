@@ -32,7 +32,7 @@ DASHBOARD_CONFIG = {
                     SUM(f.TotalInventoryValue) AS InventoryValue,
                     SUM(f.ClosingStock) AS TotalUnits
                 FROM FactInventory f
-                JOIN DimStore s ON s.StoreKey = f.StoreKey
+                JOIN DimStore s ON s.StoreKey = f.StoreKey AND s.TenantId = f.TenantId
                 GROUP BY s.StoreName
             """,
         },
@@ -45,7 +45,7 @@ DASHBOARD_CONFIG = {
                     p.ProductName,
                     SUM(f.ClosingStock) AS CurrentStock
                 FROM FactInventory f
-                JOIN DimProduct p ON p.ProductKey = f.ProductKey
+                JOIN DimProduct p ON p.ProductKey = f.ProductKey AND p.TenantId = f.TenantId
                 GROUP BY p.ProductName
             """,
         },

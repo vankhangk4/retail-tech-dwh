@@ -65,19 +65,24 @@ def extract_inventory(
         return pd.DataFrame()
 
     try:
-        xl = pd.ExcelFile(file_path)
-        all_dfs = []
-        for sname in xl.sheet_names:
-            try:
-                sub = pd.read_excel(xl, sheet_name=sname, dtype=str)
-                all_dfs.append(sub)
-                logger.info(f"  Read sheet '{sname}': {len(sub)} rows")
-            except Exception as e:
-                logger.warning(f"  Failed to read sheet '{sname}': {e}")
-        if not all_dfs:
-            logger.error(f"No sheets could be read from {file_path}")
-            return pd.DataFrame()
-        df = pd.concat(all_dfs, ignore_index=True)
+        # Auto-detect file type by extension
+        ext = file_path.suffix.lower()
+        if ext == ".csv":
+            df = pd.read_csv(file_path, dtype=str)
+        else:
+            xl = pd.ExcelFile(file_path, engine="openpyxl")
+            all_dfs = []
+            for sname in xl.sheet_names:
+                try:
+                    sub = pd.read_excel(xl, sheet_name=sname, dtype=str)
+                    all_dfs.append(sub)
+                    logger.info(f"  Read sheet '{sname}': {len(sub)} rows")
+                except Exception as e:
+                    logger.warning(f"  Failed to read sheet '{sname}': {e}")
+            if not all_dfs:
+                logger.error(f"No sheets could be read from {file_path}")
+                return pd.DataFrame()
+            df = pd.concat(all_dfs, ignore_index=True)
     except Exception as e:
         logger.error(f"Failed to read inventory file: {e}")
         return pd.DataFrame()

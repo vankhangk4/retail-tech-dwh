@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { uploadFile, listFiles } from '../services/api';
+import { uploadFile, listFiles, deleteFile } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Upload as UploadIcon,
@@ -10,6 +10,8 @@ import {
   AlertCircle,
   Download,
   Eye,
+  Trash2,
+  RefreshCw,
 } from 'lucide-react';
 
 export default function UploadPage() {
@@ -20,6 +22,8 @@ export default function UploadPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [dragging, setDragging] = useState(false);
+  const [deletingFile, setDeletingFile] = useState(null);
+  const [deleteConfirmFile, setDeleteConfirmFile] = useState(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -34,6 +38,24 @@ export default function UploadPage() {
       setFiles(res.data);
     } catch {} finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (filename) => {
+    setDeleteConfirmFile(filename);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmFile) return;
+    setDeletingFile(deleteConfirmFile);
+    setDeleteConfirmFile(null);
+    try {
+      await deleteFile(deleteConfirmFile);
+      await loadFiles();
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Lỗi khi xóa file');
+    } finally {
+      setDeletingFile(null);
     }
   };
 
@@ -183,6 +205,7 @@ export default function UploadPage() {
                   <th>Tên file</th>
                   <th>Kích thước</th>
                   <th>Ngày upload</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -196,6 +219,7 @@ export default function UploadPage() {
                     </td>
                     <td><div className="skeleton" style={{ width: 60, height: 14 }} /></td>
                     <td><div className="skeleton" style={{ width: 140, height: 14 }} /></td>
+                    <td></td>
                   </tr>
                 ))}
               </tbody>
@@ -217,6 +241,7 @@ export default function UploadPage() {
                   <th>Tên file</th>
                   <th>Kích thước</th>
                   <th>Ngày upload</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -232,6 +257,23 @@ export default function UploadPage() {
                     <td style={{ color: '#64748b', fontSize: 13 }}>
                       {new Date(f.uploaded_at).toLocaleString('vi-VN')}
                     </td>
+                    <td>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => handleDelete(f.filename)}
+                        disabled={deletingFile === f.filename}
+                        title="Xóa file"
+                        style={{ color: '#dc2626', borderColor: '#fca5a5' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}
+                      >
+                        {deletingFile === f.filename ? (
+                          <RefreshCw size={14} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={14} />
+                        )}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -239,6 +281,81 @@ export default function UploadPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmFile && (
+        <div className="modal-overlay" onClick={() => setDeleteConfirmFile(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420 }}>
+            <div className="modal-header">
+              <h3>Xác nhận xóa file</h3>
+              <button className="modal-close" onClick={() => setDeleteConfirmFile(null)}>
+                <X size={16} />
+              </button>
+            </div>
+            <div style={{ padding: '20px 24px' }}>
+              <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                <div style={{
+                  width: 56, height: 56, borderRadius: '50%',
+                  background: '#fef2f2', margin: '0 auto 16px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Trash2 size={24} style={{ color: '#dc2626' }} />
+                </div>
+                <p style={{ fontSize: 15, color: '#1e293b', marginBottom: 8 }}>
+                  Bạn có chắc chắn muốn xóa file?
+                </p>
+                <p style={{ fontSize: 13, color: '#64748b', fontFamily: 'monospace' }}>
+                  {deleteConfirmFile}
+                </p>
+                <div style={{
+                  marginTop: 12, padding: '10px 14px',
+                  background: '#fef2f2', border: '1px solid #fca5a5',
+                  borderRadius: 8, textAlign: 'left',
+                }}>
+                  <p style={{ fontSize: 13, color: '#dc2626', fontWeight: 600, marginBottom: 4 }}>
+                    Cảnh báo: Thao tác này sẽ xóa:
+                  </p>
+                  <ul style={{ fontSize: 12, color: '#991b1b', margin: 0, paddingLeft: 18 }}>
+                    <li>File đã upload</li>
+                    <li>Toàn bộ dữ liệu đã ETL (staging, dimension, fact tables)</li>
+                    <li>Lịch sử ETL run của tenant này</li>
+                  </ul>
+                  <p style={{ fontSize: 12, color: '#dc2626', marginTop: 6, marginBottom: 0 }}>
+                    Thao tác này không thể hoàn tác.
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setDeleteConfirmFile(null)}
+                  disabled={deletingFile}
+                >
+                  Hủy
+                </button>
+                <button
+                  className="btn btn-danger"
+                  onClick={confirmDelete}
+                  disabled={deletingFile}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  {deletingFile ? (
+                    <>
+                      <RefreshCw size={14} className="animate-spin" />
+                      Đang xóa...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={14} />
+                      Xóa file
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

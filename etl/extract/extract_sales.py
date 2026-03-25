@@ -84,12 +84,15 @@ def extract_sales(
         return pd.DataFrame()
 
     try:
-        # Doc tat ca sheets
-        if sheet_name:
-            xl = pd.ExcelFile(file_path)
+        # Auto-detect file type by extension
+        ext = file_path.suffix.lower()
+        if ext == ".csv":
+            df = pd.read_csv(file_path, dtype=str)
+        elif sheet_name:
+            xl = pd.ExcelFile(file_path, engine="openpyxl")
             df = pd.read_excel(xl, sheet_name=sheet_name, dtype=str)
         else:
-            xl = pd.ExcelFile(file_path)
+            xl = pd.ExcelFile(file_path, engine="openpyxl")
             all_dfs = []
             for sname in xl.sheet_names:
                 try:

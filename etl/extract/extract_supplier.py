@@ -52,11 +52,11 @@ def extract_supplier(file_path: str | Path, watermark: Optional = None) -> pd.Da
 
     try:
         if file_path.suffix.lower() in [".xlsx", ".xls"]:
-            df = pd.read_excel(file_path, dtype=str)
+            df = pd.read_excel(file_path, dtype=str, keep_default_na=False)
         else:
             for enc in ["utf-8-sig", "utf-8", "latin-1"]:
                 try:
-                    df = pd.read_csv(file_path, dtype=str, encoding=enc)
+                    df = pd.read_csv(file_path, dtype=str, encoding=enc, keep_default_na=False)
                     break
                 except Exception:
                     continue
@@ -79,7 +79,7 @@ def extract_supplier(file_path: str | Path, watermark: Optional = None) -> pd.Da
         df[col] = df[col].str.strip() if df[col].dtype == "object" else df[col]
 
     before = len(df)
-    df = df.drop_duplicates(subset=["MaNCC"], keep="last")
+    df = df.drop_duplicates(subset=["MaNCC"], keep="first")
     logger.info(f"Supplier deduplication: {before} → {len(df)} rows")
 
     logger.info(f"Extracted {len(df)} suppliers from {file_path.name}")
