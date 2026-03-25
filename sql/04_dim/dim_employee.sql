@@ -9,7 +9,8 @@ GO
 IF OBJECT_ID('dbo.DimEmployee', 'U') IS NOT NULL DROP TABLE dbo.DimEmployee;
 CREATE TABLE dbo.DimEmployee (
     EmployeeKey       INT IDENTITY(1,1) PRIMARY KEY,
-    EmployeeCode      VARCHAR(20)     NOT NULL UNIQUE,
+    TenantId          VARCHAR(50)      NOT NULL,
+    EmployeeCode      VARCHAR(20)     NOT NULL,
     FullName          NVARCHAR(150)   NOT NULL,
     Department        NVARCHAR(100)  NOT NULL,
     Position          NVARCHAR(100)  NOT NULL,
@@ -19,7 +20,7 @@ CREATE TABLE dbo.DimEmployee (
     LoadDatetime      DATETIME2      NOT NULL DEFAULT GETDATE()
 );
 
-CREATE INDEX IX_DimEmployee_EmployeeCode ON dbo.DimEmployee(EmployeeCode);
+CREATE UNIQUE INDEX UQ_DimEmployee_Tenant_EmployeeCode ON dbo.DimEmployee(TenantId, EmployeeCode);
 CREATE INDEX IX_DimEmployee_StoreKey ON dbo.DimEmployee(StoreKey);
 CREATE INDEX IX_DimEmployee_Department ON dbo.DimEmployee(Department);
 GO

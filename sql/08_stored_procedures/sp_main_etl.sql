@@ -8,7 +8,8 @@ GO
 IF OBJECT_ID('dbo.sp_Main_ETL', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_Main_ETL;
 GO
 CREATE PROCEDURE dbo.sp_Main_ETL
-    @BatchDate DATE = NULL
+    @BatchDate DATE = NULL,
+    @TenantId  VARCHAR(50)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -32,42 +33,42 @@ BEGIN
 
         PRINT '';
         PRINT '>>> [1] Loading DimSupplier...';
-        EXEC dbo.sp_Load_DimSupplier;
+        EXEC dbo.sp_Load_DimSupplier @TenantId = @TenantId;
 
         PRINT '>>> [2] Loading DimProduct (SCD2)...';
-        EXEC dbo.sp_Load_DimProduct;
+        EXEC dbo.sp_Load_DimProduct @TenantId = @TenantId;
 
         PRINT '>>> [3] Loading DimCustomer...';
-        EXEC dbo.sp_Load_DimCustomer;
+        EXEC dbo.sp_Load_DimCustomer @TenantId = @TenantId;
 
         PRINT '>>> [4] Loading DimStore...';
-        EXEC dbo.sp_Load_DimStore;
+        EXEC dbo.sp_Load_DimStore @TenantId = @TenantId;
 
         PRINT '>>> [5] Loading DimEmployee...';
-        EXEC dbo.sp_Load_DimEmployee;
+        EXEC dbo.sp_Load_DimEmployee @TenantId = @TenantId;
 
         -- =============================================
         -- PHASE 2: Load Facts
         -- =============================================
 
         PRINT '>>> [6] Loading FactSales...';
-        EXEC dbo.sp_Load_FactSales @BatchDate = @BatchDate;
+        EXEC dbo.sp_Load_FactSales @BatchDate = @BatchDate, @TenantId = @TenantId;
 
         PRINT '>>> [7] Loading FactInventory...';
-        EXEC dbo.sp_Load_FactInventory @BatchDate = @BatchDate;
+        EXEC dbo.sp_Load_FactInventory @BatchDate = @BatchDate, @TenantId = @TenantId;
 
         PRINT '>>> [8] Loading FactPurchase...';
-        EXEC dbo.sp_Load_FactPurchase @BatchDate = @BatchDate;
+        EXEC dbo.sp_Load_FactPurchase @BatchDate = @BatchDate, @TenantId = @TenantId;
 
         -- =============================================
         -- PHASE 3: Refresh Data Marts
         -- =============================================
 
         PRINT '>>> [9] Refreshing DM_SalesDailySummary...';
-        EXEC dbo.sp_Refresh_DM_SalesSummary @BatchDate = @BatchDate;
+        EXEC dbo.sp_Refresh_DM_SalesSummary @BatchDate = @BatchDate, @TenantId = @TenantId;
 
         PRINT '>>> [10] Refreshing DM_InventoryAlert...';
-        EXEC dbo.sp_Refresh_DM_InventoryAlert;
+        EXEC dbo.sp_Refresh_DM_InventoryAlert @TenantId = @TenantId;
 
         -- =============================================
         -- PHASE 4: Update Watermarks
@@ -129,7 +130,8 @@ GO
 IF OBJECT_ID('dbo.sp_Refresh_DM_SalesSummary', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_Refresh_DM_SalesSummary;
 GO
 CREATE PROCEDURE dbo.sp_Refresh_DM_SalesSummary
-    @BatchDate DATE = NULL
+    @BatchDate DATE = NULL,
+    @TenantId  VARCHAR(50)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -140,6 +142,7 @@ BEGIN
         MERGE dbo.DM_SalesDailySummary AS target
         USING (
             SELECT
+                f.TenantId,
                 f.DateKey,
                 f.StoreKey,
                 f.ProductKey,
@@ -152,15 +155,17 @@ BEGIN
                 COUNT(DISTINCT f.InvoiceNumber) AS TransactionCount,
                 SUM(CASE WHEN f.ReturnFlag = 1 THEN 1 ELSE 0 END) AS ReturnCount
             FROM dbo.FactSales f
-            LEFT JOIN dbo.DimProduct p ON p.ProductKey = f.ProductKey
-            WHERE f.DateKey = CONVERT(INT, FORMAT(@BatchDate, 'yyyyMMdd'))
-            GROUP BY f.DateKey, f.StoreKey, f.ProductKey, p.CategoryName
+            LEFT JOIN dbo.DimProduct p ON p.ProductKey = f.ProductKey AND p.TenantId = f.TenantId
+            WHERE f.TenantId = @TenantId
+              AND f.DateKey = CONVERT(INT, FORMAT(@BatchDate, 'yyyyMMdd'))
+            GROUP BY f.TenantId, f.DateKey, f.StoreKey, f.ProductKey, p.CategoryName
         ) AS source (
-            DateKey, StoreKey, ProductKey, CategoryName,
+            TenantId, DateKey, StoreKey, ProductKey, CategoryName,
             GrossSalesAmount, NetSalesAmount, CostAmount, GrossProfitAmount,
             QuantitySold, TransactionCount, ReturnCount
         )
-        ON target.DateKey = source.DateKey
+        ON target.TenantId = source.TenantId
+           AND target.DateKey = source.DateKey
            AND ISNULL(target.StoreKey, -1) = ISNULL(source.StoreKey, -1)
            AND ISNULL(target.ProductKey, -1) = ISNULL(source.ProductKey, -1)
         WHEN MATCHED THEN UPDATE SET
@@ -173,11 +178,11 @@ BEGIN
             target.ReturnCount       = source.ReturnCount,
             target.LoadDatetime      = GETDATE()
         WHEN NOT MATCHED THEN INSERT (
-            DateKey, StoreKey, ProductKey, CategoryName,
+            TenantId, DateKey, StoreKey, ProductKey, CategoryName,
             GrossSalesAmount, NetSalesAmount, CostAmount, GrossProfitAmount,
             QuantitySold, TransactionCount, ReturnCount, LoadDatetime
         ) VALUES (
-            source.DateKey, source.StoreKey, source.ProductKey, source.CategoryName,
+            source.TenantId, source.DateKey, source.StoreKey, source.ProductKey, source.CategoryName,
             source.GrossSalesAmount, source.NetSalesAmount, source.CostAmount, source.GrossProfitAmount,
             source.QuantitySold, source.TransactionCount, source.ReturnCount, GETDATE()
         );
@@ -197,6 +202,7 @@ GO
 IF OBJECT_ID('dbo.sp_Refresh_DM_InventoryAlert', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_Refresh_DM_InventoryAlert;
 GO
 CREATE PROCEDURE dbo.sp_Refresh_DM_InventoryAlert
+    @TenantId  VARCHAR(50)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -210,6 +216,7 @@ BEGIN
         MERGE dbo.DM_InventoryAlert AS target
         USING (
             SELECT
+                @TenantId                                          AS TenantId,
                 @Today                                             AS AlertDate,
                 fi.ProductKey,
                 fi.StoreKey,
@@ -239,17 +246,20 @@ BEGIN
                     StoreKey,
                     SUM(StockSold) / 30.0 AS AvgDailySales
                 FROM dbo.FactInventory
-                WHERE DateKey BETWEEN @DateKey30DaysAgo AND @DateKeyToday
+                WHERE TenantId = @TenantId
+                  AND DateKey BETWEEN @DateKey30DaysAgo AND @DateKeyToday
                 GROUP BY ProductKey, StoreKey
             ) avg_sales ON avg_sales.ProductKey = fi.ProductKey
                         AND avg_sales.StoreKey = fi.StoreKey
-            WHERE fi.DateKey = @DateKeyToday
+            WHERE fi.TenantId = @TenantId
+              AND fi.DateKey = @DateKeyToday
               AND fi.ClosingStock < 15
         ) AS source (
-            AlertDate, ProductKey, StoreKey, AlertLevel, CurrentStock,
+            TenantId, AlertDate, ProductKey, StoreKey, AlertLevel, CurrentStock,
             ReorderPoint, DaysOfSupply, SuggestedOrderQty, AvgDailySales
         )
-        ON target.AlertDate = source.AlertDate
+        ON target.TenantId = source.TenantId
+           AND target.AlertDate = source.AlertDate
            AND target.ProductKey = source.ProductKey
            AND target.StoreKey = source.StoreKey
         WHEN MATCHED THEN UPDATE SET
@@ -259,10 +269,10 @@ BEGIN
             target.IsAcknowledged  = 0,
             target.LoadDatetime    = GETDATE()
         WHEN NOT MATCHED THEN INSERT (
-            AlertDate, ProductKey, StoreKey, AlertLevel, CurrentStock,
+            TenantId, AlertDate, ProductKey, StoreKey, AlertLevel, CurrentStock,
             ReorderPoint, DaysOfSupply, SuggestedOrderQty, AvgDailySales, IsAcknowledged, LoadDatetime
         ) VALUES (
-            source.AlertDate, source.ProductKey, source.StoreKey, source.AlertLevel, source.CurrentStock,
+            source.TenantId, source.AlertDate, source.ProductKey, source.StoreKey, source.AlertLevel, source.CurrentStock,
             source.ReorderPoint, source.DaysOfSupply, source.SuggestedOrderQty, source.AvgDailySales, 0, GETDATE()
         );
 

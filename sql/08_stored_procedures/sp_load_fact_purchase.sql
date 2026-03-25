@@ -8,7 +8,8 @@ GO
 IF OBJECT_ID('dbo.sp_Load_FactPurchase', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_Load_FactPurchase;
 GO
 CREATE PROCEDURE dbo.sp_Load_FactPurchase
-    @BatchDate DATE = NULL
+    @BatchDate DATE = NULL,
+    @TenantId  VARCHAR(50)
 AS
 BEGIN
     SET NOCOUNT ON;

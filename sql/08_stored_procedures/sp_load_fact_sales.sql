@@ -10,7 +10,8 @@ IF OBJECT_ID('dbo.sp_Load_FactSales', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_Loa
 GO
 CREATE PROCEDURE dbo.sp_Load_FactSales
     @BatchDate DATE = NULL,
-    @FullLoad  BIT = 0
+    @FullLoad  BIT = 0,
+    @TenantId  VARCHAR(50)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -55,12 +56,13 @@ BEGIN
 
         -- Step 3: Load FactSales (idempotent - skip if exists)
         INSERT INTO dbo.FactSales (
-            DateKey, ProductKey, CustomerKey, StoreKey, EmployeeKey,
+            TenantId, DateKey, ProductKey, CustomerKey, StoreKey, EmployeeKey,
             InvoiceNumber, Quantity, UnitPrice, DiscountAmount,
             GrossSalesAmount, NetSalesAmount, CostAmount, GrossProfitAmount,
             TaxAmount, PaymentMethod, SalesChannel, ReturnFlag, LoadDatetime
         )
         SELECT
+            @TenantId                                            AS TenantId,
             CONVERT(INT, FORMAT(s.NgayBan, 'yyyyMMdd'))          AS DateKey,
             ISNULL(p.ProductKey, -1)                              AS ProductKey,
             ISNULL(c.CustomerKey, -1)                            AS CustomerKey,
@@ -81,14 +83,15 @@ BEGIN
             ISNULL(s.IsHoanTra, 0)                               AS ReturnFlag,
             GETDATE()                                            AS LoadDatetime
         FROM dbo.STG_SalesRaw s
-        INNER JOIN dbo.DimStore st ON st.StoreCode = s.MaCH
-        LEFT  JOIN dbo.DimProduct p  ON p.ProductCode  = s.MaSP  AND p.IsCurrent = 1
-        LEFT  JOIN dbo.DimCustomer c ON c.CustomerCode = s.MaKH
-        LEFT  JOIN dbo.DimEmployee e ON e.EmployeeCode = s.MaNV
+        INNER JOIN dbo.DimStore st ON st.StoreCode = s.MaCH AND st.TenantId = @TenantId
+        LEFT  JOIN dbo.DimProduct p  ON p.ProductCode  = s.MaSP  AND p.IsCurrent = 1 AND p.TenantId = @TenantId
+        LEFT  JOIN dbo.DimCustomer c ON c.CustomerCode = s.MaKH AND c.TenantId = @TenantId
+        LEFT  JOIN dbo.DimEmployee e ON e.EmployeeCode = s.MaNV AND e.TenantId = @TenantId
         WHERE (@FullLoad = 1 OR CAST(s.NgayBan AS DATE) = @ProcessDate)
           AND NOT EXISTS (
               SELECT 1 FROM dbo.FactSales f
-              WHERE f.InvoiceNumber = UPPER(LTRIM(RTRIM(s.MaHoaDon)))
+              WHERE f.TenantId = @TenantId
+                AND f.InvoiceNumber = UPPER(LTRIM(RTRIM(s.MaHoaDon)))
                 AND f.ProductKey = ISNULL(p.ProductKey, -1)
           );
 

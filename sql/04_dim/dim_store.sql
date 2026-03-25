@@ -9,7 +9,8 @@ GO
 IF OBJECT_ID('dbo.DimStore', 'U') IS NOT NULL DROP TABLE dbo.DimStore;
 CREATE TABLE dbo.DimStore (
     StoreKey          INT IDENTITY(1,1) PRIMARY KEY,
-    StoreCode         VARCHAR(20)     NOT NULL UNIQUE,
+    TenantId          VARCHAR(50)      NOT NULL,
+    StoreCode         VARCHAR(20)     NOT NULL,
     StoreName         NVARCHAR(150)   NOT NULL,
     StoreType         VARCHAR(50)     NOT NULL,
     Address           NVARCHAR(255)   NOT NULL,
@@ -22,7 +23,7 @@ CREATE TABLE dbo.DimStore (
     LoadDatetime      DATETIME2       NOT NULL DEFAULT GETDATE()
 );
 
-CREATE INDEX IX_DimStore_StoreCode ON dbo.DimStore(StoreCode);
+CREATE UNIQUE INDEX UQ_DimStore_Tenant_StoreCode ON dbo.DimStore(TenantId, StoreCode);
 CREATE INDEX IX_DimStore_City ON dbo.DimStore(City);
 CREATE INDEX IX_DimStore_IsActive ON dbo.DimStore(IsActive);
 GO

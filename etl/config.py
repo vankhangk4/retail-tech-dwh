@@ -105,15 +105,8 @@ print(f"[config] Running in Docker: {RUNNING_IN_DOCKER}")
 
 # ---- Multi-tenant helpers ----
 def get_tenant_conn_str(tenant_id: str) -> str:
-    """Build CONN_STR cho database DWH_{tenant_id}."""
-    db_name = f"DWH_{tenant_id}"
-    return (
-        f"DRIVER={{{MSSQL_DRIVER}}};"
-        f"SERVER={MSSQL_SERVER},{MSSQL_PORT};"
-        f"DATABASE={db_name};"
-        f"UID={MSSQL_USER};PWD={MSSQL_PASSWORD};"
-        f"TrustServerCertificate=yes;Connection Timeout=30;"
-    )
+    """Shared DB model: tenant context is logical only, connection stays the same."""
+    return CONN_STR
 
 
 def get_tenant_data_dir(tenant_id: str) -> Path:

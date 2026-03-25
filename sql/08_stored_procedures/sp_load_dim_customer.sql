@@ -7,6 +7,7 @@ GO
 IF OBJECT_ID('dbo.sp_Load_DimCustomer', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_Load_DimCustomer;
 GO
 CREATE PROCEDURE dbo.sp_Load_DimCustomer
+    @TenantId VARCHAR(50)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -16,11 +17,12 @@ BEGIN
     BEGIN TRY
         -- Insert new customers (no SCD - simple overwrite for non-key attributes)
         INSERT INTO dbo.DimCustomer (
-            CustomerCode, FullName, Gender, DateOfBirth, AgeGroup,
+            TenantId, CustomerCode, FullName, Gender, DateOfBirth, AgeGroup,
             Phone, Email, City, Province, CustomerType,
             LoyaltyPoint, MemberSince, IsActive
         )
         SELECT
+            @TenantId,
             s.MaKH,
             s.HoTen,
             s.GioiTinh,
@@ -47,7 +49,7 @@ BEGIN
             1
         FROM dbo.STG_CustomerRaw s
         WHERE NOT EXISTS (
-            SELECT 1 FROM dbo.DimCustomer dc WHERE dc.CustomerCode = s.MaKH
+            SELECT 1 FROM dbo.DimCustomer dc WHERE dc.TenantId = @TenantId AND dc.CustomerCode = s.MaKH
         );
 
         SET @RowsInserted = @@ROWCOUNT;
@@ -75,7 +77,8 @@ BEGIN
                dc.CustomerType   = ISNULL(s.LoaiKH, dc.CustomerType),
                dc.LoyaltyPoint   = ISNULL(s.DiemTichLuy, dc.LoyaltyPoint)
         FROM dbo.DimCustomer dc
-        INNER JOIN dbo.STG_CustomerRaw s ON s.MaKH = dc.CustomerCode;
+        INNER JOIN dbo.STG_CustomerRaw s ON s.MaKH = dc.CustomerCode
+        WHERE dc.TenantId = @TenantId;
 
         INSERT INTO dbo.ETL_RunLog (RunDate, PipelineName, StepName, Status, RowsInserted, Duration_Seconds, LoadDatetime)
         VALUES (@ProcessDate, 'ETL_Main', 'sp_Load_DimCustomer', 'SUCCESS',

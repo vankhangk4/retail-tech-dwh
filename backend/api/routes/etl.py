@@ -23,8 +23,8 @@ def _resolve_tenant_id(
     return current_user.TenantId
 
 
-def _run_etl_subprocess(tenant_id: str, run_id: int, db_name: str):
-    """Chạy ETL subprocess cho tenant."""
+def _run_etl_subprocess(tenant_id: str, run_id: int):
+    """Chạy ETL subprocess cho tenant trên shared DB."""
     import time
     time.sleep(1)  # Small delay
 
@@ -111,9 +111,8 @@ async def trigger_etl(
     db.commit()
     db.refresh(run)
 
-    # Run ETL in background
-    db_name = f"DWH_{tenant_id}"
-    background_tasks.add_task(_run_etl_subprocess, tenant_id, run.RunId, db_name)
+    # Run ETL in background (shared DB + tenant context)
+    background_tasks.add_task(_run_etl_subprocess, tenant_id, run.RunId)
 
     return {"run_id": run.RunId, "status": "PENDING", "message": "ETL đã được kích hoạt"}
 

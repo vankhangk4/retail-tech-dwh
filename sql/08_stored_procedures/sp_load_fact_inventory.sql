@@ -10,7 +10,8 @@ IF OBJECT_ID('dbo.sp_Load_FactInventory', 'P') IS NOT NULL DROP PROCEDURE dbo.sp
 GO
 CREATE PROCEDURE dbo.sp_Load_FactInventory
     @BatchDate DATE = NULL,
-    @FullLoad  BIT = 0
+    @FullLoad  BIT = 0,
+    @TenantId  VARCHAR(50)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -20,11 +21,12 @@ BEGIN
 
     BEGIN TRY
         INSERT INTO dbo.FactInventory (
-            DateKey, ProductKey, StoreKey, SupplierKey,
+            TenantId, DateKey, ProductKey, StoreKey, SupplierKey,
             OpeningStock, ClosingStock, StockReceived, StockSold, StockAdjusted,
             ReorderPoint, UnitCost, TotalInventoryValue
         )
         SELECT
+            @TenantId                                            AS TenantId,
             CONVERT(INT, FORMAT(s.NgayChot, 'yyyyMMdd'))         AS DateKey,
             ISNULL(p.ProductKey, -1)                             AS ProductKey,
             st.StoreKey,
@@ -38,13 +40,14 @@ BEGIN
             ISNULL(p.UnitCostPrice, 0),
             s.TonCuoiNgay * ISNULL(p.UnitCostPrice, 0)         AS TotalInventoryValue
         FROM dbo.STG_InventoryRaw s
-        INNER JOIN dbo.DimStore st ON st.StoreCode = s.MaCH
-        LEFT  JOIN dbo.DimProduct p ON p.ProductCode = s.MaSP AND p.IsCurrent = 1
-        LEFT  JOIN dbo.DimSupplier sup ON sup.SupplierCode = s.MaNCC
+        INNER JOIN dbo.DimStore st ON st.StoreCode = s.MaCH AND st.TenantId = @TenantId
+        LEFT  JOIN dbo.DimProduct p ON p.ProductCode = s.MaSP AND p.IsCurrent = 1 AND p.TenantId = @TenantId
+        LEFT  JOIN dbo.DimSupplier sup ON sup.SupplierCode = s.MaNCC AND sup.TenantId = @TenantId
         WHERE (@FullLoad = 1 OR CAST(s.NgayChot AS DATE) = @ProcessDate)
           AND NOT EXISTS (
               SELECT 1 FROM dbo.FactInventory fi
-              WHERE fi.DateKey = CONVERT(INT, FORMAT(s.NgayChot, 'yyyyMMdd'))
+              WHERE fi.TenantId = @TenantId
+                AND fi.DateKey = CONVERT(INT, FORMAT(s.NgayChot, 'yyyyMMdd'))
                 AND fi.ProductKey = ISNULL(p.ProductKey, -1)
                 AND fi.StoreKey = st.StoreKey
           );

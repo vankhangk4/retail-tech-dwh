@@ -3,12 +3,10 @@ from sqlalchemy.orm import Session
 from models.master import Tenant, User, ETLRun
 from schemas import TenantCreate, TenantResponse, TenantUpdate
 from api.deps import get_db, get_current_superadmin
-from core.tenant import create_tenant_database, delete_tenant_database
-from core.security import hash_password
 from config import get_settings
-import pyodbc
 
 router = APIRouter(prefix="/api/admin/tenants", tags=["Tenants"])
+settings = get_settings()
 
 
 @router.get("", response_model=list[TenantResponse])
@@ -31,18 +29,8 @@ async def create_tenant(
     if existing:
         raise HTTPException(status_code=400, detail="Tenant đã tồn tại")
 
-    # Create database
-    db_name = f"DWH_{body.TenantId}"
-    print(f"[TENANT] Creating database: {db_name}")
-    success = create_tenant_database(db_name)
-    print(f"[TENANT] create_tenant_database returned: {success}")
-    if not success:
-        raise HTTPException(status_code=500, detail="Không thể tạo database")
-
-    # Run init SQL scripts in the new database
-    print(f"[TENANT] Initializing schema for: {db_name}")
-    _init_tenant_db(db_name)
-    print(f"[TENANT] Schema initialized for: {db_name}")
+    # Shared database model: no per-tenant DB creation
+    db_name = settings.SHARED_DWH_DB
 
     # Create tenant record
     tenant = Tenant(
@@ -68,8 +56,7 @@ async def delete_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant không tồn tại")
 
-    # Delete database first
-    delete_tenant_database(tenant.DatabaseName)
+    # Shared database model: do not delete physical DB
 
     # Delete ETL runs for this tenant
     db.query(ETLRun).filter(ETLRun.TenantId == tenant_id).delete()
@@ -81,73 +68,3 @@ async def delete_tenant(
     db.delete(tenant)
     db.commit()
     return {"message": f"Đã xóa tenant {tenant_id}"}
-
-
-def _run_sql_script(cursor, sql_text: str):
-    """
-    Split by GO and execute each batch.
-    - Remove USE statements (already connected to target DB)
-    - Each GO-separated batch becomes one pyodbc execute() call
-    - CREATE PROCEDURE must be first statement in its batch
-    """
-    import re
-    # Remove USE database statements (we're already connected to target DB)
-    lines = []
-    for line in sql_text.split('\n'):
-        stripped = line.strip()
-        if stripped.upper().startswith('USE '):
-            continue  # skip USE statements
-        lines.append(line)
-    cleaned = '\n'.join(lines)
-
-    # Split by GO (standalone GO lines)
-    # Use regex to split on lines that are ONLY "GO" (case insensitive, ignore whitespace)
-    parts = re.split(r'^\s*[Gg][Oo]\s*$', cleaned, flags=re.MULTILINE)
-    for part in parts:
-        part = part.strip()
-        if not part:
-            continue
-        try:
-            cursor.execute(part)
-        except Exception as e:
-            msg = str(e).lower()
-            # Ignore "object not found" errors (DROP IF EXISTS patterns)
-            if 'invalid object name' in msg or 'cannot find' in msg:
-                continue
-            print(f"SQL error: {e}")
-
-
-def _init_tenant_db(db_name: str):
-    """Khởi tạo schema cho tenant database."""
-    import os
-    settings = get_settings()
-
-    # Connect directly to the new database (DB đã được tạo bởi create_tenant_database)
-    conn_str = (
-        f"DRIVER={{ODBC Driver 18 for SQL Server}};"
-        f"SERVER={settings.MSSQL_HOST},{settings.MSSQL_PORT};"
-        f"DATABASE={db_name};"
-        f"UID={settings.MSSQL_USER};PWD={settings.MSSQL_PASSWORD};"
-        f"TrustServerCertificate=yes;"
-    )
-    try:
-        conn = pyodbc.connect(conn_str, autocommit=True)
-        cursor = conn.cursor()
-
-        sql_dir = "/app/sql"
-        if os.path.exists(sql_dir):
-            for folder in ["01_init", "02_staging", "03_system", "04_dim", "05_fact", "06_datamart", "07_indexes", "08_stored_procedures"]:
-                folder_path = os.path.join(sql_dir, folder)
-                if os.path.exists(folder_path):
-                    for filename in sorted(os.listdir(folder_path)):
-                        if filename.endswith(".sql"):
-                            filepath = os.path.join(folder_path, filename)
-                            with open(filepath, "r", encoding="utf-8") as f:
-                                sql_text = f.read()
-                            _run_sql_script(cursor, sql_text)
-
-        cursor.close()
-        conn.close()
-        print(f"Tenant DB [{db_name}] initialized successfully")
-    except Exception as e:
-        print(f"Error initializing tenant DB: {e}")

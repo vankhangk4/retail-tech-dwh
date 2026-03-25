@@ -7,6 +7,7 @@ GO
 IF OBJECT_ID('dbo.sp_Load_DimSupplier', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_Load_DimSupplier;
 GO
 CREATE PROCEDURE dbo.sp_Load_DimSupplier
+    @TenantId VARCHAR(50)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -15,10 +16,11 @@ BEGIN
 
     BEGIN TRY
         INSERT INTO dbo.DimSupplier (
-            SupplierCode, SupplierName, Country, ContactPerson, Phone, Email,
+            TenantId, SupplierCode, SupplierName, Country, ContactPerson, Phone, Email,
             PaymentTerm_Days, IsActive
         )
         SELECT
+            @TenantId,
             s.MaNCC,
             s.TenNCC,
             s.QuocGia,
@@ -29,7 +31,7 @@ BEGIN
             1
         FROM dbo.STG_SupplierRaw s
         WHERE NOT EXISTS (
-            SELECT 1 FROM dbo.DimSupplier ds WHERE ds.SupplierCode = s.MaNCC
+            SELECT 1 FROM dbo.DimSupplier ds WHERE ds.TenantId = @TenantId AND ds.SupplierCode = s.MaNCC
         );
 
         SET @RowsInserted = @@ROWCOUNT;
@@ -42,7 +44,8 @@ BEGIN
                ds.Email           = s.Email,
                ds.PaymentTerm_Days = s.DieuKhoanTT_Ngay
         FROM dbo.DimSupplier ds
-        INNER JOIN dbo.STG_SupplierRaw s ON s.MaNCC = ds.SupplierCode;
+        INNER JOIN dbo.STG_SupplierRaw s ON s.MaNCC = ds.SupplierCode
+        WHERE ds.TenantId = @TenantId;
 
         INSERT INTO dbo.ETL_RunLog (RunDate, PipelineName, StepName, Status, RowsInserted, LoadDatetime)
         VALUES (@ProcessDate, 'ETL_Main', 'sp_Load_DimSupplier', 'SUCCESS', @RowsInserted, GETDATE());

@@ -9,6 +9,7 @@ GO
 IF OBJECT_ID('dbo.DimProduct', 'U') IS NOT NULL DROP TABLE dbo.DimProduct;
 CREATE TABLE dbo.DimProduct (
     ProductKey        INT IDENTITY(1,1) PRIMARY KEY,
+    TenantId          VARCHAR(50)      NOT NULL,
     ProductCode       VARCHAR(50)     NOT NULL,
     ProductName       NVARCHAR(255)  NOT NULL,
     Brand             NVARCHAR(100)  NOT NULL,
@@ -24,10 +25,10 @@ CREATE TABLE dbo.DimProduct (
     ExpirationDate    DATE           NULL,
     IsCurrent         BIT            NOT NULL DEFAULT 1,
     LoadDatetime      DATETIME2      NOT NULL DEFAULT GETDATE(),
-    CONSTRAINT UQ_DimProduct_Code_Current UNIQUE (ProductCode, IsCurrent)
+    CONSTRAINT UQ_DimProduct_Tenant_Code_Current UNIQUE (TenantId, ProductCode, IsCurrent)
 );
 
-CREATE INDEX IX_DimProduct_ProductCode ON dbo.DimProduct(ProductCode);
+CREATE INDEX IX_DimProduct_Tenant_ProductCode ON dbo.DimProduct(TenantId, ProductCode);
 CREATE INDEX IX_DimProduct_IsCurrent ON dbo.DimProduct(IsCurrent);
 CREATE INDEX IX_DimProduct_CategoryName ON dbo.DimProduct(CategoryName);
 CREATE INDEX IX_DimProduct_Brand ON dbo.DimProduct(Brand);

@@ -9,6 +9,7 @@ GO
 IF OBJECT_ID('dbo.FactInventory', 'U') IS NOT NULL DROP TABLE dbo.FactInventory;
 CREATE TABLE dbo.FactInventory (
     InventoryKey        BIGINT IDENTITY(1,1) NOT NULL,
+    TenantId            VARCHAR(50)    NOT NULL,
     DateKey            INT           NOT NULL,
     ProductKey         INT           NOT NULL,
     StoreKey           INT           NOT NULL,
@@ -25,7 +26,7 @@ CREATE TABLE dbo.FactInventory (
     CONSTRAINT PK_FactInventory PRIMARY KEY NONCLUSTERED (InventoryKey)
 );
 
-CREATE CLUSTERED INDEX IX_FactInventory_DateKey ON dbo.FactInventory(DateKey);
+CREATE CLUSTERED INDEX IX_FactInventory_Tenant_DateKey ON dbo.FactInventory(TenantId, DateKey);
 CREATE NONCLUSTERED INDEX IX_FactInventory_ProductKey ON dbo.FactInventory(ProductKey);
 CREATE NONCLUSTERED INDEX IX_FactInventory_StoreKey ON dbo.FactInventory(StoreKey);
 CREATE NONCLUSTERED INDEX IX_FactInventory_ProductStoreDate ON dbo.FactInventory(ProductKey, StoreKey, DateKey);

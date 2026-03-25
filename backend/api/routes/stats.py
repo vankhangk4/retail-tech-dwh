@@ -30,23 +30,24 @@ async def get_stats(
     if not tenant_id:
         raise HTTPException(status_code=403, detail="User không thuộc tenant nào")
 
-    db_name = "DWH_" + str(tenant_id)
-
     try:
-        with get_tenant_session(db_name) as conn:
+        with get_tenant_session() as conn:
             revenue_row = conn.execute(
-                text("SELECT ISNULL(SUM(GrossSalesAmount), 0) FROM FactSales WHERE ReturnFlag = 0")
+                text("SELECT ISNULL(SUM(GrossSalesAmount), 0) FROM FactSales WHERE ReturnFlag = 0 AND TenantId = :tenant_id"),
+                {"tenant_id": tenant_id},
             ).fetchone()
             total_revenue = float(revenue_row[0]) if revenue_row else 0.0
 
             orders_row = conn.execute(
-                text("SELECT COUNT(*) FROM FactSales WHERE ReturnFlag = 0")
+                text("SELECT COUNT(*) FROM FactSales WHERE ReturnFlag = 0 AND TenantId = :tenant_id"),
+                {"tenant_id": tenant_id},
             ).fetchone()
             total_orders = orders_row[0] if orders_row else 0
 
             # Fixed: DimCustomer has IsActive
             customers_row = conn.execute(
-                text("SELECT COUNT(*) FROM DimCustomer WHERE IsActive = 1")
+                text("SELECT COUNT(*) FROM DimCustomer WHERE IsActive = 1 AND TenantId = :tenant_id"),
+                {"tenant_id": tenant_id},
             ).fetchone()
             total_customers = customers_row[0] if customers_row else 0
 
@@ -58,11 +59,12 @@ async def get_stats(
                         SUM(f.Quantity) AS TotalQty,
                         SUM(f.NetSalesAmount) AS TotalRevenue
                     FROM FactSales f
-                    JOIN DimProduct p ON p.ProductKey = f.ProductKey
-                    WHERE f.ReturnFlag = 0 AND p.IsCurrent = 1
+                    JOIN DimProduct p ON p.ProductKey = f.ProductKey AND p.TenantId = f.TenantId
+                    WHERE f.ReturnFlag = 0 AND p.IsCurrent = 1 AND f.TenantId = :tenant_id
                     GROUP BY p.ProductName, p.CategoryName
                     ORDER BY TotalQty DESC
-                """)
+                """),
+                {"tenant_id": tenant_id},
             ).fetchall()
 
             top_products = []
@@ -99,10 +101,8 @@ async def get_summary(
     if not tenant_id:
         raise HTTPException(status_code=403, detail="User không thuộc tenant nào")
 
-    db_name = "DWH_" + str(tenant_id)
-
     try:
-        with get_tenant_session(db_name) as conn:
+        with get_tenant_session() as conn:
             monthly = conn.execute(
                 text("""
                     SELECT
@@ -113,9 +113,12 @@ async def get_summary(
                         COUNT(*) AS OrderCount
                     FROM FactSales f
                     JOIN DimDate d ON d.DateKey = f.DateKey
-                    WHERE f.ReturnFlag = 0 AND d.FullDate >= DATEADD(MONTH, -12, GETDATE())
+                    WHERE f.ReturnFlag = 0
+                      AND f.TenantId = :tenant_id
+                      AND d.FullDate >= DATEADD(MONTH, -12, GETDATE())
                     GROUP BY d.Year, d.MonthNumber
-                """)
+                """),
+                {"tenant_id": tenant_id},
             ).fetchall()
 
             monthly_data = []
@@ -136,10 +139,12 @@ async def get_summary(
                         SUM(f.NetSalesAmount) AS Revenue,
                         COUNT(*) AS Orders
                     FROM FactSales f
-                    JOIN DimStore s ON s.StoreKey = f.StoreKey
+                    JOIN DimStore s ON s.StoreKey = f.StoreKey AND s.TenantId = f.TenantId
                     WHERE f.ReturnFlag = 0
+                      AND f.TenantId = :tenant_id
                     GROUP BY s.StoreName, s.City
-                """)
+                """),
+                {"tenant_id": tenant_id},
             ).fetchall()
 
             store_data = []

@@ -37,7 +37,7 @@ class TenantCreate(BaseModel):
 class TenantResponse(BaseModel):
     TenantId: str
     TenantName: str
-    DatabaseName: str
+    DatabaseName: Optional[str]
     Plan: str
     IsActive: bool
     CreatedAt: datetime
@@ -97,3 +97,12 @@ class StatsResponse(BaseModel):
     total_orders: int
     total_customers: int
     top_products: List[dict]
+
+
+# ============ EMBED ============
+class SupersetEmbedTokenResponse(BaseModel):
+    token: str
+    superset_url: str
+    dashboard_id: int
+    guest: bool
+    mode: str = "shared_rls"
