@@ -57,7 +57,7 @@ DASHBOARD_CONFIG = {
                     c.AgeGroup,
                     SUM(f.NetSalesAmount) AS Revenue
                 FROM FactSales f
-                JOIN DimCustomer c ON c.CustomerKey = f.CustomerKey
+                JOIN DimCustomer c ON c.CustomerKey = f.CustomerKey AND c.TenantId = f.TenantId
                 WHERE f.ReturnFlag = 0
                 GROUP BY c.AgeGroup
             """,

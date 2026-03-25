@@ -18,7 +18,7 @@ DASHBOARD_CONFIG = {
                     SUM(f.Quantity) AS TotalQtySold,
                     SUM(f.NetSalesAmount) AS Revenue
                 FROM FactSales f
-                JOIN DimProduct p ON p.ProductKey = f.ProductKey
+                JOIN DimProduct p ON p.ProductKey = f.ProductKey AND p.TenantId = f.TenantId
                 WHERE f.ReturnFlag = 0
                 GROUP BY p.ProductName
                 ORDER BY TotalQtySold DESC
@@ -33,7 +33,7 @@ DASHBOARD_CONFIG = {
                     p.CategoryName,
                     SUM(f.NetSalesAmount) AS Revenue
                 FROM FactSales f
-                JOIN DimProduct p ON p.ProductKey = f.ProductKey
+                JOIN DimProduct p ON p.ProductKey = f.ProductKey AND p.TenantId = f.TenantId
                 WHERE f.ReturnFlag = 0
                 GROUP BY p.CategoryName
             """,
@@ -51,7 +51,7 @@ DASHBOARD_CONFIG = {
                         ELSE 0
                     END AS ProfitMarginPct
                 FROM FactSales f
-                JOIN DimProduct p ON p.ProductKey = f.ProductKey
+                JOIN DimProduct p ON p.ProductKey = f.ProductKey AND p.TenantId = f.TenantId
                 WHERE f.ReturnFlag = 0
                 GROUP BY p.ProductName
             """,

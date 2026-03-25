@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { getSupersetToken } from '../services/api';
 import {
   BarChart3,
@@ -14,6 +14,8 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [supersetUrl, setSupersetUrl] = useState('');
+  const [iframeTs, setIframeTs] = useState(Date.now());
+  const lastHandledEtlTsRef = useRef(0);
 
   const openSuperset = async () => {
     setLoading(true);
@@ -23,6 +25,7 @@ export default function ReportsPage() {
       setToken(res.data.token);
       if (res.data.dashboard_id) setDashboardId(res.data.dashboard_id);
       if (res.data.superset_url) setSupersetUrl(res.data.superset_url);
+      setIframeTs(Date.now());
     } catch (err) {
       setError(err.response?.data?.detail || 'Không thể lấy Superset token');
     } finally {
@@ -38,12 +41,51 @@ export default function ReportsPage() {
       setToken(res.data.token);
       if (res.data.dashboard_id) setDashboardId(res.data.dashboard_id);
       if (res.data.superset_url) setSupersetUrl(res.data.superset_url);
+      setIframeTs(Date.now());
     } catch (err) {
       setError(err.response?.data?.detail || 'Không thể lấy Superset token');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const handleEtlSuccess = async () => {
+      const rawTs = localStorage.getItem('last_etl_success_at');
+      const ts = Number(rawTs || 0);
+      if (!ts || ts <= lastHandledEtlTsRef.current) return;
+
+      lastHandledEtlTsRef.current = ts;
+      if (!token) return;
+
+      setLoading(true);
+      try {
+        const res = await getSupersetToken();
+        setToken(res.data.token);
+        if (res.data.dashboard_id) setDashboardId(res.data.dashboard_id);
+        if (res.data.superset_url) setSupersetUrl(res.data.superset_url);
+        setIframeTs(Date.now());
+      } catch {
+        // silent auto-refresh failure, user can still refresh manually
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const handleStorage = (e) => {
+      if (e.key === 'last_etl_success_at' && e.newValue) {
+        handleEtlSuccess();
+      }
+    };
+
+    window.addEventListener('etl-success', handleEtlSuccess);
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      window.removeEventListener('etl-success', handleEtlSuccess);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [token]);
 
   return (
     <div>
@@ -91,7 +133,7 @@ export default function ReportsPage() {
                 Làm mới
               </button>
               <a
-                href={`${supersetUrl}/superset/dashboard/${dashboardId}/?guest_token=${token}`}
+                href={`${supersetUrl}/superset/dashboard/${dashboardId}/?guest_token=${token}&ts=${iframeTs}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-secondary btn-sm"
@@ -153,7 +195,7 @@ export default function ReportsPage() {
               <h3>Superset Dashboard</h3>
             </div>
             <iframe
-              src={`${supersetUrl}/superset/dashboard/${dashboardId}/?guest_token=${token}`}
+              src={`${supersetUrl}/superset/dashboard/${dashboardId}/?guest_token=${token}&ts=${iframeTs}`}
               className="superset-iframe"
               title="Superset Dashboard"
               allow="fullscreen"

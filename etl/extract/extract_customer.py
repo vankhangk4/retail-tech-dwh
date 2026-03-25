@@ -6,6 +6,7 @@ import pandas as pd
 import logging
 from pathlib import Path
 from typing import Optional
+from .helpers import smart_parse_date
 
 logger = logging.getLogger("etl.extract")
 
@@ -61,11 +62,11 @@ def extract_customer(file_path: str | Path, watermark: Optional = None) -> pd.Da
 
     try:
         if file_path.suffix.lower() in [".xlsx", ".xls"]:
-            df = pd.read_excel(file_path, dtype=str)
+            df = pd.read_excel(file_path, dtype=str, keep_default_na=False)
         else:
             for enc in ["utf-8-sig", "utf-8", "latin-1"]:
                 try:
-                    df = pd.read_csv(file_path, dtype=str, encoding=enc)
+                    df = pd.read_csv(file_path, dtype=str, encoding=enc, keep_default_na=False)
                     break
                 except Exception:
                     continue
@@ -82,9 +83,9 @@ def extract_customer(file_path: str | Path, watermark: Optional = None) -> pd.Da
             df[c] = None
 
     if "NgaySinh" in df.columns:
-        df["NgaySinh"] = pd.to_datetime(df["NgaySinh"], dayfirst=False, errors="coerce")
+        df["NgaySinh"] = smart_parse_date(df["NgaySinh"])
     if "NgayDangKy" in df.columns:
-        df["NgayDangKy"] = pd.to_datetime(df["NgayDangKy"], dayfirst=False, errors="coerce")
+        df["NgayDangKy"] = smart_parse_date(df["NgayDangKy"])
     if "DiemTichLuy" in df.columns:
         df["DiemTichLuy"] = pd.to_numeric(df["DiemTichLuy"], errors="coerce").fillna(0)
 
@@ -92,7 +93,13 @@ def extract_customer(file_path: str | Path, watermark: Optional = None) -> pd.Da
         df[col] = df[col].str.strip() if df[col].dtype == "object" else df[col]
 
     before = len(df)
-    df = df.drop_duplicates(subset=["MaKH"], keep="last")
+    # Deduplication: score based on how many date fields are valid
+    df["_valid_score"] = (
+        df["NgayDangKy"].notna().astype(int) + df["NgaySinh"].notna().astype(int)
+    )
+    df = df.sort_values("_valid_score", ascending=False)
+    df = df.drop_duplicates(subset=["MaKH"], keep="first")
+    df = df.drop(columns=["_valid_score"])
     logger.info(f"Customer deduplication: {before} → {len(df)} rows")
 
     logger.info(f"Extracted {len(df)} customers from {file_path.name}")

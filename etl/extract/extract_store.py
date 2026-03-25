@@ -6,6 +6,7 @@ import pandas as pd
 import logging
 from pathlib import Path
 from typing import Optional
+from .helpers import smart_parse_date
 
 logger = logging.getLogger("etl.extract")
 
@@ -60,11 +61,11 @@ def extract_store(file_path: str | Path, watermark: Optional = None) -> pd.DataF
 
     try:
         if file_path.suffix.lower() in [".xlsx", ".xls"]:
-            df = pd.read_excel(file_path, dtype=str)
+            df = pd.read_excel(file_path, dtype=str, keep_default_na=False)
         else:
             for enc in ["utf-8-sig", "utf-8", "latin-1"]:
                 try:
-                    df = pd.read_csv(file_path, dtype=str, encoding=enc)
+                    df = pd.read_csv(file_path, dtype=str, encoding=enc, keep_default_na=False)
                     break
                 except Exception:
                     continue
@@ -81,7 +82,7 @@ def extract_store(file_path: str | Path, watermark: Optional = None) -> pd.DataF
             df[c] = None
 
     if "NgayKhaiTruong" in df.columns:
-        df["NgayKhaiTruong"] = pd.to_datetime(df["NgayKhaiTruong"], dayfirst=False, errors="coerce")
+        df["NgayKhaiTruong"] = smart_parse_date(df["NgayKhaiTruong"])
     if "DienTich_m2" in df.columns:
         df["DienTich_m2"] = pd.to_numeric(df["DienTich_m2"], errors="coerce")
 
@@ -89,7 +90,11 @@ def extract_store(file_path: str | Path, watermark: Optional = None) -> pd.DataF
         df[col] = df[col].str.strip() if df[col].dtype == "object" else df[col]
 
     before = len(df)
-    df = df.drop_duplicates(subset=["MaCH"], keep="last")
+    # Deduplication: keep row with valid date
+    df["_has_date"] = df["NgayKhaiTruong"].notna()
+    df = df.sort_values("_has_date", ascending=False)
+    df = df.drop_duplicates(subset=["MaCH"], keep="first")
+    df = df.drop(columns=["_has_date"])
     logger.info(f"Store deduplication: {before} → {len(df)} rows")
 
     logger.info(f"Extracted {len(df)} stores from {file_path.name}")
