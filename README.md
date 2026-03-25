@@ -476,7 +476,7 @@ Superset admin đăng nhập tại `http://localhost:8088` (`SUPERSET_ADMIN_USER
      ?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes
 
 2. Tạo Datasets
-   + Add → Dataset → Chọn database → Chọn bảng (FactSales, DimProduct, ...)
+   + Add → Dataset → Chọn database → Chọn bảng (FactSales, DimProduct, ....)
 
 3. Tạo Charts
    + New → Chart → Chọn dataset → Tạo chart
