@@ -146,16 +146,17 @@ cp *.xlsx *.csv ../sources/
 cd /home/khang/Desktop/retail-tech-dwh
 
 # Chạy một lần (load incremental theo watermark)
-python -m etl.main_etl
+python3.10 -m etl.main_etl
 
 # Chạy với ngày cụ thể
-python -m etl.main_etl --date 2025-03-22
+python3.10 -m etl.main_etl --date 2025-03-22
 
 # Full load (bỏ qua watermark)
-python -m etl.main_etl --full
+python3.10 -m etl.main_etl --full
+docker compose exec backend python -m etl.main_etl --full 
 
 # Chạy lập lịch hàng ngày lúc 02:00
-python -m etl.main_etl --schedule
+python3.10 -m etl.main_etl --schedule
 ```
 
 ### Kiểm tra log

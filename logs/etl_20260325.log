@@ -1,0 +1,134 @@
+2026-03-25 13:51:05 [INFO] etl.main | etl_run:131 | 
+2026-03-25 13:51:05 [INFO] etl.main | etl_run:131 | 
+2026-03-25 13:51:05 [INFO] etl.main | etl_run:132 | ============================================================
+2026-03-25 13:51:05 [INFO] etl.main | etl_run:132 | ============================================================
+2026-03-25 13:51:05 [INFO] etl.main | etl_run:133 |   ETL PIPELINE STARTED | DB: DWH_RetailTech | BatchDate: 2026-03-25
+2026-03-25 13:51:05 [INFO] etl.main | etl_run:133 |   ETL PIPELINE STARTED | DB: DWH_RetailTech | BatchDate: 2026-03-25
+2026-03-25 13:51:05 [INFO] etl.main | etl_run:136 | ============================================================
+2026-03-25 13:51:05 [INFO] etl.main | etl_run:136 | ============================================================
+2026-03-25 13:51:05 [INFO] etl.main | etl_run:146 | 
+2026-03-25 13:51:05 [INFO] etl.main | etl_run:146 | 
+2026-03-25 13:51:05 [INFO] etl.main | etl_run:147 | >>> [PHASE 1] EXTRACT & LOAD TO STAGING
+2026-03-25 13:51:05 [INFO] etl.main | etl_run:147 | >>> [PHASE 1] EXTRACT & LOAD TO STAGING
+2026-03-25 13:51:05 [INFO] etl.main | etl_run:152 | Full load mode: ignoring watermarks
+2026-03-25 13:51:05 [INFO] etl.main | etl_run:152 | Full load mode: ignoring watermarks
+2026-03-25 13:51:05 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-01': 2465 rows
+2026-03-25 13:51:05 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-02': 1840 rows
+2026-03-25 13:51:06 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-03': 2348 rows
+2026-03-25 13:51:06 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-04': 2147 rows
+2026-03-25 13:51:06 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-05': 2226 rows
+2026-03-25 13:51:07 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-06': 2505 rows
+2026-03-25 13:51:07 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-07': 2359 rows
+2026-03-25 13:51:07 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-08': 2422 rows
+2026-03-25 13:51:08 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-09': 2168 rows
+2026-03-25 13:51:08 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-10': 2352 rows
+2026-03-25 13:51:09 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-11': 3004 rows
+2026-03-25 13:51:09 [INFO] etl.extract | extract_sales:98 |   Read sheet '2025-12': 3064 rows
+2026-03-25 13:51:09 [INFO] etl.extract | extract_sales:124 | Watermark filter: 28900 → 11762 rows (watermark=2020-01-01)
+2026-03-25 13:51:09 [INFO] etl.extract | extract_sales:142 | Extracted 11762 sales records from BaoCaoDoanhThu_2025.xlsx
+2026-03-25 13:51:24 [ERROR] etl.load | load:74 | Failed to load to STG_SalesRaw: (pyodbc.OperationalError) ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-03-25 13:51:24 [WARNING] etl.load | _fallback_insert:80 | Using row-by-row fallback for STG_SalesRaw
+2026-03-25 13:51:39 [ERROR] etl.main | etl_run:164 |   Sales extraction failed: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:51:39 [ERROR] etl.main | etl_run:164 |   Sales extraction failed: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:51:40 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-01': 7750 rows
+2026-03-25 13:51:41 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-02': 7000 rows
+2026-03-25 13:51:42 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-03': 7750 rows
+2026-03-25 13:51:42 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-04': 7500 rows
+2026-03-25 13:51:43 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-05': 7750 rows
+2026-03-25 13:51:44 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-06': 7500 rows
+2026-03-25 13:51:45 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-07': 7750 rows
+2026-03-25 13:51:46 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-08': 7750 rows
+2026-03-25 13:51:46 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-09': 7500 rows
+2026-03-25 13:51:47 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-10': 7750 rows
+2026-03-25 13:51:48 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-11': 7500 rows
+2026-03-25 13:51:49 [INFO] etl.extract | extract_inventory:74 |   Read sheet '2025-12': 7750 rows
+2026-03-25 13:51:49 [INFO] etl.extract | extract_inventory:110 | Extracted 36000 inventory records from QuanLyKho_2025.xlsx
+2026-03-25 13:52:04 [ERROR] etl.load | load:74 | Failed to load to STG_InventoryRaw: (pyodbc.OperationalError) ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-03-25 13:52:04 [WARNING] etl.load | _fallback_insert:80 | Using row-by-row fallback for STG_InventoryRaw
+2026-03-25 13:52:19 [ERROR] etl.main | etl_run:174 |   Inventory extraction failed: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:52:19 [ERROR] etl.main | etl_run:174 |   Inventory extraction failed: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:52:19 [INFO] etl.extract | extract_product:90 | Product deduplication: 50 → 50 rows
+2026-03-25 13:52:19 [INFO] etl.extract | extract_product:92 | Extracted 50 products from DanhMucSanPham.csv
+2026-03-25 13:52:34 [ERROR] etl.load | load:74 | Failed to load to STG_ProductRaw: (pyodbc.OperationalError) ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-03-25 13:52:34 [WARNING] etl.load | _fallback_insert:80 | Using row-by-row fallback for STG_ProductRaw
+2026-03-25 13:52:49 [ERROR] etl.main | etl_run:184 |   Product extraction failed: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:52:49 [ERROR] etl.main | etl_run:184 |   Product extraction failed: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:52:49 [INFO] etl.extract | extract_customer:96 | Customer deduplication: 30 → 30 rows
+2026-03-25 13:52:49 [INFO] etl.extract | extract_customer:98 | Extracted 30 customers from DanhSachKhachHang.csv
+2026-03-25 13:53:04 [ERROR] etl.load | load:74 | Failed to load to STG_CustomerRaw: (pyodbc.OperationalError) ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-03-25 13:53:04 [WARNING] etl.load | _fallback_insert:80 | Using row-by-row fallback for STG_CustomerRaw
+2026-03-25 13:53:19 [ERROR] etl.main | etl_run:194 |   Customer extraction failed: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:53:19 [ERROR] etl.main | etl_run:194 |   Customer extraction failed: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:53:19 [INFO] etl.extract | extract_store:93 | Store deduplication: 5 → 5 rows
+2026-03-25 13:53:19 [INFO] etl.extract | extract_store:95 | Extracted 5 stores from DanhSachCuaHang.csv
+2026-03-25 13:53:34 [ERROR] etl.load | load:74 | Failed to load to STG_StoreRaw: (pyodbc.OperationalError) ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-03-25 13:53:34 [WARNING] etl.load | _fallback_insert:80 | Using row-by-row fallback for STG_StoreRaw
+2026-03-25 13:53:49 [ERROR] etl.main | etl_run:204 |   Store extraction failed: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:53:49 [ERROR] etl.main | etl_run:204 |   Store extraction failed: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:53:49 [INFO] etl.extract | extract_employee:82 | Employee deduplication: 20 → 20 rows
+2026-03-25 13:53:49 [INFO] etl.extract | extract_employee:84 | Extracted 20 employees from DanhSachNhanVien.csv
+2026-03-25 13:54:04 [ERROR] etl.load | load:74 | Failed to load to STG_EmployeeRaw: (pyodbc.OperationalError) ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-03-25 13:54:04 [WARNING] etl.load | _fallback_insert:80 | Using row-by-row fallback for STG_EmployeeRaw
+2026-03-25 13:54:19 [ERROR] etl.main | etl_run:214 |   Employee extraction failed: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:54:19 [ERROR] etl.main | etl_run:214 |   Employee extraction failed: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:54:19 [INFO] etl.extract | extract_supplier:83 | Supplier deduplication: 10 → 10 rows
+2026-03-25 13:54:19 [INFO] etl.extract | extract_supplier:85 | Extracted 10 suppliers from DanhSachNhaCungCap.csv
+2026-03-25 13:54:34 [ERROR] etl.load | load:74 | Failed to load to STG_SupplierRaw: (pyodbc.OperationalError) ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-03-25 13:54:34 [WARNING] etl.load | _fallback_insert:80 | Using row-by-row fallback for STG_SupplierRaw
+2026-03-25 13:54:49 [ERROR] etl.main | etl_run:224 |   Supplier extraction failed: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:54:49 [ERROR] etl.main | etl_run:224 |   Supplier extraction failed: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:54:49 [INFO] etl.main | etl_run:229 | 
+2026-03-25 13:54:49 [INFO] etl.main | etl_run:229 | 
+2026-03-25 13:54:49 [INFO] etl.main | etl_run:230 | >>> [PHASE 2] LOAD DIMENSIONS
+2026-03-25 13:54:49 [INFO] etl.main | etl_run:230 | >>> [PHASE 2] LOAD DIMENSIONS
+2026-03-25 13:55:04 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Load_DimSupplier: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:55:04 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Load_DimSupplier: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:55:19 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Load_DimProduct: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:55:19 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Load_DimProduct: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:55:35 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Load_DimCustomer: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:55:35 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Load_DimCustomer: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:55:50 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Load_DimStore: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:55:50 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Load_DimStore: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:56:05 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Load_DimEmployee: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:56:05 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Load_DimEmployee: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:56:05 [INFO] etl.main | etl_run:248 | 
+2026-03-25 13:56:05 [INFO] etl.main | etl_run:248 | 
+2026-03-25 13:56:05 [INFO] etl.main | etl_run:249 | >>> [PHASE 3] LOAD FACTS
+2026-03-25 13:56:05 [INFO] etl.main | etl_run:249 | >>> [PHASE 3] LOAD FACTS
+2026-03-25 13:56:20 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Load_FactSales: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:56:20 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Load_FactSales: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:56:35 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Load_FactInventory: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:56:35 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Load_FactInventory: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:56:50 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Load_FactPurchase: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:56:50 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Load_FactPurchase: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:56:50 [INFO] etl.main | etl_run:265 | 
+2026-03-25 13:56:50 [INFO] etl.main | etl_run:265 | 
+2026-03-25 13:56:50 [INFO] etl.main | etl_run:266 | >>> [PHASE 4] REFRESH DATA MARTS
+2026-03-25 13:56:50 [INFO] etl.main | etl_run:266 | >>> [PHASE 4] REFRESH DATA MARTS
+2026-03-25 13:57:05 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Refresh_DM_SalesSummary: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:57:05 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Refresh_DM_SalesSummary: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:57:20 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Refresh_DM_InventoryAlert: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:57:20 [ERROR] etl.main | run_stored_procedure:71 | SP execution failed - sp_Refresh_DM_InventoryAlert: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:57:20 [INFO] etl.main | etl_run:281 | 
+2026-03-25 13:57:20 [INFO] etl.main | etl_run:281 | 
+2026-03-25 13:57:20 [INFO] etl.main | etl_run:282 | >>> [PHASE 5] UPDATE WATERMARKS
+2026-03-25 13:57:20 [INFO] etl.main | etl_run:282 | >>> [PHASE 5] UPDATE WATERMARKS
+2026-03-25 13:57:35 [ERROR] etl.main | etl_run:325 |   Failed to get max dates: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:57:35 [ERROR] etl.main | etl_run:325 |   Failed to get max dates: ('HYT00', '[HYT00] [Microsoft][ODBC Driver 18 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+2026-03-25 13:57:35 [INFO] etl.main | etl_run:327 | 
+2026-03-25 13:57:35 [INFO] etl.main | etl_run:327 | 
+2026-03-25 13:57:35 [INFO] etl.main | etl_run:328 | ============================================================
+2026-03-25 13:57:35 [INFO] etl.main | etl_run:328 | ============================================================
+2026-03-25 13:57:35 [INFO] etl.main | etl_run:329 |   ETL PIPELINE COMPLETED | DB: DWH_RetailTech | Status: SUCCESS
+2026-03-25 13:57:35 [INFO] etl.main | etl_run:329 |   ETL PIPELINE COMPLETED | DB: DWH_RetailTech | Status: SUCCESS
+2026-03-25 13:57:35 [INFO] etl.main | etl_run:330 |   Total rows processed: 0
+2026-03-25 13:57:35 [INFO] etl.main | etl_run:330 |   Total rows processed: 0
+2026-03-25 13:57:35 [INFO] etl.main | etl_run:331 | ============================================================
+2026-03-25 13:57:35 [INFO] etl.main | etl_run:331 | ============================================================
