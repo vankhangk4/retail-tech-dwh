@@ -23,6 +23,9 @@ COPY backend/ /app/
 # Copy ETL module
 COPY etl/ /app/etl/
 
+# Copy SQL scripts (for tenant DB initialization)
+COPY sql/ /app/sql/
+
 # Copy data files (sources + samples)
 COPY data/ /app/data/
 
