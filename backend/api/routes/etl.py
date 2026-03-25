@@ -35,12 +35,12 @@ def _run_etl_subprocess(tenant_id: str, run_id: int, db_name: str):
             db.commit()
 
     try:
+        cmd = ["python", "-m", "etl.main_etl", "--full"]
+        if tenant_id:
+            cmd.extend(["--tenant", tenant_id])
+
         result = subprocess.run(
-            [
-                "python", "-m", "etl.main_etl",
-                "--tenant", tenant_id,
-                "--full",
-            ],
+            cmd,
             capture_output=True,
             text=True,
             cwd="/app",
@@ -51,12 +51,24 @@ def _run_etl_subprocess(tenant_id: str, run_id: int, db_name: str):
         with get_master_session() as db:
             run = db.query(ETLRun).filter(ETLRun.RunId == run_id).first()
             if run:
-                run.Status = "SUCCESS"
+                # Kiểm tra returncode để xác định status chính xác
+                if result.returncode == 0:
+                    run.Status = "SUCCESS"
+                else:
+                    run.Status = "FAILED"
+                    run.ErrorMessage = (
+                        result.stderr[:1000] if result.stderr
+                        else f"Process exited with code {result.returncode}"
+                    )
                 run.CompletedAt = datetime.utcnow()
                 run.RowsProcessed = 0
-                run.LogOutput = result.stdout[-5000:] if len(result.stdout) > 5000 else result.stdout
-                if result.returncode != 0 and result.stderr:
-                    run.ErrorMessage = result.stderr[:1000]
+                # Gộp stdout + stderr vào log (Python logger mặc định ghi ra stderr)
+                combined = ""
+                if result.stdout:
+                    combined += result.stdout
+                if result.stderr:
+                    combined += ("\n--- STDERR ---\n" + result.stderr) if combined else result.stderr
+                run.LogOutput = combined[-5000:] if len(combined) > 5000 else combined
                 db.commit()
     except subprocess.TimeoutExpired:
         with get_master_session() as db:
