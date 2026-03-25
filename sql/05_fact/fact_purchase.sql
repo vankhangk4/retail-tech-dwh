@@ -9,6 +9,7 @@ GO
 IF OBJECT_ID('dbo.FactPurchase', 'U') IS NOT NULL DROP TABLE dbo.FactPurchase;
 CREATE TABLE dbo.FactPurchase (
     PurchaseKey         BIGINT IDENTITY(1,1) NOT NULL,
+    TenantId            VARCHAR(50)    NOT NULL,
     DateKey            INT           NOT NULL,
     ProductKey         INT           NOT NULL,
     SupplierKey        INT           NOT NULL,
@@ -23,7 +24,7 @@ CREATE TABLE dbo.FactPurchase (
     CONSTRAINT PK_FactPurchase PRIMARY KEY NONCLUSTERED (PurchaseKey)
 );
 
-CREATE CLUSTERED INDEX IX_FactPurchase_DateKey ON dbo.FactPurchase(DateKey);
+CREATE CLUSTERED INDEX IX_FactPurchase_Tenant_DateKey ON dbo.FactPurchase(TenantId, DateKey);
 CREATE NONCLUSTERED INDEX IX_FactPurchase_ProductKey ON dbo.FactPurchase(ProductKey);
 CREATE NONCLUSTERED INDEX IX_FactPurchase_SupplierKey ON dbo.FactPurchase(SupplierKey);
 CREATE NONCLUSTERED INDEX IX_FactPurchase_StoreKey ON dbo.FactPurchase(StoreKey);

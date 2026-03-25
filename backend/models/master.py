@@ -10,7 +10,7 @@ class Tenant(Base):
 
     TenantId = Column(String(50), primary_key=True)
     TenantName = Column(String(200), nullable=False)
-    DatabaseName = Column(String(100), nullable=False, unique=True)
+    DatabaseName = Column(String(100), nullable=True)
     Plan = Column(String(20), default="trial")
     IsActive = Column(Boolean, default=True)
     CreatedAt = Column(DateTime, default=datetime.utcnow)

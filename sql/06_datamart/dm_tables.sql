@@ -12,6 +12,7 @@ GO
 IF OBJECT_ID('dbo.DM_SalesDailySummary', 'U') IS NOT NULL DROP TABLE dbo.DM_SalesDailySummary;
 CREATE TABLE dbo.DM_SalesDailySummary (
     SummaryID           BIGINT IDENTITY(1,1) PRIMARY KEY,
+    TenantId           VARCHAR(50)   NOT NULL,
     DateKey            INT           NOT NULL,
     StoreKey           INT           NULL,
     ProductKey         INT           NULL,
@@ -24,10 +25,10 @@ CREATE TABLE dbo.DM_SalesDailySummary (
     TransactionCount   INT           NOT NULL DEFAULT 0,
     ReturnCount        INT           NOT NULL DEFAULT 0,
     LoadDatetime       DATETIME2     NOT NULL DEFAULT GETDATE(),
-    CONSTRAINT UQ_DM_SalesDailySummary UNIQUE (DateKey, StoreKey, ProductKey)
+    CONSTRAINT UQ_DM_SalesDailySummary UNIQUE (TenantId, DateKey, StoreKey, ProductKey)
 );
 
-CREATE NONCLUSTERED INDEX IX_DM_SalesDailySummary_StoreKey ON dbo.DM_SalesDailySummary(StoreKey);
+CREATE NONCLUSTERED INDEX IX_DM_SalesDailySummary_Tenant_StoreKey ON dbo.DM_SalesDailySummary(TenantId, StoreKey);
 GO
 
 -- ============================================================
@@ -36,6 +37,7 @@ GO
 IF OBJECT_ID('dbo.DM_InventoryAlert', 'U') IS NOT NULL DROP TABLE dbo.DM_InventoryAlert;
 CREATE TABLE dbo.DM_InventoryAlert (
     AlertID            BIGINT IDENTITY(1,1) PRIMARY KEY,
+    TenantId           VARCHAR(50)    NOT NULL,
     AlertDate          DATE           NOT NULL,
     ProductKey         INT           NOT NULL,
     StoreKey           INT           NOT NULL,
@@ -47,10 +49,10 @@ CREATE TABLE dbo.DM_InventoryAlert (
     AvgDailySales      DECIMAL(10,2) NULL,
     IsAcknowledged     BIT           NOT NULL DEFAULT 0,
     LoadDatetime       DATETIME2     NOT NULL DEFAULT GETDATE(),
-    CONSTRAINT UQ_DM_InventoryAlert UNIQUE (AlertDate, ProductKey, StoreKey)
+    CONSTRAINT UQ_DM_InventoryAlert UNIQUE (TenantId, AlertDate, ProductKey, StoreKey)
 );
 
-CREATE NONCLUSTERED INDEX IX_DM_InventoryAlert_AlertLevel ON dbo.DM_InventoryAlert(AlertLevel);
+CREATE NONCLUSTERED INDEX IX_DM_InventoryAlert_Tenant_AlertLevel ON dbo.DM_InventoryAlert(TenantId, AlertLevel);
 CREATE NONCLUSTERED INDEX IX_DM_InventoryAlert_IsAcknowledged ON dbo.DM_InventoryAlert(IsAcknowledged);
 GO
 

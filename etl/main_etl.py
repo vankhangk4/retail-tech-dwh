@@ -104,18 +104,16 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False, tenant_i
     Args:
         batch_date: Ngày xử lý (mặc định: hôm nay)
         full_load: Nếu True, bỏ qua watermark và load tất cả
-        tenant_id: Nếu có, chạy ETL cho database DWH_{tenant_id}
+        tenant_id: Tenant context để gắn TenantId vào Dim/Fact trong shared DB
     """
     if batch_date is None:
         batch_date = date.today()
 
-    # Xác định connection string và file paths theo tenant
+    # Shared DB model: always use one DB, tenant_id is logical context only.
+    conn_str = config.CONN_STR
     if tenant_id:
-        conn_str = config.get_tenant_conn_str(tenant_id)
         file_paths = config.get_tenant_file_paths(tenant_id)
-        db_label = f"DWH_{tenant_id}"
     else:
-        conn_str = config.CONN_STR
         file_paths = {
             "SALES_FILE": config.SALES_FILE,
             "INVENTORY_FILE": config.INVENTORY_FILE,
@@ -125,7 +123,7 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False, tenant_i
             "EMPLOYEE_FILE": config.EMPLOYEE_FILE,
             "SUPPLIER_FILE": config.SUPPLIER_FILE,
         }
-        db_label = config.MSSQL_DATABASE
+    db_label = config.MSSQL_DATABASE
 
     batch_date_str = batch_date.strftime("%Y-%m-%d")
     logger.info("")
@@ -236,9 +234,12 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False, tenant_i
             "sp_Load_DimStore",
             "sp_Load_DimEmployee",
         ]
+        if not tenant_id:
+            raise ValueError("tenant_id is required for shared multi-tenant ETL")
+
         for sp in dim_sps:
             try:
-                run_stored_procedure(sp, conn_str=conn_str)
+                run_stored_procedure(sp, {"TenantId": tenant_id}, conn_str=conn_str)
             except Exception as e:
                 logger.error(f"  {sp} failed: {e}")
 
@@ -249,9 +250,23 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False, tenant_i
         logger.info(">>> [PHASE 3] LOAD FACTS")
 
         fact_sps = [
-            ("sp_Load_FactSales", {"BatchDate": batch_date_str, "FullLoad": 1 if full_load else 0}),
-            ("sp_Load_FactInventory", {"BatchDate": batch_date_str, "FullLoad": 1 if full_load else 0}),
-            ("sp_Load_FactPurchase", {"BatchDate": batch_date_str}),
+            (
+                "sp_Load_FactSales",
+                {
+                    "BatchDate": batch_date_str,
+                    "FullLoad": 1 if full_load else 0,
+                    "TenantId": tenant_id,
+                },
+            ),
+            (
+                "sp_Load_FactInventory",
+                {
+                    "BatchDate": batch_date_str,
+                    "FullLoad": 1 if full_load else 0,
+                    "TenantId": tenant_id,
+                },
+            ),
+            ("sp_Load_FactPurchase", {"BatchDate": batch_date_str, "TenantId": tenant_id}),
         ]
         for sp_name, params in fact_sps:
             try:
@@ -266,12 +281,20 @@ def etl_run(batch_date: Optional[date] = None, full_load: bool = False, tenant_i
         logger.info(">>> [PHASE 4] REFRESH DATA MARTS")
 
         try:
-            run_stored_procedure("sp_Refresh_DM_SalesSummary", {"BatchDate": batch_date_str}, conn_str=conn_str)
+            run_stored_procedure(
+                "sp_Refresh_DM_SalesSummary",
+                {"BatchDate": batch_date_str, "TenantId": tenant_id},
+                conn_str=conn_str,
+            )
         except Exception as e:
             logger.error(f"  sp_Refresh_DM_SalesSummary failed: {e}")
 
         try:
-            run_stored_procedure("sp_Refresh_DM_InventoryAlert", conn_str=conn_str)
+            run_stored_procedure(
+                "sp_Refresh_DM_InventoryAlert",
+                {"TenantId": tenant_id},
+                conn_str=conn_str,
+            )
         except Exception as e:
             logger.error(f"  sp_Refresh_DM_InventoryAlert failed: {e}")
 

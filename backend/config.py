@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     # Default SuperAdmin (set via env for init)
     DEFAULT_ADMIN_PASSWORD: str = ""  # required from env
 
+    # Shared Data Warehouse DB (single DB for all tenants)
+    SHARED_DWH_DB: str = "DWH_RetailTech"
+
+    # Superset shared dashboard
+    SUPERSET_SHARED_DASHBOARD_ID: int = 1
+
     @property
     def master_db_url(self) -> str:
         return (
@@ -46,6 +52,15 @@ class Settings(BaseSettings):
             f"SERVER={self.MSSQL_HOST},{self.MSSQL_PORT};"
             f"UID={self.MSSQL_USER};PWD={self.MSSQL_PASSWORD};"
             f"TrustServerCertificate=yes;Connection Timeout=30;"
+        )
+
+    @property
+    def shared_dwh_conn_str(self) -> str:
+        """Connection string for the shared DWH database (all tenants)."""
+        return (
+            f"mssql+pyodbc://{self.MSSQL_USER}:{self.MSSQL_PASSWORD}"
+            f"@{self.MSSQL_HOST}:{self.MSSQL_PORT}/{self.SHARED_DWH_DB}"
+            f"?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
         )
 
     class Config:

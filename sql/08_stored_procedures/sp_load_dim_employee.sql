@@ -7,6 +7,7 @@ GO
 IF OBJECT_ID('dbo.sp_Load_DimEmployee', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_Load_DimEmployee;
 GO
 CREATE PROCEDURE dbo.sp_Load_DimEmployee
+    @TenantId VARCHAR(50)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -15,19 +16,20 @@ BEGIN
 
     BEGIN TRY
         INSERT INTO dbo.DimEmployee (
-            EmployeeCode, FullName, Department, Position, StoreKey, HireDate, IsActive
+            TenantId, EmployeeCode, FullName, Department, Position, StoreKey, HireDate, IsActive
         )
         SELECT
+            @TenantId,
             s.MaNV,
             s.HoTen,
             s.PhongBan,
             s.ChucVu,
-            (SELECT TOP 1 ds.StoreKey FROM dbo.DimStore ds WHERE ds.StoreCode = s.MaCH),
+            (SELECT TOP 1 ds.StoreKey FROM dbo.DimStore ds WHERE ds.StoreCode = s.MaCH AND ds.TenantId = @TenantId),
             s.NgayVaoLam,
             1
         FROM dbo.STG_EmployeeRaw s
         WHERE NOT EXISTS (
-            SELECT 1 FROM dbo.DimEmployee de WHERE de.EmployeeCode = s.MaNV
+            SELECT 1 FROM dbo.DimEmployee de WHERE de.TenantId = @TenantId AND de.EmployeeCode = s.MaNV
         );
 
         SET @RowsInserted = @@ROWCOUNT;
@@ -36,9 +38,10 @@ BEGIN
         SET    de.FullName   = s.HoTen,
                de.Department = s.PhongBan,
                de.Position   = s.ChucVu,
-               de.StoreKey   = (SELECT TOP 1 ds.StoreKey FROM dbo.DimStore ds WHERE ds.StoreCode = s.MaCH)
+               de.StoreKey   = (SELECT TOP 1 ds.StoreKey FROM dbo.DimStore ds WHERE ds.StoreCode = s.MaCH AND ds.TenantId = @TenantId)
         FROM dbo.DimEmployee de
-        INNER JOIN dbo.STG_EmployeeRaw s ON s.MaNV = de.EmployeeCode;
+        INNER JOIN dbo.STG_EmployeeRaw s ON s.MaNV = de.EmployeeCode
+        WHERE de.TenantId = @TenantId;
 
         INSERT INTO dbo.ETL_RunLog (RunDate, PipelineName, StepName, Status, RowsInserted, LoadDatetime)
         VALUES (@ProcessDate, 'ETL_Main', 'sp_Load_DimEmployee', 'SUCCESS', @RowsInserted, GETDATE());

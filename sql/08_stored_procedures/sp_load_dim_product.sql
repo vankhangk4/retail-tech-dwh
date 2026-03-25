@@ -8,6 +8,7 @@ GO
 IF OBJECT_ID('dbo.sp_Load_DimProduct', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_Load_DimProduct;
 GO
 CREATE PROCEDURE dbo.sp_Load_DimProduct
+    @TenantId VARCHAR(50)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -27,18 +28,20 @@ BEGIN
                dp.IsCurrent       = 0
         FROM   dbo.DimProduct dp
         INNER JOIN dbo.STG_ProductRaw s ON s.MaSP = dp.ProductCode
-        WHERE  dp.IsCurrent = 1
+        WHERE  dp.TenantId = @TenantId
+          AND  dp.IsCurrent = 1
           AND  (dp.UnitCostPrice <> s.GiaVon OR dp.UnitListPrice <> s.GiaNiemYet);
 
         SET @RowsUpdated = @@ROWCOUNT;
 
         -- Bước 2: Chèn bản ghi mới (sản phẩm mới hoặc thay đổi)
         INSERT INTO dbo.DimProduct (
-            ProductCode, ProductName, Brand, CategoryID, CategoryName, SubCategory,
+            TenantId, ProductCode, ProductName, Brand, CategoryID, CategoryName, SubCategory,
             UnitCostPrice, UnitListPrice, UnitOfMeasure, Warranty_Months, IsActive,
             EffectiveDate, ExpirationDate, IsCurrent
         )
         SELECT
+            @TenantId,
             s.MaSP,
             s.TenSP,
             s.ThuongHieu,
@@ -56,7 +59,9 @@ BEGIN
         FROM dbo.STG_ProductRaw s
         WHERE NOT EXISTS (
             SELECT 1 FROM dbo.DimProduct dp
-            WHERE dp.ProductCode = s.MaSP AND dp.IsCurrent = 1
+            WHERE dp.TenantId = @TenantId
+              AND dp.ProductCode = s.MaSP
+              AND dp.IsCurrent = 1
         );
 
         SET @RowsInserted = @@ROWCOUNT;

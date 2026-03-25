@@ -7,6 +7,7 @@ GO
 IF OBJECT_ID('dbo.sp_Load_DimStore', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_Load_DimStore;
 GO
 CREATE PROCEDURE dbo.sp_Load_DimStore
+    @TenantId VARCHAR(50)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -15,10 +16,11 @@ BEGIN
 
     BEGIN TRY
         INSERT INTO dbo.DimStore (
-            StoreCode, StoreName, StoreType, Address, District, City,
+            TenantId, StoreCode, StoreName, StoreType, Address, District, City,
             OpenDate, ManagerName, StoreArea_m2, IsActive
         )
         SELECT
+            @TenantId,
             s.MaCH,
             s.TenCH,
             s.LoaiHinh,
@@ -31,7 +33,7 @@ BEGIN
             1
         FROM dbo.STG_StoreRaw s
         WHERE NOT EXISTS (
-            SELECT 1 FROM dbo.DimStore ds WHERE ds.StoreCode = s.MaCH
+            SELECT 1 FROM dbo.DimStore ds WHERE ds.TenantId = @TenantId AND ds.StoreCode = s.MaCH
         );
 
         SET @RowsInserted = @@ROWCOUNT;
@@ -45,7 +47,8 @@ BEGIN
                ds.ManagerName   = s.QuanLy,
                ds.StoreArea_m2  = s.DienTich_m2
         FROM dbo.DimStore ds
-        INNER JOIN dbo.STG_StoreRaw s ON s.MaCH = ds.StoreCode;
+        INNER JOIN dbo.STG_StoreRaw s ON s.MaCH = ds.StoreCode
+        WHERE ds.TenantId = @TenantId;
 
         INSERT INTO dbo.ETL_RunLog (RunDate, PipelineName, StepName, Status, RowsInserted, LoadDatetime)
         VALUES (@ProcessDate, 'ETL_Main', 'sp_Load_DimStore', 'SUCCESS', @RowsInserted, GETDATE());

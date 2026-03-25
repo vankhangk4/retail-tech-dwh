@@ -251,7 +251,8 @@ export default function TenantsPage() {
                     Xóa tenant "{tenantToDelete.TenantId}"?
                   </p>
                   <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6 }}>
-                    Tất cả dữ liệu trong database <strong>{tenantToDelete.DatabaseName}</strong>, users và ETL history sẽ bị xóa vĩnh viễn.
+                    Tenant sẽ bị xóa khỏi hệ thống metadata; users và ETL history của tenant cũng sẽ bị xóa.
+                    Dữ liệu vật lý trong shared data warehouse không bị drop theo thao tác này.
                   </p>
                 </div>
               </div>

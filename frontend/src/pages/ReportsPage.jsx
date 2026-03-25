@@ -13,7 +13,7 @@ export default function ReportsPage() {
   const [dashboardId, setDashboardId] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const supersetUrl = 'http://localhost:8088';
+  const [supersetUrl, setSupersetUrl] = useState('');
 
   const openSuperset = async () => {
     setLoading(true);
@@ -22,6 +22,7 @@ export default function ReportsPage() {
       const res = await getSupersetToken();
       setToken(res.data.token);
       if (res.data.dashboard_id) setDashboardId(res.data.dashboard_id);
+      if (res.data.superset_url) setSupersetUrl(res.data.superset_url);
     } catch (err) {
       setError(err.response?.data?.detail || 'Không thể lấy Superset token');
     } finally {
@@ -36,6 +37,7 @@ export default function ReportsPage() {
       const res = await getSupersetToken();
       setToken(res.data.token);
       if (res.data.dashboard_id) setDashboardId(res.data.dashboard_id);
+      if (res.data.superset_url) setSupersetUrl(res.data.superset_url);
     } catch (err) {
       setError(err.response?.data?.detail || 'Không thể lấy Superset token');
     } finally {
@@ -109,7 +111,7 @@ export default function ReportsPage() {
                 <p style={{ fontWeight: 600, color: '#dc2626', marginBottom: 4 }}>Không thể kết nối Superset</p>
                 <p style={{ fontSize: 13, color: '#64748b' }}>{error}</p>
                 <p style={{ fontSize: 13, color: '#64748b', marginTop: 8 }}>
-                  Đảm bảo Superset đang chạy tại <code style={{ background: '#fee2e2', padding: '1px 6px', borderRadius: 4, color: '#dc2626' }}>{supersetUrl}</code>
+                  Đảm bảo Superset đang chạy tại <code style={{ background: '#fee2e2', padding: '1px 6px', borderRadius: 4, color: '#dc2626' }}>{supersetUrl || 'URL từ backend'}</code>
                 </p>
               </div>
             </div>
@@ -137,7 +139,7 @@ export default function ReportsPage() {
                 </p>
                 <p style={{ marginTop: 6, fontSize: 13, color: '#94a3b8', maxWidth: 380, margin: '6px auto 0' }}>
                   Nhấn "Mở Dashboard" để truy cập báo cáo trực quan từ Superset.
-                  <br />Đảm bảo Superset đang chạy tại <strong>{supersetUrl}</strong>
+                  <br />Đảm bảo Superset đang chạy tại <strong>{supersetUrl || 'URL từ backend'}</strong>
                 </p>
               </div>
             )}
