@@ -383,7 +383,7 @@ CREATE TABLE Users (
 );
 
 -- DWH_TenantXXX (per tenant - giống schema hiện tại)
--- STG_*, Dim*, Fact*, DM_* per tenant
+-- STG_*, Dim*, Fact*, DM_* per tenant.
 ```
 
 ### 10.6. Superset Multi-tenant
