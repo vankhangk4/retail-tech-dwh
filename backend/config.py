@@ -26,6 +26,7 @@ class Settings(BaseSettings):
 
     # Superset
     SUPERSET_URL: str = "http://datn_superset:8088"
+    SUPERSET_EXTERNAL_URL: str = "http://localhost:8088"
     SUPERSET_ADMIN_USER: str = "admin"
     SUPERSET_ADMIN_PASSWORD: str = ""  # required from env
 
@@ -37,6 +38,7 @@ class Settings(BaseSettings):
 
     # Superset shared dashboard
     SUPERSET_SHARED_DASHBOARD_ID: int = 1
+    SUPERSET_SHARED_DASHBOARD_UUID: str = "74880bb6-dcae-473b-a25e-ea77c4db96c1"
 
     @property
     def master_db_url(self) -> str:

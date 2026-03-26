@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getSupersetToken } from '../services/api';
+import { embedDashboard } from '@superset-ui/embedded-sdk';
 import {
   BarChart3,
   ExternalLink,
@@ -16,6 +17,24 @@ export default function ReportsPage() {
   const [supersetUrl, setSupersetUrl] = useState('');
   const [iframeTs, setIframeTs] = useState(Date.now());
   const lastHandledEtlTsRef = useRef(0);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (token && containerRef.current && dashboardId && supersetUrl) {
+      containerRef.current.innerHTML = '';
+      embedDashboard({
+        id: dashboardId,
+        supersetDomain: supersetUrl,
+        mountPoint: containerRef.current,
+        fetchGuestToken: () => Promise.resolve(token),
+        dashboardUiConfig: {
+          hideTitle: true,
+          hideChartControls: true,
+          hideTab: true,
+        },
+      });
+    }
+  }, [token, dashboardId, supersetUrl, iframeTs]);
 
   const openSuperset = async () => {
     setLoading(true);
@@ -133,7 +152,7 @@ export default function ReportsPage() {
                 Làm mới
               </button>
               <a
-                href={`${supersetUrl}/superset/dashboard/${dashboardId}/?guest_token=${token}&ts=${iframeTs}`}
+                href={`${supersetUrl}/superset/dashboard/p/${dashboardId}/`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-secondary btn-sm"
@@ -194,11 +213,10 @@ export default function ReportsPage() {
               <BarChart3 size={18} />
               <h3>Superset Dashboard</h3>
             </div>
-            <iframe
-              src={`${supersetUrl}/superset/dashboard/${dashboardId}/?guest_token=${token}&ts=${iframeTs}`}
-              className="superset-iframe"
-              title="Superset Dashboard"
-              allow="fullscreen"
+            <div 
+              ref={containerRef} 
+              className="superset-iframe" 
+              style={{ width: '100%', minHeight: '800px', border: 'none' }}
             />
           </div>
         )}
