@@ -43,7 +43,7 @@ async def _create_guest_token(tenant_id: str, dashboard_id: int) -> str:
             "first_name": "Tenant",
             "last_name": "User",
         },
-        "resources": [{"type": "dashboard", "id": str(dashboard_id)}],
+        "resources": [{"type": "dashboard", "id": settings.SUPERSET_SHARED_DASHBOARD_UUID}],
         "rls": [{"clause": f"TenantId = '{safe_tenant_id}'"}],
     }
 
@@ -75,8 +75,8 @@ async def get_superset_guest_token(
 
     return {
         "token": token,
-        "superset_url": settings.SUPERSET_URL,
-        "dashboard_id": dashboard_id,
+        "superset_url": getattr(settings, "SUPERSET_EXTERNAL_URL", settings.SUPERSET_URL),
+        "dashboard_id": settings.SUPERSET_SHARED_DASHBOARD_UUID,
         "guest": True,
         "mode": "shared_rls",
     }
@@ -97,7 +97,7 @@ async def get_dashboard_embed_info(
     shared_dashboard_id = settings.SUPERSET_SHARED_DASHBOARD_ID
 
     return {
-        "dashboard_id": shared_dashboard_id,
-        "superset_url": settings.SUPERSET_URL,
+        "dashboard_id": settings.SUPERSET_SHARED_DASHBOARD_UUID,
+        "superset_url": getattr(settings, "SUPERSET_EXTERNAL_URL", settings.SUPERSET_URL),
         "guest_token": await _create_guest_token(tenant_id, shared_dashboard_id),
     }

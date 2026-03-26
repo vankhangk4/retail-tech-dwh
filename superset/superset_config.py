@@ -32,6 +32,7 @@ FEATURE_FLAGS = {
 
 # ---- Guest Token (for iframe embedding) ----
 GUEST_ROLE_NAME = "Public"
+PUBLIC_ROLE_LIKE = "Gamma"
 GUEST_TOKEN_JWT_SECRET = SECRET_KEY  # Must match for token validation
 GUEST_TOKEN_JWT_ALGO = "HS256"
 GUEST_TOKEN_HEADER_NAME = "X-GuestToken"
