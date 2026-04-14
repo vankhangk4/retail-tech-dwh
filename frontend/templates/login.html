@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập — DWH Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-box">
+            <!-- Logo / Header -->
+            <div class="login-header">
+                <div class="logo-icon">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <rect width="48" height="48" rx="12" fill="#2563EB"/>
+                        <rect x="10" y="14" width="12" height="12" rx="2" fill="white"/>
+                        <rect x="26" y="14" width="12" height="12" rx="2" fill="white" opacity="0.5"/>
+                        <rect x="10" y="28" width="12" height="12" rx="2" fill="white" opacity="0.5"/>
+                        <rect x="26" y="28" width="12" height="12" rx="2" fill="white"/>
+                    </svg>
+                </div>
+                <h1>DWH Dashboard</h1>
+                <p>Hệ thống Data Warehouse — Multi-Tenant</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="login-form" novalidate>
+                <div class="form-group">
+                    <label for="username">Tên đăng nhập</label>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        placeholder="Nhập tên đăng nhập"
+                        autocomplete="username"
+                        required
+                    />
+                    <span class="field-error" id="usernameError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Mật khẩu</label>
+                    <div class="password-wrapper">
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Nhập mật khẩu"
+                            autocomplete="current-password"
+                            required
+                        />
+                        <button type="button" class="toggle-password" aria-label="Hiện/Ẩn mật khẩu">
+                            <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <span class="field-error" id="passwordError"></span>
+                </div>
+
+                <div class="alert alert-danger" id="loginAlert" style="display:none;"></div>
+
+                <button type="submit" class="btn-login" id="loginBtn">
+                    <span class="btn-text">Đăng nhập</span>
+                    <span class="btn-loader" style="display:none;">
+                        <svg class="spinner" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="30 70"/>
+                        </svg>
+                    </span>
+                </button>
+            </form>
+
+            <!-- Demo accounts -->
+            <div class="demo-accounts">
+                <p class="demo-title">Tài khoản demo</p>
+                <div class="demo-list">
+                    <button class="demo-btn" onclick="fillDemo('admin', '{{ demo_admin }}')">
+                        <span class="demo-role">Admin</span>
+                        <span class="demo-info">Xem toàn bộ dữ liệu</span>
+                    </button>
+                    <button class="demo-btn" onclick="fillDemo('manager_hn', '{{ demo_manager_hn }}')">
+                        <span class="demo-role">STORE_HN</span>
+                        <span class="demo-info">Chỉ xem Hà Nội</span>
+                    </button>
+                    <button class="demo-btn" onclick="fillDemo('manager_hcm', '{{ demo_manager_hcm }}')">
+                        <span class="demo-role">STORE_HCM</span>
+                        <span class="demo-info">Chỉ xem HCM</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="login-footer">
+                <p>© 2026 — Đồ án tốt nghiệp Nguyễn Văn Khang</p>
+                <p>Khoa Công nghệ Thông tin — Trường ĐH Thủy Lợi</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const alertBox = document.getElementById('loginAlert');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+
+        // Toggle password visibility
+        document.querySelector('.toggle-password').addEventListener('click', function () {
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+            this.classList.toggle('showing');
+        });
+
+        // Fill demo credentials
+        function fillDemo(username, password) {
+            usernameInput.value = username;
+            passwordInput.value = password;
+            alertBox.style.display = 'none';
+        }
+
+        // Form submit
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+
+            // Validate
+            let hasError = false;
+            document.getElementById('usernameError').textContent = '';
+            document.getElementById('passwordError').textContent = '';
+
+            if (!username) {
+                document.getElementById('usernameError').textContent = 'Vui long nhap ten dang nhap';
+                hasError = true;
+            }
+            if (!password) {
+                document.getElementById('passwordError').textContent = 'Vui long nhap mat khau';
+                hasError = true;
+            }
+            if (hasError) return;
+
+            // Show loading
+            loginBtn.disabled = true;
+            loginBtn.querySelector('.btn-text').style.display = 'none';
+            loginBtn.querySelector('.btn-loader').style.display = 'inline-block';
+            alertBox.style.display = 'none';
+
+            try {
+                const resp = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                const data = await resp.json();
+
+                if (data.success) {
+                    // Redirect based on role
+                    if (data.role === 'admin') {
+                        window.location.href = '/dashboard?role=admin';
+                    } else {
+                        window.location.href = '/dashboard?role=viewer';
+                    }
+                } else {
+                    alertBox.textContent = data.message || 'Sai tai khoan hoac mat khau';
+                    alertBox.style.display = 'block';
+                }
+            } catch (err) {
+                alertBox.textContent = 'Khong ket noi duoc Auth Gateway. Vui long thu lai.';
+                alertBox.style.display = 'block';
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.querySelector('.btn-text').style.display = 'inline-block';
+                loginBtn.querySelector('.btn-loader').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

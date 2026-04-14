@@ -1,0 +1,46 @@
+# Environment variables — KHÔNG commit .env
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+.env/
+*.egg-info/
+dist/
+build/
+
+# Logs
+*.log
+etl_orchestrator.log
+
+# Superset home
+superset_home/
+
+# Docker
+.docker/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data files (keep READMEs)
+data/STORE_HN/*.xlsx
+data/STORE_HN/*.xls
+data/STORE_HN/*.csv
+data/STORE_HCM/*.xlsx
+data/STORE_HCM/*.xls
+data/STORE_HCM/*.csv
+!data/*/README.md

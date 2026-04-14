@@ -1,0 +1,231 @@
+# ============================================================
+# FILE: frontend/app.py
+# Mô tả: Flask Web Application — Login + Dashboard + Superset Embed
+# ============================================================
+
+import os
+import requests
+from flask import (
+    Flask, render_template, request, redirect,
+    url_for, session, flash, jsonify
+)
+from flask import Blueprint
+
+app = Flask(__name__, template_folder='templates', static_folder='static', root_path=os.path.dirname(os.path.abspath(__file__)))
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key-change-in-prod')
+
+# ---- Configuration ----
+API_BASE_URL = os.environ.get('API_BASE_URL', 'http://localhost:8000')
+SUPERSET_URL = os.environ.get('SUPERSET_URL', 'http://localhost:8088')
+
+# ---- Proxy API calls to Auth Gateway ----
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    """Proxy login request to Auth Gateway."""
+    data = request.get_json()
+    try:
+        r = requests.post(
+            f'{API_BASE_URL}/auth/login',
+            json={'username': data['username'], 'password': data['password']},
+            timeout=10
+        )
+        if r.status_code == 200:
+            resp = r.json()
+            session['access_token'] = resp['access_token']
+            # Decode token to get user info
+            import jwt
+            payload = jwt.decode(resp['access_token'], options={"verify_signature": False})
+            session['user_id'] = payload.get('user_id')
+            session['tenant_id'] = payload.get('tenant_id')
+            session['role'] = payload.get('role')
+            return jsonify({'success': True, 'role': session['role']})
+        elif r.status_code == 401:
+            return jsonify({'success': False, 'message': 'Sai tai khoan hoac mat khau'}), 401
+        elif r.status_code == 403:
+            return jsonify({'success': False, 'message': 'Tai khoan bi khoa hoac cua hang khong hoat dong'}), 403
+        else:
+            return jsonify({'success': False, 'message': 'Loi he thong'}), 500
+    except requests.exceptions.ConnectionError:
+        return jsonify({'success': False, 'message': 'Khong ket noi duoc Auth Gateway'}), 503
+
+
+@app.route('/api/dashboard-token', methods=['GET'])
+def api_dashboard_token():
+    """Proxy dashboard-token request to Auth Gateway with dashboard_id."""
+    if 'access_token' not in session:
+        return jsonify({'error': 'Chua dang nhap'}), 401
+
+    dashboard_id = request.args.get('dashboard_id', '1')
+    try:
+        dashboard_id = int(dashboard_id)
+    except ValueError:
+        dashboard_id = 1
+
+    try:
+        r = requests.get(
+            f'{API_BASE_URL}/auth/dashboard-token?dashboard_id={dashboard_id}',
+            headers={'Authorization': f'Bearer {session["access_token"]}'},
+            timeout=10
+        )
+        if r.status_code == 200:
+            return jsonify(r.json())
+        else:
+            return jsonify({'error': 'Khong lay duoc dashboard token'}), r.status_code
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'Khong ket noi duoc Auth Gateway'}), 503
+
+
+@app.route('/api/me', methods=['GET'])
+def api_me():
+    """Proxy /me request to Auth Gateway."""
+    if 'access_token' not in session:
+        return jsonify({'error': 'Chua dang nhap'}), 401
+
+    try:
+        r = requests.get(
+            f'{API_BASE_URL}/auth/me',
+            headers={'Authorization': f'Bearer {session["access_token"]}'},
+            timeout=10
+        )
+        return jsonify(r.json()), r.status_code
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'Khong ket noi duoc Auth Gateway'}), 503
+
+
+@app.route('/api/logout', methods=['POST'])
+def api_logout():
+    """Logout — clear session."""
+    session.clear()
+    return jsonify({'success': True})
+
+
+@app.route('/health', methods=['GET'])
+@app.route('/api/health', methods=['GET'])
+def api_health():
+    """Health check."""
+    try:
+        r = requests.get(f'{API_BASE_URL}/health', timeout=5)
+        return jsonify({'api': 'ok' if r.status_code == 200 else 'error'}), 200
+    except:
+        return jsonify({'api': 'unreachable'}), 200
+
+
+# ---- Pages ----
+
+@app.route('/')
+def index():
+    if 'access_token' in session:
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('login'))
+
+
+@app.route('/login')
+def login():
+    if 'access_token' in session:
+        return redirect(url_for('dashboard'))
+    return render_template('login.html',
+        SUPERSET_URL=SUPERSET_URL,
+        demo_admin=os.environ.get('APP_USER_admin', 'Admin@1234'),
+        demo_manager_hn=os.environ.get('APP_USER_manager_hn', 'Pass@HN123'),
+        demo_manager_hcm=os.environ.get('APP_MANAGER_HCM', 'Pass@HCM123'),
+    )
+
+
+@app.route('/dashboard')
+def dashboard():
+    if 'access_token' not in session:
+        return redirect(url_for('login'))
+
+    # Lấy dashboard token từ Auth Gateway
+    dashboard_token = None
+    try:
+        r = requests.get(
+            f'{API_BASE_URL}/auth/dashboard-token',
+            headers={'Authorization': f'Bearer {session["access_token"]}'},
+            timeout=10
+        )
+        if r.status_code == 200:
+            dashboard_token = r.json().get('guest_token')
+    except:
+        pass
+
+    return render_template(
+        'dashboard.html',
+        user={
+            'role': session.get('role', 'viewer'),
+            'tenant_id': session.get('tenant_id'),
+            'user_id': session.get('user_id'),
+        },
+        dashboard_token=dashboard_token,
+        SUPERSET_URL=SUPERSET_URL,
+    )
+
+
+# ---- KPI Summary API (lấy trực tiếp từ SQL Server) ----
+
+@app.route('/api/kpi')
+def api_kpi():
+    """Trả về KPI summary nhanh — gọi trực tiếp SQL Server qua API Gateway."""
+    if 'access_token' not in session:
+        return jsonify({'error': 'Chua dang nhap'}), 401
+
+    try:
+        r = requests.get(
+            f'{API_BASE_URL}/api/kpi',
+            headers={
+                'Authorization': 'Bearer ' + session.get('access_token', ''),
+                'X-Tenant-ID': session.get('tenant_id', ''),
+            },
+            timeout=10
+        )
+        return jsonify(r.json()), r.status_code
+    except:
+        return jsonify({'error': 'Khong lay duoc KPI'}), 503
+
+
+# ---- Admin Proxy Endpoints ----
+
+@app.route('/api/tenants', methods=['GET'])
+def api_tenants():
+    if 'access_token' not in session:
+        return jsonify({'error': 'Chua dang nhap'}), 401
+    try:
+        r = requests.get(f'{API_BASE_URL}/api/tenants',
+            headers={'Authorization': f'Bearer {session["access_token"]}'},
+            timeout=10)
+        return jsonify(r.json()), r.status_code
+    except:
+        return jsonify({'tenants': []}), 200
+
+
+@app.route('/api/users', methods=['GET'])
+def api_users():
+    if 'access_token' not in session:
+        return jsonify({'error': 'Chua dang nhap'}), 401
+    try:
+        r = requests.get(f'{API_BASE_URL}/api/users',
+            headers={'Authorization': f'Bearer {session["access_token"]}'},
+            timeout=10)
+        return jsonify(r.json()), r.status_code
+    except:
+        return jsonify({'users': []}), 200
+
+
+@app.route('/api/etl/logs', methods=['GET'])
+def api_etl_logs():
+    if 'access_token' not in session:
+        return jsonify({'error': 'Chua dang nhap'}), 401
+    try:
+        r = requests.get(f'{API_BASE_URL}/api/etl/logs',
+            headers={'Authorization': f'Bearer {session["access_token"]}'},
+            timeout=10)
+        return jsonify(r.json()), r.status_code
+    except:
+        return jsonify({'logs': []}), 200
+
+
+if __name__ == '__main__':
+    port = int(os.environ.get('FRONTEND_PORT', 3000))
+    debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(host='0.0.0.0', port=port, debug=debug)

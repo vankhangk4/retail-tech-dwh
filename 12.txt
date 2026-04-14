@@ -1,0 +1,25 @@
+Bây giờ chạy lại script. Trước tiên cần DROP database cũ rồi tạo lại để xóa các bảng đã tạo sai:
+
+  Searched for 1 pattern (ctrl+o to expand)                                                                                               
+  
+● Đã fix xong. Tất cả lỗi đều do syntax CREATE INDEX IF NOT EXISTS — SQL Server không hỗ trợ cú pháp này.                                 
+                                                            
+  Tổng kết các lỗi đã sửa:                                                                                                                
+  
+  ┌────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────────────┐  
+  │          File          │                                                    Lỗi                                                    │
+  ├────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ 04_create_staging.sql  │ 5 dòng CREATE INDEX IF NOT EXISTS → chuyển thành IF NOT EXISTS (...) CREATE INDEX                         │
+  ├────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ 05_create_datamart.sql │ 6 dòng CREATE INDEX IF NOT EXISTS và CREATE UNIQUE INDEX IF NOT EXISTS → chuyển thành IF NOT EXISTS (...) │
+  │                        │  CREATE INDEX                                                                                             │
+  ├────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ 00_run_all_schema.sql  │ Thêm gọi file 06_create_indexes.sql (file này đã đúng syntax nhưng bị thiếu trong script chính)           │
+  └────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  Bây giờ chạy lại script:
+  1. Xóa database cũ: DROP DATABASE DWH_MultiTenant;
+  2. Tạo lại: CREATE DATABASE DWH_MultiTenant;
+  3. Chạy 00_run_all_schema.sql (bật Enable SQLCMD trên toolbar trước khi Run)
+
+ã ổn , bây giờ tới phần khó đây, phần superset thì như nào

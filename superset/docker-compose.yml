@@ -1,0 +1,97 @@
+# ============================================================
+# FILE: superset/docker-compose.yml
+# Mô tả: Docker Compose cho Apache Superset (standalone)
+# ============================================================
+# Cách sử dụng:
+#   cd superset/
+#   cp ../../.env .env
+#   docker-compose up -d
+# ============================================================
+
+version: '3.8'
+
+x-superset-common:
+  &superset-common
+  image: apache/superset:3.1.1
+  env_file:
+    - .env
+  volumes:
+    - superset_home:/app/superset_home
+    - ./superset_config.py:/app/pythonpath/superset_config.py
+
+services:
+  superset-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: superset
+      POSTGRES_USER: superset
+      POSTGRES_PASSWORD: ${SUPERSET_DB_PASSWORD:-superset123}
+    volumes:
+      - superset_db_data:/var/lib/postgresql/data
+    networks:
+      - superset-network
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'superset']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  superset-redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis123}
+    volumes:
+      - superset_redis_data:/data
+    networks:
+      - superset-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  superset-init:
+    <<: *superset-common
+    command: >
+      sh -c "superset db upgrade &&
+             superset fab create-admin --username admin --password ${SUPERSET_ADMIN_PWD:-admin} --email admin@company.com --firstname Admin --lastname User ||
+             true &&
+             superset init"
+    depends_on:
+      superset-db:
+        condition: service_healthy
+      superset-redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://superset:${SUPERSET_DB_PASSWORD:-superset123}@superset-db:5432/superset
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+    networks:
+      - superset-network
+
+  superset-app:
+    <<: *superset-common
+    command: >
+      sh -c "superset run --with-threads --reload --host 0.0.0.0 --port 8088"
+    depends_on:
+      superset-init:
+        condition: service_completed_successfully
+    ports:
+      - '8088:8088'
+    environment:
+      DATABASE_URL: postgresql://superset:${SUPERSET_DB_PASSWORD:-superset123}@superset-db:5432/superset
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+    networks:
+      - superset-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8088/health']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+networks:
+  superset-network:
+    driver: bridge
+
+volumes:
+  superset_home:
+  superset_db_data:
+  superset_redis_data:

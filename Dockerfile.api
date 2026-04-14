@@ -1,0 +1,29 @@
+# ============================================================
+# FILE: Dockerfile.api
+# Mô tả: Docker image cho Auth Gateway FastAPI
+# ============================================================
+
+FROM python:3.11-slim
+
+# Cài đặt build dependencies cho pymssql
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    curl \
+    libffi-dev \
+    libssl-dev \
+    pkg-config \
+    freetds-dev \
+    unixodbc-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY api/ /app/api/
+COPY etl/ /app/etl/
+
+EXPOSE 8000
+
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
