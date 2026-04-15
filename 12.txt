@@ -1,0 +1,194 @@
+❯ đã ổn,bây giờ như này, nhúng dardboard superset vào dự án như nào, đã thế còn phải phân chia theo tenant, nhúng của tenant 1 dữ 
+ liệu phải cô lập hoàn toàn đối với nhúng của tenant 2 và cứ như thế, đọc                                                         
+'/home/khang/Desktop/dwh/dwh_project/Nguyen_Van_Khang_Bao_Cao.docx' báo cáo này để hiểu hơn r đưa ra hướng làm cho tôi            
+
+  Read 1 file (ctrl+o to expand)
+
+● Bash(cd /tmp && cp "/home/khang/Desktop/dwh/dwh_project/Nguyen_Van_Kanh_Bao_Cao.docx" /tmp/report.docx 2>/dev/null || cp
+      "/home/khang/Desktop/dwh/dwh_project/Nguyen_…)
+  ⎿  TRƯỜNG ĐẠI HỌC THUỶ LỢI
+     KHOA CÔNG NGHỆ THÔNG TIN
+     ĐỀ CƯƠNG ĐỒ ÁN TỐT NGHIỆP        
+     … +208 lines (ctrl+o to expand)
+  ⎿  Shell cwd was reset to /home/khang/Desktop/dwh/dwh_project                                                                   
+   
+  Read 1 file (ctrl+o to expand)                                                                                                  
+                                                                                                                                
+● Đã đọc báo cáo. Đây là project Data Warehouse Multi-Tenant với kiến trúc khá rõ ràng. Dựa trên báo cáo và code hiện tại, đây là 
+  hướng làm chi tiết:                                     
+                                                                                                                                  
+  ---                                                                                                                             
+  Hướng làm: Embed Superset Dashboard với Multi-Tenant Isolation
+                                                                                                                                  
+  Tổng quan luồng                                           
+                                                                                                                                  
+  User login (Frontend)                                     
+    → POST /auth/login → JWT (chứa tenant_id + role)
+    → POST /auth/dashboard-token → Superset Guest Token (chứa RLS clause)                                                         
+    → Frontend nhận iframe embed URL + guest token                                                                                
+    → Superset query với auto WHERE tenant_id='X'                                                                                 
+                                                                                                                                  
+  Bước 1: Cấu hình Superset (bật embedding)                                                                                       
+   
+  Thêm vào superset/superset_config.py:                                                                                           
+                                                            
+  from superset.security.manager import SupersetSecurityManager                                                                   
+                                                            
+  FEATURE_FLAGS = {
+      'ENABLE_TEMPLATE_PROCESSING': True,
+      'ENABLE_JAVASCRIPT_CONTROLS': False,
+      'SQLLAB_BACKEND_PERSISTENCE': True,                                                                                         
+      'DASHBOARD_CACHE': True,
+      'ROW_LEVEL_SECURITY': True,                                                                                                 
+      'ALERT_REPORTS': True,                                
+      'EMBEDDED_SUPERSET': True,        # BẬT EMBEDDING
+  }                                                                                                                               
+   
+  Bước 2: Cấu hình RLS (Row Level Security)                                                                                       
+                                                            
+  Trong Superset UI, vào Security → Row Level Security → (+). Tạo rule cho mỗi bảng:                                              
+                                                            
+  ┌─────────────┬───────────────────────────────────────────┐                                                                     
+  │    Field    │                   Value                   │
+  ├─────────────┼───────────────────────────────────────────┤
+  │ Table       │ fact_sales                                │
+  ├─────────────┼───────────────────────────────────────────┤
+  │ Role        │ TenantViewer                              │
+  ├─────────────┼───────────────────────────────────────────┤                                                                     
+  │ Clause      │ tenant_id = '{{ current_user_username }}' │
+  ├─────────────┼───────────────────────────────────────────┤                                                                     
+  │ Filter Type │ Regular                                   │
+  └─────────────┴───────────────────────────────────────────┘
+
+  (Làm tương tự cho fact_inventory, fact_purchase, dim_customer, dim_store, dm_sales_summary)                                     
+   
+  Bước 3: Tạo API endpoint /auth/dashboard-token                                                                                  
+                                                            
+  Endpoint này đã có trong auth.py (dòng 277). Cần nâng cấp để dùng Superset Embedded SDK thay vì guest token cũ:                 
+                                                            
+  @router.get('/dashboard-token')                                                                                                 
+  def get_dashboard_token(                                  
+      authorization: str = Header(...),                                                                                           
+      dashboard_id: int = 1,
+  ):                                                                                                                              
+      """                                                   
+      Nhận JWT → tạo Superset Guest Token
+      → trả về { dashboard_url, guest_token } để frontend embed
+      """                                                                                                                         
+      # 1. Verify JWT từ Auth Gateway
+      token = authorization[7:]                                                                                                   
+      payload = decode_token(token)                                                                                               
+   
+      # 2. Lấy Superset admin token                                                                                               
+      admin_token = get_superset_admin_token()              
+
+      # 3. Tạo guest token với RLS                                                                                                
+      if payload.role == 'admin':
+          rls_clause = '1=1'  # Admin: không lọc                                                                                  
+      else:                                                                                                                       
+          rls_clause = f"tenant_id = '{payload.tenant_id}'"
+                                                                                                                                  
+      guest = requests.post(                                
+          f'{SUPERSET_URL}/api/v1/security/guest_token/',
+          headers={'Authorization': f'Bearer {admin_token}'},                                                                     
+          json={
+              'user': {                                                                                                           
+                  'username': payload.username,             
+                  'first_name': payload.role,
+                  'last_name': payload.tenant_id or 'admin',
+              },                                                                                                                  
+              'resources': [
+                  {'type': 'dashboard', 'id': dashboard_id},                                                                      
+              ],                                            
+              'rls': [
+                  {'clause': rls_clause},
+              ],
+          }
+      )
+      guest_token = guest.json()['token']
+                                                                                                                                  
+      # 4. Trả về embed URL
+      return {                                                                                                                    
+          'dashboard_url': f'{SUPERSET_URL}/superset/dashboard/{dashboard_id}/',
+          'guest_token': guest_token,                                                                                             
+      }
+                                                                                                                                  
+  Bước 4: Frontend embed dashboard                          
+
+  Dùng Superset Embedded SDK hoặc iframe đơn giản:                                                                                
+   
+  <!-- frontend/app.py hoặc template -->                                                                                          
+  <div id="superset-container"                              
+       data-superset-url="http://superset:8088"                                                                                   
+       data-guest-token="{{ guest_token }}">
+  </div>                                                                                                                          
+                                                            
+  <script type="module">                                                                                                          
+    import embed from "https://cdn.jsdelivr.net/npm/@superset-ui/embedded-sdk@1.0.0/+esm";
+    // Hoặc dùng iframe thuần                                                                                                     
+  </script>                                                 
+                                                                                                                                  
+  Cách iframe đơn giản nhất:                                                                                                      
+   
+  <iframe                                                                                                                         
+    src="http://localhost:8088/superset/dashboard/{{ dashboard_id }}/?guest_token={{ guest_token }}"
+    width="100%" height="600px"                                                                                                   
+    frameborder="0"
+  ></iframe>                                                                                                                      
+                                                                                                                                  
+  Bước 5: Tạo 5 Dashboards trong Superset
+                                                                                                                                  
+  ┌─────────────────────────┬─────────────────────────────────────────────────┬─────────────────────────┐                         
+  │        Dashboard        │                    Nội dung                     │         Dataset         │
+  ├─────────────────────────┼─────────────────────────────────────────────────┼─────────────────────────┤                         
+  │ 1. Phân tích Doanh thu  │ Doanh thu theo ngày/tuần/tháng, so sánh cùng kỳ │ dm_sales_summary        │
+  ├─────────────────────────┼─────────────────────────────────────────────────┼─────────────────────────┤
+  │ 2. Phân tích Sản phẩm   │ TOP 10 bán chạy, biên lợi nhuận                 │ dm_product_performance  │                         
+  ├─────────────────────────┼─────────────────────────────────────────────────┼─────────────────────────┤                         
+  │ 3. Quản lý Tồn kho      │ Cảnh báo dưới ngưỡng, xu hướng nhập/xuất        │ dm_inventory_alert      │                         
+  ├─────────────────────────┼─────────────────────────────────────────────────┼─────────────────────────┤                         
+  │ 4. Phân tích Khách hàng │ RFM segmentation, tỷ lệ quay lại                │ dm_customer_rfm         │
+  ├─────────────────────────┼─────────────────────────────────────────────────┼─────────────────────────┤                         
+  │ 5. Hiệu suất Nhân viên  │ Doanh số theo nhân viên                         │ dm_employee_performance │
+  └─────────────────────────┴─────────────────────────────────────────────────┴─────────────────────────┘                         
+                                                            
+  Bước 6: Tạo Users & Roles trong Superset (auto-provisioning)                                                                    
+                                                            
+  Thêm vào superset/scripts/provision.py — tự động tạo khi Superset khởi động:                                                    
+   
+  # Tạo role TenantViewer (read-only)                                                                                             
+  # Tạo role RLS_STORE_HN, RLS_STORE_HCM (hoặc dùng 1 role TenantViewer + dynamic RLS)                                            
+  # Tạo Superset users cho mỗi tenant                                                                                             
+  # Gán guest_token cho phép embedded                                                                                             
+                                                                                                                                  
+  Bước 7: Frontend page để chọn & xem dashboard                                                                                   
+   
+  Thêm route /dashboard/<id> trong Flask frontend:                                                                                
+                                                            
+  @frontend_bp.route('/dashboard/<int:dashboard_id>')                                                                             
+  @login_required                                           
+  def view_dashboard(dashboard_id):
+      # Gọi API để lấy guest token
+      resp = requests.get(                                                                                                        
+          f'{API_BASE_URL}/auth/dashboard-token',
+          headers={'Authorization': f'Bearer {session["access_token"]}'},                                                         
+          params={'dashboard_id': dashboard_id}             
+      )                                                                                                                           
+      data = resp.json()
+      return render_template('dashboard.html',                                                                                    
+          dashboard_url=data['dashboard_url'],              
+          guest_token=data['guest_token']
+      )
+
+  ---
+  Triển khai theo thứ tự
+                                                                                                                                  
+  1. Bật EMBEDDED_SUPERSET flag trong config
+  2. Tạo Superset datasets từ MSSQL (kết nối datasource trong Superset UI)                                                        
+  3. Xây dashboards trong Superset UI (5 cái)                                                                                     
+  4. Cấu hình RLS rules trong Superset UI
+  5. Update /auth/dashboard-token endpoint đúng chuẩn                                                                             
+  6. Update frontend để embed dashboard                     
+  7. Test: login tenant A → chỉ thấy data A, không thấy data B                                                                    
+                                                                                                                                  
+  Cần tôi bắt đầu implement từng bước không? 

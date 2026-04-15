@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — DWH Multi-Tenant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body data-access-token="{{ session.get('access_token', '') }}">
+    <!-- ===== SIDEBAR ===== -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 48 48" fill="none">
+                    <rect width="48" height="48" rx="12" fill="#2563EB"/>
+                    <rect x="10" y="14" width="12" height="12" rx="2" fill="white"/>
+                    <rect x="26" y="14" width="12" height="12" rx="2" fill="white" opacity="0.5"/>
+                    <rect x="10" y="28" width="12" height="12" rx="2" fill="white" opacity="0.5"/>
+                    <rect x="26" y="28" width="12" height="12" rx="2" fill="white"/>
+                </svg>
+                <span class="logo-text">DWH Dashboard</span>
+            </div>
+        </div>
+
+        <div class="sidebar-user">
+            <div class="user-info">
+                <div class="user-avatar">{{ user.role[0].upper() }}</div>
+                <div class="user-details">
+                    <span class="user-role">
+                        {% if user.role == 'admin' %}
+                            Quản trị viên
+                        {% else %}
+                            Viewer
+                        {% endif %}
+                    </span>
+                    <span class="user-tenant">
+                        {% if user.tenant_id %}
+                            {{ user.tenant_id }}
+                        {% else %}
+                            Toàn hệ thống
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <ul class="nav-menu">
+            <li class="nav-item active" data-page="overview">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7" rx="1"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1"/>
+                </svg>
+                <span>Tổng quan</span>
+            </li>
+            <li class="nav-item" data-page="revenue">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+                <span>Doanh thu</span>
+            </li>
+            <li class="nav-item" data-page="products">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                </svg>
+                <span>Sản phẩm</span>
+            </li>
+            <li class="nav-item" data-page="inventory">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                </svg>
+                <span>Tồn kho</span>
+            </li>
+            <li class="nav-item" data-page="customers">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                <span>Khách hàng</span>
+            </li>
+            <li class="nav-item" data-page="employees">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
+                </svg>
+                <span>Nhân viên</span>
+            </li>
+
+            {% if user.role == 'admin' %}
+            <li class="nav-divider"></li>
+            {% endif %}
+            <li class="nav-item" data-page="etl">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <span>Tải lên dữ liệu</span>
+            </li>
+            {% if user.role == 'admin' %}
+            <li class="nav-item admin-only" data-page="admin">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                <span>Quản trị</span>
+            </li>
+            {% endif %}
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="health-indicator" id="healthIndicator">
+                <span class="health-dot"></span>
+                <span class="health-text">Đang kiểm tra...</span>
+            </div>
+            <button class="btn-logout" id="logoutBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Đăng xuất
+            </button>
+        </div>
+    </nav>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="main-content" id="mainContent">
+        <header class="top-bar">
+            <button class="toggle-sidebar" id="toggleSidebar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+            </button>
+            <div class="page-title" id="pageTitle">Tổng quan</div>
+            <div class="top-bar-right">
+                <span class="tenant-badge">
+                    {% if user.tenant_id %}
+                        {{ user.tenant_id }}
+                    {% else %}
+                        Admin
+                    {% endif %}
+                </span>
+                {% if user.role == 'admin' %}
+                <span class="role-badge admin">ADMIN</span>
+                {% else %}
+                <span class="role-badge viewer">VIEWER</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- ===== PAGE: OVERVIEW ===== -->
+        <div class="page active" id="page-overview">
+            <div class="page-header">
+                <h2>Tổng quan Dashboard</h2>
+                <p>Xem nhanh các chỉ số kinh doanh của
+                    {% if user.tenant_id %}{{ user.tenant_id }}{% else %}toàn hệ thống{% endif %}
+                </p>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon revenue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                        </svg>
+                    </div>
+                    <div class="kpi-content">
+                        <span class="kpi-label">Tổng Doanh thu</span>
+                        <span class="kpi-value" id="kpi-revenue">--</span>
+                        <span class="kpi-change positive" id="kpi-revenue-change">--</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon profit">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+                        </svg>
+                    </div>
+                    <div class="kpi-content">
+                        <span class="kpi-label">Lợi nhuận gộp</span>
+                        <span class="kpi-value" id="kpi-profit">--</span>
+                        <span class="kpi-change positive" id="kpi-profit-change">--</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon orders">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/>
+                        </svg>
+                    </div>
+                    <div class="kpi-content">
+                        <span class="kpi-label">Tổng Đơn hàng</span>
+                        <span class="kpi-value" id="kpi-orders">--</span>
+                        <span class="kpi-change" id="kpi-orders-change">--</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon customers">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                    <div class="kpi-content">
+                        <span class="kpi-label">Khách hàng</span>
+                        <span class="kpi-value" id="kpi-customers">--</span>
+                        <span class="kpi-change" id="kpi-customers-change">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick actions -->
+            <div class="dashboard-grid">
+                <div class="dash-card">
+                    <h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>
+                        </svg>
+                        Dashboard Doanh thu
+                    </h3>
+                    <p>Phân tích doanh thu theo ngày, tuần, tháng. So sánh cùng kỳ, theo cửa hàng và danh mục sản phẩm.</p>
+                    <button class="btn-open-dashboard" onclick="openSupersetDashboard(1)">
+                        Mở Dashboard
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="dash-card">
+                    <h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/>
+                        </svg>
+                        Dashboard Sản phẩm
+                    </h3>
+                    <p>TOP 10 sản phẩm bán chạy, tỷ lệ đóng góp doanh thu, phân tích biên lợi nhuận gộp.</p>
+                    <button class="btn-open-dashboard" onclick="openSupersetDashboard(2)">
+                        Mở Dashboard
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="dash-card">
+                    <h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        </svg>
+                        Dashboard Tồn kho
+                    </h3>
+                    <p>Cảnh báo tồn kho dưới ngưỡng tối thiểu, xu hướng nhập/xuất kho theo thời gian.</p>
+                    <button class="btn-open-dashboard" onclick="openSupersetDashboard(3)">
+                        Mở Dashboard
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== PAGE: REVENUE ===== -->
+        <div class="page" id="page-revenue">
+            <div class="page-header">
+                <h2>Dashboard Phân tích Doanh thu</h2>
+                <p>Chi tiết doanh thu — Superset Embedded View</p>
+            </div>
+            <div class="superset-container" id="superset-revenue">
+                <iframe id="iframe-revenue" width="100%" height="600" frameborder="0"></iframe>
+            </div>
+        </div>
+
+        <!-- ===== PAGE: PRODUCTS ===== -->
+        <div class="page" id="page-products">
+            <div class="page-header">
+                <h2>Dashboard Phân tích Sản phẩm</h2>
+                <p>TOP sản phẩm bán chạy — Superset Embedded View</p>
+            </div>
+            <div class="superset-container" id="superset-products">
+                <iframe id="iframe-products" width="100%" height="600" frameborder="0"></iframe>
+            </div>
+        </div>
+
+        <!-- ===== PAGE: INVENTORY ===== -->
+        <div class="page" id="page-inventory">
+            <div class="page-header">
+                <h2>Dashboard Quản lý Tồn kho</h2>
+                <p>Cảnh báo và xu hướng tồn kho — Superset Embedded View</p>
+            </div>
+            <div class="superset-container" id="superset-inventory">
+                <iframe id="iframe-inventory" width="100%" height="600" frameborder="0"></iframe>
+            </div>
+        </div>
+
+        <!-- ===== PAGE: CUSTOMERS ===== -->
+        <div class="page" id="page-customers">
+            <div class="page-header">
+                <h2>Dashboard Phân tích Khách hàng</h2>
+                <p>Phân khúc RFM — Superset Embedded View</p>
+            </div>
+            <div class="superset-container" id="superset-customers">
+                <iframe id="iframe-customers" width="100%" height="600" frameborder="0"></iframe>
+            </div>
+        </div>
+
+        <!-- ===== PAGE: EMPLOYEES ===== -->
+        <div class="page" id="page-employees">
+            <div class="page-header">
+                <h2>Dashboard Hiệu suất Nhân viên</h2>
+                <p>Doanh số, tỷ lệ chuyển đổi — Superset Embedded View</p>
+            </div>
+            <div class="superset-container" id="superset-employees">
+                <iframe id="iframe-employees" width="100%" height="600" frameborder="0"></iframe>
+            </div>
+        </div>
+
+        <!-- ===== PAGE: UPLOAD / ETL ===== -->
+        <div class="page" id="page-etl">
+            <div class="page-header">
+                <h2>Tải lên dữ liệu</h2>
+                <p>Upload file Excel/CSV rồi chạy ETL vào Data Warehouse
+                    {% if user.tenant_id %}{{ user.tenant_id }}{% else %}<select id="etlTenantSelect" style="margin-left:8px;padding:4px 8px;border-radius:6px;border:1px solid #ddd;">
+                        <option value="">Đang tải...</option>
+                    </select>{% endif %}
+                </p>
+            </div>
+
+            <!-- Upload zone -->
+            <div class="upload-section">
+                <div class="upload-zone" id="uploadZone">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <p class="upload-hint">Kéo thả file vào đây hoặc nhấn nút bên dưới</p>
+                    <label for="fileInput" class="upload-browse" style="cursor:pointer;display:inline-block;padding:10px 24px;background:#2563eb;color:white;border-radius:8px;font-weight:600;">
+                        Chọn file (.xlsx, .xls, .csv)
+                    </label>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+                    <p class="upload-formats">Tối đa 50MB/file</p>
+                    <div id="uploadPreview" class="upload-preview"></div>
+                </div>
+
+                <!-- File type guide -->
+                <div class="upload-guide">
+                    <h4>Hướng dẫn đặt tên file</h4>
+                    <table class="guide-table">
+                        <thead><tr><th>Loại file</th><th>Tên file mẫu</th><th>Mô tả</th></tr></thead>
+                        <tbody>
+                            <tr><td>Doanh thu</td><td><code>BaoCaoDoanhThu_HN_20260101.xlsx</code></td><td>Hóa đơn bán hàng</td></tr>
+                            <tr><td>Tồn kho</td><td><code>QuanLyKho_HCM_20260101.xlsx</code></td><td>Dữ liệu tồn kho</td></tr>
+                            <tr><td>Sản phẩm</td><td><code>DanhMucSanPham.csv</code></td><td>Danh mục sản phẩm</td></tr>
+                            <tr><td>Khách hàng</td><td><code>DanhMucKhachHang.csv</code></td><td>Danh mục khách hàng</td></tr>
+                            <tr><td>Nhập hàng</td><td><code>PhieuNhapHang.csv</code></td><td>Phiếu nhập hàng</td></tr>
+                            <tr><td>Nhà cung cấp</td><td><code>DanhMucNhaCungCap.csv</code></td><td>Danh mục nhà cung cấp</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Upload status -->
+            <div class="upload-status" id="uploadStatus" style="display:none; margin-top:16px;">
+                <div class="status-header">
+                    <svg id="statusIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"></svg>
+                    <span id="statusText"></span>
+                </div>
+                <div id="statusDetail"></div>
+            </div>
+
+            <!-- Uploaded files list -->
+            <div class="files-section" id="filesSection">
+                <h3>📁 File đã tải lên gần đây</h3>
+                <div id="uploadedFilesList">
+                    <div class="loading">Đang tải danh sách file...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== PAGE: ADMIN ===== -->
+        {% if user.role == 'admin' %}
+        <div class="page" id="page-admin">
+            <div class="page-header">
+                <h2>Quản trị hệ thống</h2>
+                <p>Quản lý tenant, user, giám sát ETL</p>
+            </div>
+            <div class="admin-grid">
+                <div class="admin-card">
+                    <h3>📦 Tạo Tenant mới</h3>
+                    <form class="create-form" id="formCreateTenant" onsubmit="createTenant(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Mã Tenant (ID)</label>
+                                <input type="text" id="newTenantId" placeholder="VD: STORE_DN" required pattern="[A-Za-z0-9_]+" maxlength="20"
+                                    oninput="autoFillTenantPath()">
+                            </div>
+                            <div class="form-group">
+                                <label>Tên Tenant</label>
+                                <input type="text" id="newTenantName" placeholder="VD: Cửa hàng Đà Nẵng" required maxlength="200">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Đường dẫn file</label>
+                            <input type="text" id="newTenantFilePath" readonly
+                                style="background:#f3f4f6;color:#6b7280;">
+                            <small style="color:#9ca3af;font-size:11px;">Tự động tạo thư mục data và logs khi tạo tenant</small>
+                        </div>
+                        <button type="submit" class="btn-primary">Tạo Tenant</button>
+                        <span id="tenantCreateMsg" class="form-msg"></span>
+                    </form>
+                </div>
+
+                <div class="admin-card">
+                    <h3>👤 Tạo User mới</h3>
+                    <form class="create-form" id="formCreateUser" onsubmit="createUser(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Username</label>
+                                <input type="text" id="newUserUsername" placeholder="VD: manager_dn" required maxlength="100">
+                            </div>
+                            <div class="form-group">
+                                <label>Password</label>
+                                <input type="password" id="newUserPassword" placeholder="Mật khẩu" required minlength="6">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Tenant</label>
+                                <select id="newUserTenant">
+                                    <option value="">— Toàn hệ thống (Admin) —</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Vai trò</label>
+                                <select id="newUserRole">
+                                    <option value="viewer">Viewer (Manager cửa hàng)</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary">Tạo User</button>
+                        <span id="userCreateMsg" class="form-msg"></span>
+                    </form>
+                </div>
+
+                <div class="admin-card">
+                    <h3>📦 Danh sách Tenant</h3>
+                    <div style="overflow-x:auto;">
+                    <table class="admin-table" id="tenant-table" style="width:100%;border-collapse:collapse;font-size:13px;">
+                        <thead>
+                            <tr style="background:#f8fafc;text-align:left;">
+                                <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Mã</th>
+                                <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Tên</th>
+                                <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Đường dẫn</th>
+                                <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Trạng thái</th>
+                                <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tenant-list">
+                            <tr><td colspan="5" style="padding:16px;text-align:center;color:#94a3b8;">Đang tải...</td></tr>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+                <div class="admin-card">
+                    <h3>👤 Danh sách User</h3>
+                    <div style="overflow-x:auto;">
+                    <table class="admin-table" id="user-table" style="width:100%;border-collapse:collapse;font-size:13px;">
+                        <thead>
+                            <tr style="background:#f8fafc;text-align:left;">
+                                <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Username</th>
+                                <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Tenant</th>
+                                <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Vai trò</th>
+                                <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Trạng thái</th>
+                                <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-list">
+                            <tr><td colspan="5" style="padding:16px;text-align:center;color:#94a3b8;">Đang tải...</td></tr>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+                <div class="admin-card full-width">
+                    <h3>Giám sát ETL</h3>
+                    <div id="etl-logs">
+                        <div class="loading">Đang tải...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </main>
+
+    <!-- ===== EDIT TENANT MODAL ===== -->
+    <div class="modal-overlay" id="modalEditTenant" style="display:none;z-index:1000;">
+        <div class="modal" style="max-width:500px;">
+            <div class="modal-header">
+                <h3 id="editTenantTitle">Sửa Tenant</h3>
+                <button class="modal-close" onclick="closeEditTenantModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" style="padding:20px;">
+                <form id="formEditTenant" onsubmit="submitEditTenant(event)">
+                    <input type="hidden" id="editTenantId">
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label style="font-weight:600;color:#374151;display:block;margin-bottom:4px;">Tên Tenant</label>
+                        <input type="text" id="editTenantName" required maxlength="200"
+                            style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
+                    </div>
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label style="font-weight:600;color:#374151;display:block;margin-bottom:4px;">Đường dẫn file</label>
+                        <input type="text" id="editTenantFilePath"
+                            style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
+                    </div>
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label style="font-weight:600;color:#374151;display:block;margin-bottom:4px;">Trạng thái</label>
+                        <select id="editTenantActive"
+                            style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
+                            <option value="1">Hoạt động</option>
+                            <option value="0">Tắt</option>
+                        </select>
+                    </div>
+                    <div style="display:flex;gap:8px;justify-content:flex-end;">
+                        <button type="button" onclick="closeEditTenantModal()" class="btn-primary"
+                            style="background:#6b7280;border:none;color:white;padding:8px 20px;border-radius:8px;cursor:pointer;">Hủy</button>
+                        <button type="submit" class="btn-primary"
+                            style="background:#2563eb;border:none;color:white;padding:8px 20px;border-radius:8px;cursor:pointer;">Lưu</button>
+                    </div>
+                    <span id="editTenantMsg" class="form-msg" style="display:block;margin-top:8px;"></span>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== EDIT USER MODAL ===== -->
+    <div class="modal-overlay" id="modalEditUser" style="display:none;z-index:1000;">
+        <div class="modal" style="max-width:500px;">
+            <div class="modal-header">
+                <h3 id="editUserTitle">Sửa User</h3>
+                <button class="modal-close" onclick="closeEditUserModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" style="padding:20px;">
+                <form id="formEditUser" onsubmit="submitEditUser(event)">
+                    <input type="hidden" id="editUserId">
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label style="font-weight:600;color:#374151;display:block;margin-bottom:4px;">Username</label>
+                        <input type="text" id="editUserUsername" disabled
+                            style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;background:#f3f4f6;color:#6b7280;">
+                    </div>
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label style="font-weight:600;color:#374151;display:block;margin-bottom:4px;">Password mới <small style="color:#9ca3af;font-weight:400;">(bỏ trống nếu không đổi)</small></label>
+                        <input type="password" id="editUserPassword" minlength="6" placeholder="Nhập password mới"
+                            style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
+                    </div>
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label style="font-weight:600;color:#374151;display:block;margin-bottom:4px;">Tenant</label>
+                        <select id="editUserTenant"
+                            style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
+                            <option value="">— Toàn hệ thống —</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label style="font-weight:600;color:#374151;display:block;margin-bottom:4px;">Vai trò</label>
+                        <select id="editUserRole"
+                            style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
+                            <option value="viewer">Viewer (Manager cửa hàng)</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label style="font-weight:600;color:#374151;display:block;margin-bottom:4px;">Trạng thái</label>
+                        <select id="editUserActive"
+                            style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
+                            <option value="1">Hoạt động</option>
+                            <option value="0">Tắt</option>
+                        </select>
+                    </div>
+                    <div style="display:flex;gap:8px;justify-content:flex-end;">
+                        <button type="button" onclick="closeEditUserModal()" class="btn-primary"
+                            style="background:#6b7280;border:none;color:white;padding:8px 20px;border-radius:8px;cursor:pointer;">Hủy</button>
+                        <button type="submit" class="btn-primary"
+                            style="background:#2563eb;border:none;color:white;padding:8px 20px;border-radius:8px;cursor:pointer;">Lưu</button>
+                    </div>
+                    <span id="editUserMsg" class="form-msg" style="display:block;margin-top:8px;"></span>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SUPERSET EMBED MODAL ===== -->
+    <div class="modal-overlay" id="modalOverlay" style="display:none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Dashboard</h3>
+                <button class="modal-close" onclick="closeModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <iframe id="modalIframe" width="100%" height="700" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== User context from server =====
+        const USER_ROLE = '{{ user.role }}';
+        const USER_TENANT = '{{ user.tenant_id }}';
+        const DASHBOARD_TOKEN = '{{ dashboard_token or "" }}';
+        const SUPERSET_URL = '{{ SUPERSET_URL }}';
+        // Access token from server-rendered data attribute
+        const ACCESS_TOKEN = document.body.dataset.accessToken || '';
+        // Helper: fetch with auth
+        async function authFetch(url, options = {}) {
+            const headers = { ...(options.headers || {}) };
+            if (ACCESS_TOKEN) headers['Authorization'] = 'Bearer ' + ACCESS_TOKEN;
+            const resp = await fetch(url, { ...options, headers });
+            return resp;
+        }
+
+        // ===== Init: populate tenant selector from server =====
+
+        async function populateTenantSelector() {
+            const tenantSelect = document.getElementById('uploadTenantSelect');
+            if (!tenantSelect) return;
+
+            try {
+                const resp = await authFetch('/api/tenants');
+                if (!resp.ok) return;
+                const data = await resp.json();
+                const tenants = data.tenants || [];
+                tenantSelect.innerHTML = tenants
+                    .filter(t => t.is_active)
+                    .map(t => `<option value="${t.tenant_id}">${t.tenant_id} — ${t.tenant_name}</option>`)
+                    .join('');
+            } catch (e) {
+                tenantSelect.innerHTML = '<option value="STORE_HN">STORE_HN</option><option value="STORE_HCM">STORE_HCM</option>';
+            }
+        }
+
+        // ===== Navigation =====
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function () {
+                const page = this.dataset.page;
+                navigateTo(page);
+            });
+        });
+
+        function navigateTo(page) {
+            // Update nav
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            const activeNav = document.querySelector(`.nav-item[data-page="${page}"]`);
+            if (activeNav) activeNav.classList.add('active');
+
+            // Update pages
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            const targetPage = document.getElementById(`page-${page}`);
+            if (targetPage) {
+                targetPage.classList.add('active');
+                document.getElementById('pageTitle').textContent =
+                    targetPage.querySelector('h2')?.textContent || page;
+            }
+
+            // Load Superset iframe if needed
+            const noSupersetPages = ['overview', 'upload', 'admin'];
+            if (!noSupersetPages.includes(page)) {
+                loadSupersetIframe(page);
+            }
+        }
+
+        function loadSupersetIframe(page) {
+            const dashboardIds = {
+                'revenue': 1,
+                'products': 2,
+                'inventory': 3,
+                'customers': 4,
+                'employees': 5,
+            };
+            const dashId = dashboardIds[page];
+            if (!dashId) return;
+
+            const iframe = document.getElementById(`iframe-${page}`);
+            if (!iframe) return;
+
+            // Fetch fresh guest token for this specific dashboard
+            iframe.src = 'about:blank';
+            fetch(`/api/dashboard-token?dashboard_id=${dashId}`)
+                .then(resp => {
+                    if (!resp.ok) throw new Error('Token error');
+                    return resp.json();
+                })
+                .then(data => {
+                    const url = data.dashboard_url || `${SUPERSET_URL}/superset/dashboard/${dashId}/`;
+                    iframe.src = `${url}?standalone=2&guest_token=${data.guest_token}`;
+                })
+                .catch(err => {
+                    console.error('Dashboard token error:', err);
+                    iframe.srcdoc = '<p style="padding:20px;color:red;">Lỗi lấy dashboard token. Vui long dang nhap lai.</p>';
+                });
+        }
+
+        // ===== Superset modal =====
+        function openSupersetDashboard(dashId) {
+            document.getElementById('modalTitle').textContent = 'Dashboard — Superset';
+            document.getElementById('modalIframe').src = 'about:blank';
+
+            // Fetch fresh guest token for the requested dashboard
+            fetch(`/api/dashboard-token?dashboard_id=${dashId}`)
+                .then(resp => {
+                    if (!resp.ok) throw new Error('Token error');
+                    return resp.json();
+                })
+                .then(data => {
+                    const url = data.dashboard_url || `${SUPERSET_URL}/superset/dashboard/${dashId}/`;
+                    document.getElementById('modalIframe').src =
+                        `${url}?standalone=2&guest_token=${data.guest_token}`;
+                })
+                .catch(err => {
+                    console.error('Dashboard token error:', err);
+                    alert('Khong lay duoc dashboard token. Vui long dang nhap lai.');
+                });
+
+            document.getElementById('modalOverlay').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+            document.getElementById('modalIframe').src = 'about:blank';
+        }
+
+        document.getElementById('modalOverlay').addEventListener('click', function (e) {
+            if (e.target === this) closeModal();
+        });
+
+        // ===== Health check =====
+        async function checkHealth() {
+            const indicator = document.getElementById('healthIndicator');
+            try {
+                const resp = await fetch('/api/health');
+                const data = await resp.json();
+                if (data.api === 'ok') {
+                    indicator.innerHTML = '<span class="health-dot online"></span><span class="health-text">API Online</span>';
+                } else {
+                    indicator.innerHTML = '<span class="health-dot offline"></span><span class="health-text">API Offline</span>';
+                }
+            } catch {
+                indicator.innerHTML = '<span class="health-dot offline"></span><span class="health-text">API Offline</span>';
+            }
+        }
+        checkHealth();
+
+        // ===== Logout =====
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await fetch('/api/logout', { method: 'POST' });
+            window.location.href = '/login';
+        });
+
+        // ===== Toggle sidebar =====
+        document.getElementById('toggleSidebar').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        });
+
+        // ===== KPI loading =====
+        async function loadKPIs() {
+            try {
+                // Call Flask /api/kpi which proxies to Auth Gateway with session cookie
+                const resp = await fetch('/api/kpi');
+                if (!resp.ok) return;
+                const data = await resp.json();
+                const kpi = data.kpi || {};
+
+                const fmt = n => new Intl.NumberFormat('vi-VN').format(n) + ' VNĐ';
+                document.getElementById('kpi-revenue').textContent = fmt(kpi.total_revenue || 0);
+                document.getElementById('kpi-profit').textContent = fmt(kpi.total_profit || 0);
+                document.getElementById('kpi-orders').textContent =
+                    new Intl.NumberFormat('vi-VN').format(kpi.total_orders || 0);
+                document.getElementById('kpi-customers').textContent =
+                    new Intl.NumberFormat('vi-VN').format(kpi.total_customers || 0);
+
+                // Profit margin label
+                const margin = kpi.profit_margin_pct || 0;
+                const profitEl = document.getElementById('kpi-profit-change');
+                if (profitEl) profitEl.textContent = `Biên: ${margin}%`;
+
+                // Low stock alerts label
+                const alerts = kpi.low_stock_alerts || 0;
+                const ordersEl = document.getElementById('kpi-orders-change');
+                if (ordersEl && alerts > 0) ordersEl.textContent = `${alerts} cảnh báo tồn kho`;
+
+            } catch (err) {
+                console.warn('KPI load error:', err);
+            }
+        }
+        loadKPIs();
+
+        // ===== Admin page =====
+        if (USER_ROLE === 'admin') {
+            loadAdminData();
+        }
+
+        // ===== Upload page init =====
+        populateTenantSelector();
+        const etlTenantSelect = document.getElementById('etlTenantSelect');
+        const fileInput = document.getElementById('fileInput');
+        const uploadZone = document.getElementById('uploadZone');
+        const uploadPreview = document.getElementById('uploadPreview');
+        const uploadStatus = document.getElementById('uploadStatus');
+
+        function getCurrentTenant() {
+            if (etlTenantSelect) return etlTenantSelect.value;
+            return USER_TENANT || 'STORE_HN';
+        }
+
+        if (fileInput) {
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length) showFilePreview();
+            });
+        }
+
+        if (uploadZone) {
+            uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+            uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+            uploadZone.addEventListener('drop', e => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    showFilePreview();
+                }
+            });
+            uploadZone.addEventListener('click', e => {
+                const tag = e.target.tagName;
+                const cls = e.target.className || '';
+                if (tag === 'INPUT' || tag === 'LABEL' || tag === 'BUTTON' || cls.includes('btn-')) return;
+                fileInput.click();
+            });
+        }
+
+        function showFilePreview() {
+            const files = fileInput.files;
+            if (!files.length) return;
+            uploadPreview.style.display = 'block';
+            const html = Array.from(files).map((f, i) => {
+                const sizeMB = (f.size / (1024 * 1024)).toFixed(2);
+                return `<div class="preview-file">
+                    <span>📄 <strong>${f.name}</strong> (${sizeMB} MB)</span>
+                </div>`;
+            }).join('');
+            uploadPreview.innerHTML = html + `
+                <button class="upload-submit-btn" id="btnUploadSubmit" onclick="uploadFile()" style="margin-top:12px; margin-right:8px;">
+                    Tải lên dữ liệu
+                </button>
+                <button class="btn-trigger-etl" onclick="triggerETL(getCurrentTenant())" style="margin-top:12px;">
+                    Chạy ETL
+                </button>
+            `;
+        }
+
+        async function uploadFile() {
+            if (!fileInput.files.length) {
+                alert('Vui long chon file truoc');
+                return;
+            }
+
+            const tenant = getCurrentTenant();
+            const statusEl = document.getElementById('uploadStatus');
+            const statusText = document.getElementById('statusText');
+            const statusDetail = document.getElementById('statusDetail');
+            const statusIcon = document.getElementById('statusIcon');
+            const submitBtn = document.getElementById('btnUploadSubmit');
+
+            statusEl.style.display = 'block';
+            statusEl.className = 'upload-status running';
+            statusText.textContent = `Đang upload ${fileInput.files.length} file...`;
+            statusIcon.innerHTML = '<circle cx="12" cy="12" r="10" stroke="#2563EB" fill="none" stroke-width="2"/><path d="M12 6v6l4 2" stroke="#2563EB" stroke-width="2" stroke-linecap="round"/>';
+            statusDetail.innerHTML = '<p>Đang tai file len server...</p>';
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Đang upload...'; }
+
+            const formData = new FormData();
+            for (const f of fileInput.files) {
+                formData.append('files', f);
+            }
+
+            try {
+                const resp = await fetch(`/api/upload/${tenant}`, {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await resp.json();
+
+                if (data.success) {
+                    statusIcon.innerHTML = '<path d="M20 6L9 17l-5-5" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
+                    statusText.textContent = `✓ Upload thanh cong ${data.successful_uploads}/${data.total_files} file`;
+                    statusDetail.innerHTML = `
+                        <p><strong>Kết quả:</strong></p>
+                        ${data.uploaded_files.map(f => {
+                            if (f.success) {
+                                return `<p style="color:#059669">✓ ${f.filename} (${f.file_type})</p>`;
+                            } else {
+                                return `<p style="color:#dc2626">✕ ${f.filename}: ${f.error}</p>`;
+                            }
+                        }).join('')}
+                    `;
+                    statusEl.className = 'upload-status success';
+                    loadUploadedFiles();
+                    fileInput.value = '';
+                    uploadPreview.style.display = 'none';
+                } else {
+                    throw new Error(data.detail || data.message || 'Upload that bai');
+                }
+            } catch (err) {
+                statusIcon.innerHTML = '<path d="M18 6L6 18M6 6l12 12" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>';
+                statusText.textContent = '✕ Upload that bai';
+                statusDetail.innerHTML = `<p class="error-msg">${err.message}</p>`;
+                statusEl.className = 'upload-status error';
+            } finally {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Tải lên dữ liệu'; }
+            }
+        }
+
+        async function triggerETL(tenant) {
+            const tenant2 = tenant || getCurrentTenant();
+            const statusEl = document.getElementById('uploadStatus');
+            const statusText = document.getElementById('statusText');
+            const statusDetail = document.getElementById('statusDetail');
+            const statusIcon = document.getElementById('statusIcon');
+
+            statusEl.style.display = 'block';
+            statusEl.className = 'upload-status running';
+            statusText.textContent = `ETL dang chay cho ${tenant2}...`;
+            statusIcon.innerHTML = '<circle cx="12" cy="12" r="10" stroke="#2563EB" fill="none" stroke-width="2"/><path d="M12 6v6l4 2" stroke="#2563EB" stroke-width="2" stroke-linecap="round"/>';
+            statusDetail.innerHTML = '<p>Dang nap du lieu vao Data Warehouse...</p>';
+
+            try {
+                const resp = await fetch(`/api/upload/${tenant2}/etl`, { method: 'POST' });
+                const data = await resp.json();
+                if (data.success) {
+                    statusIcon.innerHTML = '<path d="M20 6L9 17l-5-5" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
+                    statusText.textContent = `✓ ETL da duoc kich hoat cho ${tenant2}`;
+                    statusDetail.innerHTML = `
+                        <p>${data.message}</p>
+                        <p style="font-size:12px;color:#6b7280">Qua trinh ETL chay trong nen, kiem tra lai sau 1-2 phut.</p>
+                    `;
+                    statusEl.className = 'upload-status success';
+                } else {
+                    throw new Error(data.message || 'ETL that bai');
+                }
+            } catch (e) {
+                statusIcon.innerHTML = '<path d="M18 6L6 18M6 6l12 12" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>';
+                statusText.textContent = '✕ ETL that bai';
+                statusDetail.innerHTML = `<p class="error-msg">${e.message}</p>`;
+                statusEl.className = 'upload-status error';
+            }
+        }
+
+        async function loadUploadedFiles() {
+            const tenant = getCurrentTenant();
+            const listEl = document.getElementById('uploadedFilesList');
+            if (!listEl) return;
+
+            try {
+                const resp = await fetch(`/api/upload/${tenant}/files`);
+                if (!resp.ok) { listEl.innerHTML = '<p>Khong the tai danh sach file</p>'; return; }
+                const data = await resp.json();
+                const files = data.files || [];
+
+                if (!files.length) {
+                    listEl.innerHTML = '<p>Chua co file nao duoc tai len</p>';
+                    return;
+                }
+
+                const isAdmin = USER_ROLE === 'admin';
+                listEl.innerHTML = `<table class="files-table">
+                    <thead><tr>
+                        <th>Tên file</th><th>Loại</th><th>Kích thước</th><th>Ngày tải lên</th>
+                        ${isAdmin ? '<th>Thao tác</th>' : ''}
+                    </tr></thead>
+                    <tbody>${
+                        files.map(f => {
+                            const sizeStr = f.size_bytes > 1024*1024
+                                ? (f.size_bytes/1024/1024).toFixed(1)+' MB'
+                                : (f.size_bytes/1024).toFixed(1)+' KB';
+                            const dateStr = new Date(f.uploaded_at).toLocaleString('vi-VN');
+                            const delBtn = isAdmin
+                                ? `<button class="btn-delete-file" onclick="deleteFile('${tenant}','${f.filename}')">Xóa</button>`
+                                : '';
+                            return `<tr>
+                                <td><strong>${f.filename}</strong></td>
+                                <td><span class="file-type-badge ${f.file_type}">${f.file_type}</span></td>
+                                <td>${sizeStr}</td>
+                                <td>${dateStr}</td>
+                                ${delBtn ? `<td>${delBtn}</td>` : ''}
+                            </tr>`;
+                        }).join('')
+                    }</tbody>
+                </table>`;
+            } catch (e) {
+                listEl.innerHTML = '<p>Khong the tai danh sach file</p>';
+            }
+        }
+
+        async function deleteFile(tenant, filename) {
+            if (!confirm(`Xóa file "${filename}"?`)) return;
+            try {
+                const resp = await fetch(`/api/upload/${tenant}/files/${encodeURIComponent(filename)}`, {
+                    method: 'DELETE'
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    loadUploadedFiles();
+                } else {
+                    alert('Xóa thất bại: ' + (data.detail || data.message));
+                }
+            } catch (e) {
+                alert('Lỗi: ' + e.message);
+            }
+        }
+
+        // Init
+        loadUploadedFiles();
+        if (etlTenantSelect) {
+            etlTenantSelect.addEventListener('change', loadUploadedFiles);
+        }
+
+        // ===== loadAdminData =====
+
+        async function loadAdminData() {
+            // Populate tenant dropdown in user form first
+            populateTenantDropdown();
+
+            // Load tenants
+            try {
+                const resp = await authFetch('/api/tenants');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    _tenantListCache = data.tenants || [];
+                    renderTenants(_tenantListCache);
+                }
+            } catch (e) { console.warn('Tenants load error', e); }
+
+            // Load users
+            try {
+                const resp = await authFetch('/api/users');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    _userListCache = data.users || [];
+                    renderUsers(_userListCache);
+                }
+            } catch (e) { console.warn('Users load error', e); }
+
+            // Load ETL logs
+            try {
+                const resp = await authFetch('/api/etl/logs');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    renderETLLogs(data.logs || []);
+                }
+            } catch (e) { console.warn('ETL logs load error', e); }
+        }
+
+        function renderTenants(tenants) {
+            const el = document.getElementById('tenant-list');
+            if (!el) return;
+            if (!tenants.length) {
+                el.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:#94a3b8;">Chưa có tenant nào</td></tr>';
+                return;
+            }
+            el.innerHTML = tenants.map(t => `
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:10px 12px;font-weight:600;color:#1e40af;">${t.tenant_id}</td>
+                    <td style="padding:10px 12px;color:#374151;">${t.tenant_name}</td>
+                    <td style="padding:10px 12px;color:#6b7280;font-size:12px;">${t.file_path || '—'}</td>
+                    <td style="padding:10px 12px;">
+                        <span style="padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;${t.is_active ? 'background:#dcfce7;color:#16a34a;' : 'background:#fee2e2;color:#dc2626;'}">
+                            ${t.is_active ? 'Hoạt động' : 'Tắt'}
+                        </span>
+                    </td>
+                    <td style="padding:10px 12px;">
+                        <button onclick="openEditTenant('${t.tenant_id}')"
+                            style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-right:4px;">
+                            Sửa
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderUsers(users) {
+            const el = document.getElementById('user-list');
+            if (!el) return;
+            if (!users.length) {
+                el.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:#94a3b8;">Chưa có user nào</td></tr>';
+                return;
+            }
+            el.innerHTML = users.map(u => `
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:10px 12px;font-weight:600;color:#1e40af;">${u.username}</td>
+                    <td style="padding:10px 12px;color:#374151;">${u.tenant_id || '—'}</td>
+                    <td style="padding:10px 12px;">
+                        <span style="padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;${u.role === 'admin' ? 'background:#ede9fe;color:#7c3aed;' : 'background:#dbeafe;color:#1d4ed8;'}">
+                            ${u.role === 'admin' ? 'Admin' : 'Viewer'}
+                        </span>
+                    </td>
+                    <td style="padding:10px 12px;">
+                        <span style="padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;${u.is_active ? 'background:#dcfce7;color:#16a34a;' : 'background:#fee2e2;color:#dc2626;'}">
+                            ${u.is_active ? 'Hoạt động' : 'Tắt'}
+                        </span>
+                    </td>
+                    <td style="padding:10px 12px;">
+                        <button onclick="openEditUser(${u.user_id}, '${u.username}', '${u.tenant_id || ''}', '${u.role}', ${u.is_active})"
+                            style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-right:4px;">
+                            Sửa
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // ===== Edit Tenant Modal =====
+        let _tenantListCache = [];
+
+        function openEditTenant(tenantId) {
+            const t = _tenantListCache.find(x => x.tenant_id === tenantId);
+            if (!t) return;
+            document.getElementById('editTenantId').value = t.tenant_id;
+            document.getElementById('editTenantName').value = t.tenant_name;
+            document.getElementById('editTenantFilePath').value = t.file_path || '';
+            document.getElementById('editTenantActive').value = t.is_active ? '1' : '0';
+            document.getElementById('editTenantTitle').textContent = 'Sửa Tenant: ' + tenantId;
+            document.getElementById('editTenantMsg').textContent = '';
+            document.getElementById('editTenantMsg').className = 'form-msg';
+            document.getElementById('modalEditTenant').style.display = 'flex';
+        }
+
+        function closeEditTenantModal() {
+            document.getElementById('modalEditTenant').style.display = 'none';
+        }
+
+        document.getElementById('modalEditTenant').addEventListener('click', function(e) {
+            if (e.target === this) closeEditTenantModal();
+        });
+
+        async function submitEditTenant(e) {
+            e.preventDefault();
+            const tenantId = document.getElementById('editTenantId').value;
+            const msgEl = document.getElementById('editTenantMsg');
+            msgEl.textContent = 'Đang lưu...';
+            msgEl.className = 'form-msg running';
+
+            const body = {};
+            const name = document.getElementById('editTenantName').value.trim();
+            const filePath = document.getElementById('editTenantFilePath').value.trim();
+            const isActive = document.getElementById('editTenantActive').value;
+            if (name) body.tenant_name = name;
+            if (filePath !== undefined) body.file_path = filePath || null;
+            body.is_active = isActive === '1';
+
+            try {
+                const resp = await authFetch(`/api/tenants/${tenantId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const data = await resp.json();
+                if (resp.ok && data.success) {
+                    msgEl.textContent = '✓ Đã lưu thay đổi!';
+                    msgEl.className = 'form-msg success';
+                    setTimeout(closeEditTenantModal, 800);
+                    loadAdminData();
+                } else {
+                    throw new Error(data.detail || data.message || 'Lưu thất bại');
+                }
+            } catch (err) {
+                msgEl.textContent = '✕ ' + err.message;
+                msgEl.className = 'form-msg error';
+            }
+        }
+
+        // ===== Edit User Modal =====
+        let _userListCache = [];
+
+        async function openEditUser(userId, username, tenantId, role, isActive) {
+            document.getElementById('editUserId').value = userId;
+            document.getElementById('editUserUsername').value = username;
+            document.getElementById('editUserPassword').value = '';
+            document.getElementById('editUserRole').value = role;
+            document.getElementById('editUserActive').value = isActive ? '1' : '0';
+            document.getElementById('editUserTitle').textContent = 'Sửa User: ' + username;
+            document.getElementById('editUserMsg').textContent = '';
+            document.getElementById('editUserMsg').className = 'form-msg';
+
+            // Populate tenant dropdown
+            const tenantSelect = document.getElementById('editUserTenant');
+            tenantSelect.innerHTML = '<option value="">— Toàn hệ thống —</option>';
+            try {
+                const resp = await authFetch('/api/tenants');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const tenants = data.tenants || [];
+                    tenantSelect.innerHTML = '<option value="">— Toàn hệ thống —</option>' +
+                        tenants.map(t => `<option value="${t.tenant_id}">${t.tenant_id} — ${t.tenant_name}</option>`).join('');
+                    tenantSelect.value = tenantId;
+                }
+            } catch (e) {}
+
+            document.getElementById('modalEditUser').style.display = 'flex';
+        }
+
+        function closeEditUserModal() {
+            document.getElementById('modalEditUser').style.display = 'none';
+        }
+
+        document.getElementById('modalEditUser').addEventListener('click', function(e) {
+            if (e.target === this) closeEditUserModal();
+        });
+
+        async function submitEditUser(e) {
+            e.preventDefault();
+            const userId = document.getElementById('editUserId').value;
+            const msgEl = document.getElementById('editUserMsg');
+            msgEl.textContent = 'Đang lưu...';
+            msgEl.className = 'form-msg running';
+
+            const body = {};
+            const password = document.getElementById('editUserPassword').value;
+            const tenantId = document.getElementById('editUserTenant').value || null;
+            const role = document.getElementById('editUserRole').value;
+            const isActive = document.getElementById('editUserActive').value;
+
+            if (password) body.password = password;
+            if (tenantId !== undefined) body.tenant_id = tenantId;
+            body.role = role;
+            body.is_active = isActive === '1';
+
+            try {
+                const resp = await authFetch(`/api/users/${userId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const data = await resp.json();
+                if (resp.ok && data.success) {
+                    msgEl.textContent = '✓ Đã lưu thay đổi!';
+                    msgEl.className = 'form-msg success';
+                    setTimeout(closeEditUserModal, 800);
+                    loadAdminData();
+                } else {
+                    throw new Error(data.detail || data.message || 'Lưu thất bại');
+                }
+            } catch (err) {
+                msgEl.textContent = '✕ ' + err.message;
+                msgEl.className = 'form-msg error';
+            }
+        }
+
+        // ===== Admin: Create Tenant =====
+        function autoFillTenantPath() {
+            const id = document.getElementById('newTenantId').value.trim().replace(/[^a-zA-Z0-9_]/g, '_');
+            document.getElementById('newTenantFilePath').value = id ? `./data/${id}/` : '';
+        }
+
+        async function createTenant(e) {
+            e.preventDefault();
+            const msgEl = document.getElementById('tenantCreateMsg');
+            const tenantId = document.getElementById('newTenantId').value.trim().replace(/[^a-zA-Z0-9_]/g, '_');
+            const tenantName = document.getElementById('newTenantName').value.trim();
+            const filePath = document.getElementById('newTenantFilePath').value;
+
+            if (!tenantId) { alert('Vui long nhap ma tenant'); return; }
+
+            msgEl.textContent = 'Đang tạo...';
+            msgEl.className = 'form-msg running';
+
+            try {
+                const resp = await authFetch('/api/tenants', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tenant_id: tenantId, tenant_name: tenantName, file_path: filePath }),
+                });
+                const data = await resp.json();
+                if (resp.ok && data.success) {
+                    msgEl.textContent = '✓ Tenant "' + tenantId + '" đã được tạo!';
+                    msgEl.className = 'form-msg success';
+                    document.getElementById('newTenantId').value = '';
+                    document.getElementById('newTenantName').value = '';
+                    document.getElementById('newTenantFilePath').value = '';
+                    loadAdminData();
+                    // Refresh tenant dropdown for user form
+                    populateTenantDropdown();
+                } else {
+                    throw new Error(data.detail || data.message || 'Tạo thất bại');
+                }
+            } catch (err) {
+                msgEl.textContent = '✕ ' + err.message;
+                msgEl.className = 'form-msg error';
+            }
+        }
+
+        // ===== Admin: Create User =====
+        async function createUser(e) {
+            e.preventDefault();
+            const msgEl = document.getElementById('userCreateMsg');
+            const username = document.getElementById('newUserUsername').value.trim();
+            const password = document.getElementById('newUserPassword').value;
+            const tenantId = document.getElementById('newUserTenant').value || null;
+            const role = document.getElementById('newUserRole').value;
+
+            msgEl.textContent = 'Đang tạo...';
+            msgEl.className = 'form-msg running';
+
+            try {
+                const resp = await authFetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, tenant_id: tenantId, role }),
+                });
+                const data = await resp.json();
+                if (resp.ok && data.success) {
+                    msgEl.textContent = '✓ User "' + username + '" đã được tạo!';
+                    msgEl.className = 'form-msg success';
+                    document.getElementById('newUserUsername').value = '';
+                    document.getElementById('newUserPassword').value = '';
+                    loadAdminData();
+                } else {
+                    throw new Error(data.detail || data.message || 'Tạo thất bại');
+                }
+            } catch (err) {
+                msgEl.textContent = '✕ ' + err.message;
+                msgEl.className = 'form-msg error';
+            }
+        }
+
+        async function populateTenantDropdown() {
+            const select = document.getElementById('newUserTenant');
+            if (!select) return;
+            try {
+                const resp = await authFetch('/api/tenants');
+                if (!resp.ok) return;
+                const data = await resp.json();
+                const tenants = data.tenants || [];
+                select.innerHTML = '<option value="">— Toàn hệ thống (Admin) —</option>' +
+                    tenants.map(t => `<option value="${t.tenant_id}">${t.tenant_id} — ${t.tenant_name}</option>`).join('');
+            } catch (e) {}
+        }
+
+        // ===== Admin: renderTenants =====
+        function renderETLLogs(logs) {
+            const el = document.getElementById('etl-logs');
+            if (!el) return;
+            if (!logs.length) { el.innerHTML = '<p>Chua co ETL log</p>'; return; }
+            el.innerHTML = '<table class="admin-table"><thead><tr><th>Thời gian</th><th>Tenant</th><th>Bảng</th><th>Trạng thái</th><th>Dòng</th></tr></thead><tbody>' +
+                logs.slice(0, 20).map(l => `<tr><td>${l.start_time ? new Date(l.start_time).toLocaleString('vi-VN') : '—'}</td><td>${l.tenant_id}</td><td>${l.source_table}</td><td>${l.status}</td><td>${l.rows_inserted}</td></tr>`).join('') +
+                '</tbody></table>';
+        }
+    </script>
+</body>
+</html>

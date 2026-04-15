@@ -1,0 +1,216 @@
+# ============================================================
+# FILE: docker-compose.yml
+# Mô tả: Docker Compose tổng hợp toàn bộ hệ thống DWH Multi-Tenant
+# ============================================================
+# Cách sử dụng:
+#   cp .env.example .env   # Chỉnh sửa .env với password thật
+#   docker-compose up -d
+#
+# Services:
+#   - mssql:       SQL Server 2022 (Data Warehouse)
+#   - api:         Auth Gateway FastAPI (xác thực multi-tenant)
+#   - frontend:    Flask Web Application (Login + Dashboard)
+#   - superset:   Apache Superset (BI Dashboard)
+#   - redis:       Redis (cache cho Superset)
+# ============================================================
+
+services:
+  # ============================================================
+  # Microsoft SQL Server 2022 — Data Warehouse
+  # ============================================================
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: dwh_mssql
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-YourStrong@Passw0rd}
+      MSSQL_PID: 'Developer'
+    ports:
+      - '1433:1433'
+    volumes:
+      - mssql_data:/var/opt/mssql
+      - ./sql:/docker-entrypoint-initdb.d
+    networks:
+      - dwh-network
+    healthcheck:
+      test: ['CMD-SHELL', '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -Q "SELECT 1" -C -b']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================================
+  # Auth Gateway — FastAPI
+  # ============================================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: dwh_api
+    environment:
+      - MSSQL_SERVER=mssql
+      - MSSQL_USER=sa
+      - MSSQL_PASSWORD=${MSSQL_SA_PASSWORD}
+      - MSSQL_DATABASE=DWH_MultiTenant
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - SUPERSET_URL=http://superset:8088
+      - SUPERSET_ADMIN_USER=admin
+      - SUPERSET_PASSWORD=${SUPERSET_ADMIN_PWD}
+      - SUPERSET_ADMIN_PWD=${SUPERSET_ADMIN_PWD}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - ALERT_FROM_EMAIL=${ALERT_FROM_EMAIL}
+      - ALERT_TO_EMAIL=${ALERT_TO_EMAIL}
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - PORT=8000
+    ports:
+      - '8000:8000'
+    depends_on:
+      mssql:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+    networks:
+      - dwh-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================================
+  # Frontend — Flask Web Application
+  # ============================================================
+  frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile.frontend
+    container_name: dwh_frontend
+    environment:
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-change-me-in-prod}
+      - API_BASE_URL=http://api:8000
+      - SUPERSET_URL=http://superset:8088
+      - FLASK_DEBUG=False
+      - FRONTEND_PORT=3000
+      - APP_USER_admin=${APP_USER_admin:-Admin@1234}
+      - APP_USER_manager_hn=${APP_USER_manager_hn:-Pass@HN123}
+      - APP_MANAGER_HCM=${APP_MANAGER_HCM:-Pass@HCM123}
+    ports:
+      - '3000:3000'
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - dwh-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================================
+  # Apache Superset — BI Platform
+  # ============================================================
+  superset-db:
+    image: postgres:15-alpine
+    container_name: dwh_superset_db
+    environment:
+      POSTGRES_DB: superset
+      POSTGRES_USER: superset
+      POSTGRES_PASSWORD: ${SUPERSET_DB_PASSWORD:-superset123}
+    volumes:
+      - superset_db_data:/var/lib/postgresql/data
+    networks:
+      - dwh-network
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'superset']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  superset-redis:
+    image: redis:7-alpine
+    container_name: dwh_superset_redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis123}
+    volumes:
+      - superset_redis_data:/data
+    networks:
+      - dwh-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-redis123}', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  superset-init:
+    build:
+      context: ./superset
+      dockerfile: Dockerfile.init
+    container_name: dwh_superset_init
+    command: >
+      bash -c "export SUPERSET_SECRET_KEY=${SUPERSET_SECRET_KEY} && superset db upgrade || true && superset fab create-admin --username ${SUPERSET_ADMIN_USER:-admin} --password ${SUPERSET_ADMIN_PWD:-admin} --email admin@company.com --firstname Admin --lastname User || true"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://superset:${SUPERSET_DB_PASSWORD:-superset123}@superset-db:5432/superset
+      MSSQL_DATABASE_URL: mssql+pymssql://sa:${MSSQL_SA_PASSWORD:-M1tjtnrx}@mssql:1433/DWH_MultiTenant
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
+      SUPERSET_ADMIN_USER: ${SUPERSET_ADMIN_USER:-admin}
+      SUPERSET_ADMIN_PWD: ${SUPERSET_ADMIN_PWD:-M1tjtnrx}
+    volumes:
+      - ./superset/superset_config.py:/app/pythonpath/superset_config.py
+      - ./superset/scripts:/superset_scripts
+      - superset_home:/app/superset_home
+    depends_on:
+      superset-db:
+        condition: service_healthy
+      superset-redis:
+        condition: service_healthy
+    networks:
+      - dwh-network
+    restart: 'no'
+
+  superset:
+    build:
+      context: ./superset
+      dockerfile: Dockerfile
+    container_name: dwh_superset
+    command: ["bash", "/app/docker_start.sh"]
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://superset:${SUPERSET_DB_PASSWORD:-superset123}@superset-db:5432/superset
+      MSSQL_DATABASE_URL: mssql+pymssql://sa:${MSSQL_SA_PASSWORD}@mssql:1433/${MSSQL_DATABASE:-DWH_MultiTenant}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
+      SUPERSET_ADMIN_USER: ${SUPERSET_ADMIN_USER:-admin}
+      SUPERSET_ADMIN_PWD: ${SUPERSET_ADMIN_PWD:-M1tjtnrx}
+    volumes:
+      - ./superset/superset_config.py:/app/pythonpath/superset_config.py
+      - ./superset/superset_start.sh:/app/docker_start.sh
+      - ./superset/scripts:/superset_scripts
+      - superset_home:/app/superset_home
+    ports:
+      - '8088:8088'
+    depends_on:
+      superset-init:
+        condition: service_completed_successfully
+    networks:
+      - dwh-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8088/health']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+networks:
+  dwh-network:
+    driver: bridge
+
+volumes:
+  mssql_data:
+  superset_db_data:
+  superset_redis_data:
+  superset_home:

@@ -1,0 +1,35 @@
+# ============================================================
+# FILE: requirements.txt
+# Mô tả: Python dependencies cho Auth Gateway + ETL
+# ============================================================
+
+# Web framework
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+python-multipart>=0.0.9
+
+# Database — dùng pymssql thay pyodbc (pure Python, không cần ODBC driver)
+pymssql>=2.2.0
+sqlalchemy>=2.0.0
+
+# Auth
+PyJWT>=2.8.0
+bcrypt==4.0.1
+passlib[bcrypt]>=1.7.4
+
+# Data processing
+pandas>=2.2.0
+openpyxl>=3.1.0
+xlrd>=2.0.0
+
+# HTTP client
+requests>=2.31.0
+
+# Email
+aiosmtplib>=3.0.0
+
+# Environment
+python-dotenv>=1.0.0
+
+# Utilities
+python-dateutil>=2.9.0
