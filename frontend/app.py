@@ -26,7 +26,7 @@ def api_login():
     data = request.get_json()
     try:
         r = requests.post(
-            f'{API_BASE_URL}/auth/login',
+            f'{API_BASE_URL}/api/login',
             json={'username': data['username'], 'password': data['password']},
             timeout=10
         )
@@ -64,7 +64,7 @@ def api_dashboard_token():
 
     try:
         r = requests.get(
-            f'{API_BASE_URL}/auth/dashboard-token?dashboard_id={dashboard_id}',
+            f'{API_BASE_URL}/api/dashboard-token?dashboard_id={dashboard_id}',
             headers={'Authorization': f'Bearer {session["access_token"]}'},
             timeout=10
         )
@@ -84,7 +84,7 @@ def api_me():
 
     try:
         r = requests.get(
-            f'{API_BASE_URL}/auth/me',
+            f'{API_BASE_URL}/api/me',
             headers={'Authorization': f'Bearer {session["access_token"]}'},
             timeout=10
         )
@@ -153,7 +153,7 @@ def api_register():
 
     try:
         r = requests.post(
-            f'{API_BASE_URL}/auth/register',
+            f'{API_BASE_URL}/api/register',
             json={'username': username, 'password': password,
                   'role': role, 'tenant_id': tenant_id},
             timeout=10
@@ -187,7 +187,7 @@ def dashboard():
     dashboard_token = None
     try:
         r = requests.get(
-            f'{API_BASE_URL}/auth/dashboard-token',
+            f'{API_BASE_URL}/api/dashboard-token',
             headers={'Authorization': f'Bearer {session["access_token"]}'},
             timeout=10
         )
