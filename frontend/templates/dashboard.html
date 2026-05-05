@@ -1008,7 +1008,7 @@
             statusDetail.innerHTML = '<p>Dang nap du lieu vao Data Warehouse...</p>';
 
             try {
-                const resp = await fetch(`/api/upload/${tenant2}/etl`, { method: 'POST' });
+                const resp = await authFetch(`/api/upload/${tenant2}/etl`, { method: 'POST' });
                 const data = await resp.json();
                 if (data.success) {
                     statusIcon.innerHTML = '<path d="M20 6L9 17l-5-5" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
@@ -1105,7 +1105,26 @@
             }
         }
 
+        async function populateETLTenantSelect() {
+            if (!etlTenantSelect) return;
+            try {
+                const resp = await authFetch('/api/tenants');
+                if (!resp.ok) return;
+                const data = await resp.json();
+                const tenants = data.tenants || [];
+                if (tenants.length) {
+                    etlTenantSelect.innerHTML = tenants
+                        .map(t => `<option value="${t.tenant_id}">${t.tenant_id} — ${t.tenant_name}</option>`)
+                        .join('');
+                    etlTenantSelect.value = tenants[0].tenant_id;
+                }
+            } catch (e) {
+                console.warn('[ETL-SELECT] Failed to load tenants', e);
+            }
+        }
+
         // Init
+        populateETLTenantSelect();
         loadUploadedFiles();
         if (etlTenantSelect) {
             etlTenantSelect.addEventListener('change', loadUploadedFiles);

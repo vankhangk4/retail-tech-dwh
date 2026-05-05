@@ -40,7 +40,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ---- Router ----
-router = APIRouter(prefix='/auth', tags=['Authentication'])
+router = APIRouter(prefix='/api', tags=['Authentication'])
 
 
 # ---- Helpers ----

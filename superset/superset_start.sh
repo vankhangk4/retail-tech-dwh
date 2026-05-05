@@ -63,8 +63,9 @@ cd /app && python3 /superset_scripts/fix_positions.py 2>&1 || echo "[superset] F
 echo "[superset] Fixing chart params (Superset 3.x)..."
 cd /app && python3 /superset_scripts/fix_chart_params.py 2>&1 || echo "[superset] Chart params fixed"
 
-echo "[superset] Patching ChartDataQueryContextSchema..."
-cd /app && python3 /superset_scripts/patch_chart_data_api.py 2>&1 || echo "[superset] Chart data API patched"
+# DISABLED: patch_chart_data_api.py causes AttributeError and chart config issues
+# echo "[superset] Patching ChartDataQueryContextSchema..."
+# cd /app && python3 /superset_scripts/patch_chart_data_api.py 2>&1 || echo "[superset] Chart data API patched"
 
 echo "[superset] Provisioning complete. Server running on PID: $SERVER_PID"
 wait $SERVER_PID
