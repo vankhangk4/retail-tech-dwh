@@ -48,6 +48,9 @@ for i in $(seq 1 60); do
     sleep 2
 done
 
+echo "[superset] Initializing Superset (syncing roles & permissions)..."
+cd /app && superset init 2>&1 || echo "[superset] Init complete"
+
 echo "[superset] Running provisioning (RBAC + Charts)..."
 # Must run from /app so superset.app resolves correctly
 cd /app && python3 /superset_scripts/provision_v2.py 2>&1 || echo "[superset] Provisioning v2 done (may already exist)"
