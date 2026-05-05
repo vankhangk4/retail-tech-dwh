@@ -120,15 +120,61 @@ def index():
     return redirect(url_for('login'))
 
 
+@app.route('/register')
+def register():
+    if 'access_token' in session:
+        return redirect(url_for('dashboard'))
+    return render_template('register.html',
+        SUPERSET_URL=SUPERSET_URL,
+    )
+
+
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    """Proxy register request to Auth Gateway."""
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'message': 'Invalid request'}), 400
+
+    username  = data.get('username', '').strip()
+    password  = data.get('password', '')
+    role      = data.get('role', 'viewer')
+    tenant_id = data.get('tenant_id', '').strip() or None
+
+    # Basic validation
+    if not username or len(username) < 3:
+        return jsonify({'success': False, 'message': 'Tên đăng nhập phải từ 3 ký tự'}), 400
+    if len(password) < 6:
+        return jsonify({'success': False, 'message': 'Mật khẩu phải ít nhất 6 ký tự'}), 400
+    if role not in ('viewer', 'admin'):
+        return jsonify({'success': False, 'message': 'Vai trò không hợp lệ'}), 400
+    if not tenant_id:
+        return jsonify({'success': False, 'message': 'Vui lòng chọn cửa hàng'}), 400
+
+    try:
+        r = requests.post(
+            f'{API_BASE_URL}/auth/register',
+            json={'username': username, 'password': password,
+                  'role': role, 'tenant_id': tenant_id},
+            timeout=10
+        )
+        if r.status_code == 200:
+            return jsonify(r.json()), 200
+        elif r.status_code == 409:
+            return jsonify({'success': False, 'message': 'Tên đăng nhập đã tồn tại'}), 409
+        else:
+            detail = r.json().get('detail', 'Lỗi hệ thống') if r.content else 'Lỗi hệ thống'
+            return jsonify({'success': False, 'message': detail}), r.status_code
+    except requests.exceptions.ConnectionError:
+        return jsonify({'success': False, 'message': 'Không kết nối được Auth Gateway'}), 503
+
+
 @app.route('/login')
 def login():
     if 'access_token' in session:
         return redirect(url_for('dashboard'))
     return render_template('login.html',
         SUPERSET_URL=SUPERSET_URL,
-        demo_admin=os.environ.get('APP_USER_admin', 'Admin@1234'),
-        demo_manager_hn=os.environ.get('APP_USER_manager_hn', 'Pass@HN123'),
-        demo_manager_hcm=os.environ.get('APP_MANAGER_HCM', 'Pass@HCM123'),
     )
 
 
@@ -203,7 +249,7 @@ def api_tenants():
 def api_create_tenant():
     if 'access_token' not in session:
         return jsonify({'error': 'Chua dang nhap'}), 401
-    if session.get('role') != 'admin':
+    if session.get('role') not in ('admin', 'superadmin'):
         return jsonify({'error': 'Chi admin moi co quyen tao tenant'}), 403
     data = request.get_json()
     try:
@@ -237,7 +283,7 @@ def api_users():
 def api_create_user():
     if 'access_token' not in session:
         return jsonify({'error': 'Chua dang nhap'}), 401
-    if session.get('role') != 'admin':
+    if session.get('role') not in ('admin', 'superadmin'):
         return jsonify({'error': 'Chi admin moi co quyen tao user'}), 403
     data = request.get_json()
     try:
@@ -258,7 +304,7 @@ def api_create_user():
 def api_update_tenant(tenant_id):
     if 'access_token' not in session:
         return jsonify({'error': 'Chua dang nhap'}), 401
-    if session.get('role') != 'admin':
+    if session.get('role') not in ('admin', 'superadmin'):
         return jsonify({'error': 'Chi admin moi co quyen sua tenant'}), 403
     data = request.get_json()
     try:
@@ -279,7 +325,7 @@ def api_update_tenant(tenant_id):
 def api_update_user(user_id):
     if 'access_token' not in session:
         return jsonify({'error': 'Chua dang nhap'}), 401
-    if session.get('role') != 'admin':
+    if session.get('role') not in ('admin', 'superadmin'):
         return jsonify({'error': 'Chi admin moi co quyen sua user'}), 403
     data = request.get_json()
     try:
@@ -369,7 +415,7 @@ def api_delete_file(tenant_id, filename):
     """Proxy delete uploaded file (admin only)."""
     if 'access_token' not in session:
         return jsonify({'error': 'Chua dang nhap'}), 401
-    if session.get('role') != 'admin':
+    if session.get('role') not in ('admin', 'superadmin'):
         return jsonify({'error': 'Chi admin moi co quyen xoa file'}), 403
     try:
         r = requests.delete(

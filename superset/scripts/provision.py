@@ -48,15 +48,9 @@ def init_session(token: str) -> requests.Session:
         'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json',
     })
-    # Lấy CSRF token (Flask/WTF lưu trong cookie)
-    try:
-        r = _session.get(f'{SUPERSET_URL}/api/v1/csrf_token/', timeout=15)
-        if r.status_code == 200:
-            csrf = r.json().get('result', '')
-            _session.headers['X-CSRFToken'] = csrf
-            logger.info('[OK] CSRF token acquired')
-    except requests.RequestException as e:
-        logger.warning(f'CSRF token error: {e}')
+    # CSRF was disabled in Superset 3.x via WTF_CSRF_ENABLED=false
+    # No CSRF token needed when CSRF is disabled, so skip gracefully
+    logger.info('[OK] Session ready (CSRF disabled — no token needed)')
     return _session
 
 
@@ -204,8 +198,9 @@ def create_database_connection() -> int:
         }),
     }
     r = _api('POST', '/api/v1/database/', json=payload, timeout=30)
-    if r.status_code == 200:
-        db_id = r.json()['id']
+    if r.status_code in (200, 201):
+        resp = r.json()
+        db_id = resp.get('id') or resp.get('result', {}).get('id')
         logger.info(f'[OK] Created DB "{conn_name}" (id={db_id})')
         return db_id
     elif r.status_code == 422 and 'already exists' in r.text.lower():

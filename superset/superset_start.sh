@@ -5,6 +5,8 @@
 # 1. Chạy Superset web server bằng gunicorn (background)
 # 2. Chờ server sẵn sàng
 # 3. Chạy provisioning (tạo datasource, datasets, dashboards, RLS)
+# 4. Sync dataset columns từ MSSQL
+# 5. Fix dashboard positions
 # ============================================================
 
 set -e
@@ -46,8 +48,23 @@ for i in $(seq 1 60); do
     sleep 2
 done
 
-echo "[superset] Running provisioning..."
-PYTHONPATH=/app/superset_scripts python /superset_scripts/provision.py 2>&1 || echo "[superset] Provisioning done (may already exist)"
+echo "[superset] Running provisioning (RBAC + Charts)..."
+# Must run from /app so superset.app resolves correctly
+cd /app && python3 /superset_scripts/provision_v2.py 2>&1 || echo "[superset] Provisioning v2 done (may already exist)"
+# DISABLED: provision_charts.py uses REST API which has permission issues. provision_v2.py handles all chart creation.
+# cd /app && python3 /superset_scripts/provision_charts.py 2>&1 || echo "[superset] Chart provisioning done (may already exist)"
+
+echo "[superset] Syncing dataset columns from MSSQL..."
+cd /app && python3 /superset_scripts/sync_columns.py 2>&1 || echo "[superset] Sync columns done"
+
+echo "[superset] Fixing dashboard positions..."
+cd /app && python3 /superset_scripts/fix_positions.py 2>&1 || echo "[superset] Fix positions done"
+
+echo "[superset] Fixing chart params (Superset 3.x)..."
+cd /app && python3 /superset_scripts/fix_chart_params.py 2>&1 || echo "[superset] Chart params fixed"
+
+echo "[superset] Patching ChartDataQueryContextSchema..."
+cd /app && python3 /superset_scripts/patch_chart_data_api.py 2>&1 || echo "[superset] Chart data API patched"
 
 echo "[superset] Provisioning complete. Server running on PID: $SERVER_PID"
 wait $SERVER_PID

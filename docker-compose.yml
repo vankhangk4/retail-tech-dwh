@@ -29,7 +29,6 @@ services:
       - '1433:1433'
     volumes:
       - mssql_data:/var/opt/mssql
-      - ./sql:/docker-entrypoint-initdb.d
     networks:
       - dwh-network
     healthcheck:
@@ -37,6 +36,60 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+
+  # ============================================================
+  # MSSQL Init — chay 00_init.sql + tao superadmin sau khi MSSQL healthy
+  # ============================================================
+  mssql-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: dwh_mssql_init
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+    depends_on:
+      mssql:
+        condition: service_healthy
+    volumes:
+      - ./sql:/sql
+    command: >
+      bash -c "
+        echo '[INIT] Cho MSSQL san sang...';
+        sleep 3;
+        for i in 1 2 3 4 5; do
+          /opt/mssql-tools18/bin/sqlcmd -S mssql -U sa -P '${MSSQL_SA_PASSWORD}' -d master -Q 'SELECT 1' -C && break;
+          echo '[INIT] Thu $i - cho 5s...';
+          sleep 5;
+        done;
+        echo '[INIT] Dang chay 00_init.sql...';
+        /opt/mssql-tools18/bin/sqlcmd -S mssql -U sa -P '${MSSQL_SA_PASSWORD}' -d master -i /sql/00_init.sql -C;
+        echo '[INIT] Hoan tat. DB DWH_MultiTenant da duoc tao.';
+      "
+    networks:
+      - dwh-network
+    restart: 'no'
+
+  # ============================================================
+  # MSSQL Init Admin — chay Python bootstrap (bcrypt hash) sau khi DB tao xong
+  # ============================================================
+  mssql-bootstrap:
+    build:
+      context: .
+      dockerfile: Dockerfile.mssql-init
+    container_name: dwh_mssql_bootstrap
+    env_file:
+      - .env
+    environment:
+      - MSSQL_SERVER=mssql
+      - MSSQL_PORT=1433
+      - MSSQL_USER=sa
+      - MSSQL_PASSWORD=${MSSQL_SA_PASSWORD}
+      - MSSQL_DATABASE=DWH_MultiTenant
+    depends_on:
+      mssql-init:
+        condition: service_completed_successfully
+    networks:
+      - dwh-network
+    restart: 'no'
 
   # ============================================================
   # Auth Gateway — FastAPI
@@ -63,12 +116,15 @@ services:
       - ALERT_FROM_EMAIL=${ALERT_FROM_EMAIL}
       - ALERT_TO_EMAIL=${ALERT_TO_EMAIL}
       - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - DEFAULT_ADMIN_USER=${DEFAULT_ADMIN_USER}
+      - DEFAULT_ADMIN_PASS=${DEFAULT_ADMIN_PASS}
+      - DEFAULT_ADMIN_ROLE=${DEFAULT_ADMIN_ROLE}
       - PORT=8000
     ports:
       - '8000:8000'
     depends_on:
-      mssql:
-        condition: service_healthy
+      mssql-bootstrap:
+        condition: service_completed_successfully
     volumes:
       - ./data:/app/data
     networks:
@@ -93,12 +149,11 @@ services:
       - SUPERSET_URL=http://superset:8088
       - FLASK_DEBUG=False
       - FRONTEND_PORT=3000
-      - APP_USER_admin=${APP_USER_admin:-Admin@1234}
-      - APP_USER_manager_hn=${APP_USER_manager_hn:-Pass@HN123}
-      - APP_MANAGER_HCM=${APP_MANAGER_HCM:-Pass@HCM123}
     ports:
       - '3000:3000'
     depends_on:
+      mssql-bootstrap:
+        condition: service_completed_successfully
       api:
         condition: service_healthy
     networks:
@@ -196,6 +251,8 @@ services:
       - '8088:8088'
     depends_on:
       superset-init:
+        condition: service_completed_successfully
+      mssql-bootstrap:
         condition: service_completed_successfully
     networks:
       - dwh-network

@@ -2,6 +2,10 @@
 .env
 .env.local
 .env.*.local
+.venv/
+venv/
+env/
+.env/
 
 # Python
 __pycache__/
@@ -9,38 +13,61 @@ __pycache__/
 *$py.class
 *.so
 .Python
-venv/
-.venv/
-env/
-.env/
 *.egg-info/
 dist/
 build/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.ipynb_checkpoints/
 
 # Logs
 *.log
 etl_orchestrator.log
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Superset home
+# Data & Database
+*.sqlite
+*.db
+data/**/*.xlsx
+data/**/*.xls
+data/**/*.csv
+data/**/*.json
+!data/**/README.md
+!data/**/.gitkeep
 superset_home/
 
-# Docker
-.docker/
-
-# IDE
+# IDE & Editor
 .vscode/
 .idea/
 *.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# Data files (keep READMEs)
-data/STORE_HN/*.xlsx
-data/STORE_HN/*.xls
-data/STORE_HN/*.csv
-data/STORE_HCM/*.xlsx
-data/STORE_HCM/*.xls
-data/STORE_HCM/*.csv
-!data/*/README.md
+# Docker
+.docker/
+*.tar
+
+# Others
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

@@ -11,6 +11,7 @@ BEGIN
         TenantName    NVARCHAR(200) NOT NULL,              -- Tên cửa hàng/chi nhánh
         FilePath      NVARCHAR(500) NULL,                  -- Đường dẫn file Excel/CSV
         IsActive      BIT          NOT NULL DEFAULT 1,      -- Trạng thái hoạt động
+        ExpiresAt     DATETIME2    NULL,                     -- Ngày hết hạn — NULL = không hết hạn
         CreatedAt     DATETIME2    NOT NULL DEFAULT GETDATE()
     );
     PRINT 'Created: Tenants';
@@ -28,7 +29,7 @@ BEGIN
                                                        -- Vai trò: 'admin' hoặc 'viewer'
         IsActive      BIT          NOT NULL DEFAULT 1,      -- Trạng thái tài khoản
         CreatedAt     DATETIME2    NOT NULL DEFAULT GETDATE(),
-        CONSTRAINT CHK_Role CHECK (Role IN ('admin', 'viewer')),
+        CONSTRAINT CHK_Role CHECK (Role IN ('admin', 'viewer', 'superadmin')),
         CONSTRAINT FK_AppUsers_Tenant FOREIGN KEY (TenantID)
             REFERENCES Tenants(TenantID)
     );
@@ -48,46 +49,7 @@ BEGIN
     VALUES ('STORE_HCM', N'Cửa hàng Hồ Chí Minh', './data/STORE_HCM/', 1);
 END
 
--- Bước 4: Insert admin mặc định (password: Admin@1234 — hash bcrypt)
-IF NOT EXISTS (SELECT * FROM AppUsers WHERE Username = 'admin')
-BEGIN
-    -- hash bcrypt của 'Admin@1234' (rounds=12)
-    INSERT INTO AppUsers (Username, PasswordHash, TenantID, Role, IsActive)
-    VALUES (
-        'admin',
-        '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4mHPnlCJLmf1q3Gq',
-        NULL,
-        'admin',
-        1
-    );
-    PRINT 'Created default admin user';
-END
-
--- Bước 5: Insert viewer mẫu cho mỗi tenant
-IF NOT EXISTS (SELECT * FROM AppUsers WHERE Username = 'manager_hn')
-BEGIN
-    -- hash bcrypt của 'Pass@HN123' (rounds=12)
-    INSERT INTO AppUsers (Username, PasswordHash, TenantID, Role, IsActive)
-    VALUES (
-        'manager_hn',
-        '$2b$12$KxGcD2vKZ9P8y7fL5vHQ0.6bX0r9JZL4qU8Y5hN3mM1cX2iS0dE',
-        'STORE_HN',
-        'viewer',
-        1
-    );
-END
-
-IF NOT EXISTS (SELECT * FROM AppUsers WHERE Username = 'manager_hcm')
-BEGIN
-    -- hash bcrypt của 'Pass@HCM123' (rounds=12)
-    INSERT INTO AppUsers (Username, PasswordHash, TenantID, Role, IsActive)
-    VALUES (
-        'manager_hcm',
-        '$2b$12$AxFdH3jLP0Q7z6eM4uIR1.7cY1s8KZL5rT7X4iN2mN0bY1jT9cF',
-        'STORE_HCM',
-        'viewer',
-        1
-    );
-END
-
+-- Bước 4: User mặc định được tạo bởi Python bootstrap_users() khi API start.
+-- Đọc từ env: DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASS, DEFAULT_ADMIN_ROLE
+-- Script này không insert gì — chỉ tạo bảng.
 PRINT 'Done: 01_create_tenants.sql';

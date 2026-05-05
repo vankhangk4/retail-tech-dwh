@@ -27,7 +27,9 @@
                 <div class="user-avatar">{{ user.role[0].upper() }}</div>
                 <div class="user-details">
                     <span class="user-role">
-                        {% if user.role == 'admin' %}
+                        {% if user.role == 'superadmin' %}
+                            Superadmin
+                        {% elif user.role == 'admin' %}
                             Quản trị viên
                         {% else %}
                             Viewer
@@ -85,7 +87,7 @@
                 <span>Nhân viên</span>
             </li>
 
-            {% if user.role == 'admin' %}
+            {% if user.role == 'superadmin' %}
             <li class="nav-divider"></li>
             {% endif %}
             <li class="nav-item" data-page="etl">
@@ -95,6 +97,15 @@
                 <span>Tải lên dữ liệu</span>
             </li>
             {% if user.role == 'admin' %}
+            <li class="nav-divider"></li>
+            <li class="nav-item" data-page="manage">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                <span>Quản lý</span>
+            </li>
+            {% endif %}
+            {% if user.role == 'superadmin' %}
             <li class="nav-item admin-only" data-page="admin">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -135,7 +146,9 @@
                         Admin
                     {% endif %}
                 </span>
-                {% if user.role == 'admin' %}
+                {% if user.role == 'superadmin' %}
+                <span class="role-badge admin">SUPERADMIN</span>
+                {% elif user.role == 'admin' %}
                 <span class="role-badge admin">ADMIN</span>
                 {% else %}
                 <span class="role-badge viewer">VIEWER</span>
@@ -370,8 +383,56 @@
             </div>
         </div>
 
-        <!-- ===== PAGE: ADMIN ===== -->
+        <!-- ===== PAGE: MANAGE (Tenant-level Admin) ===== -->
         {% if user.role == 'admin' %}
+        <div class="page" id="page-manage">
+            <div class="page-header">
+                <h2>Quản lý — {{ user.tenant_id }}</h2>
+                <p>Quản lý user thuộc tenant {{ user.tenant_id }}</p>
+            </div>
+            <div class="admin-grid">
+                <div class="admin-card">
+                    <h3>Tạo User mới</h3>
+                    <form class="create-form" id="formCreateUser" onsubmit="createTenantUser(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Username</label>
+                                <input type="text" id="newUserUsername" placeholder="VD: manager_cn1" required maxlength="100">
+                            </div>
+                            <div class="form-group">
+                                <label>Password</label>
+                                <input type="password" id="newUserPassword" placeholder="Mật khẩu" required minlength="6">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary">Tạo User</button>
+                        <span id="userCreateMsg" class="form-msg"></span>
+                    </form>
+                </div>
+                <div class="admin-card full-width">
+                    <h3>Danh sách User trong tenant</h3>
+                    <div style="overflow-x:auto;">
+                    <table class="admin-table" style="width:100%;border-collapse:collapse;font-size:13px;">
+                        <thead>
+                            <tr style="background:#f8fafc;text-align:left;">
+                                <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Username</th>
+                                <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Vai trò</th>
+                                <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Trạng thái</th>
+                                <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Ngày tạo</th>
+                                <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tenant-user-list">
+                            <tr><td colspan="5" style="padding:16px;text-align:center;color:#94a3b8;">Đang tải...</td></tr>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ===== PAGE: ADMIN (Superadmin) ===== -->
+        {% if user.role == 'superadmin' %}
         <div class="page" id="page-admin">
             <div class="page-header">
                 <h2>Quản trị hệ thống</h2>
@@ -397,6 +458,11 @@
                             <input type="text" id="newTenantFilePath" readonly
                                 style="background:#f3f4f6;color:#6b7280;">
                             <small style="color:#9ca3af;font-size:11px;">Tự động tạo thư mục data và logs khi tạo tenant</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Ngày hết hạn <small style="color:#9ca3af;font-weight:400;">(bỏ trống = không hết hạn)</small></label>
+                            <input type="datetime-local" id="newTenantExpiresAt"
+                                style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
                         </div>
                         <button type="submit" class="btn-primary">Tạo Tenant</button>
                         <span id="tenantCreateMsg" class="form-msg"></span>
@@ -446,11 +512,12 @@
                                 <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Tên</th>
                                 <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Đường dẫn</th>
                                 <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Trạng thái</th>
+                                <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Hết hạn</th>
                                 <th style="padding:8px 12px;border-bottom:2px solid #e2e8f0;">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="tenant-list">
-                            <tr><td colspan="5" style="padding:16px;text-align:center;color:#94a3b8;">Đang tải...</td></tr>
+                            <tr><td colspan="6" style="padding:16px;text-align:center;color:#94a3b8;">Đang tải...</td></tr>
                         </tbody>
                     </table>
                     </div>
@@ -507,6 +574,11 @@
                     <div class="form-group" style="margin-bottom:12px;">
                         <label style="font-weight:600;color:#374151;display:block;margin-bottom:4px;">Đường dẫn file</label>
                         <input type="text" id="editTenantFilePath"
+                            style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
+                    </div>
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label style="font-weight:600;color:#374151;display:block;margin-bottom:4px;">Ngày hết hạn <small style="color:#9ca3af;font-weight:400;">(bỏ trống = không hết hạn)</small></label>
+                        <input type="datetime-local" id="editTenantExpiresAt"
                             style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
                     </div>
                     <div class="form-group" style="margin-bottom:16px;">
@@ -672,12 +744,13 @@
         }
 
         function loadSupersetIframe(page) {
+            // Superset dashboard IDs: 11=doanh-thu, 12=san-pham, 13=ton-kho, 14=khach-hang, 15=nhan-vien
             const dashboardIds = {
-                'revenue': 1,
-                'products': 2,
-                'inventory': 3,
-                'customers': 4,
-                'employees': 5,
+                'revenue': 11,
+                'products': 12,
+                'inventory': 13,
+                'customers': 14,
+                'employees': 15,
             };
             const dashId = dashboardIds[page];
             if (!dashId) return;
@@ -797,7 +870,7 @@
         loadKPIs();
 
         // ===== Admin page =====
-        if (USER_ROLE === 'admin') {
+        if (USER_ROLE === 'superadmin') {
             loadAdminData();
         }
 
@@ -885,7 +958,7 @@
             }
 
             try {
-                const resp = await fetch(`/api/upload/${tenant}`, {
+                const resp = await authFetch(`/api/upload/${tenant}`, {
                     method: 'POST',
                     body: formData,
                 });
@@ -960,11 +1033,23 @@
             const tenant = getCurrentTenant();
             const listEl = document.getElementById('uploadedFilesList');
             if (!listEl) return;
+            if (!tenant) {
+                listEl.innerHTML = '<p>Chua co thong tin tenant — vui long tai lai trang.</p>';
+                return;
+            }
+
+            console.log('[FILES] Loading files for tenant:', tenant, 'USER_TENANT:', USER_TENANT);
 
             try {
-                const resp = await fetch(`/api/upload/${tenant}/files`);
-                if (!resp.ok) { listEl.innerHTML = '<p>Khong the tai danh sach file</p>'; return; }
+                const resp = await authFetch(`/api/upload/${tenant}/files`);
+                console.log('[FILES] Response status:', resp.status);
+                if (!resp.ok) {
+                    console.error('[FILES] Error:', resp.status, await resp.text());
+                    listEl.innerHTML = `<p style="color:#dc2626;">Lỗi tải file (HTTP ${resp.status}) — kiểm tra console</p>`;
+                    return;
+                }
                 const data = await resp.json();
+                console.log('[FILES] Data:', data);
                 const files = data.files || [];
 
                 if (!files.length) {
@@ -998,7 +1083,8 @@
                     }</tbody>
                 </table>`;
             } catch (e) {
-                listEl.innerHTML = '<p>Khong the tai danh sach file</p>';
+                console.error('[FILES] Exception:', e);
+                listEl.innerHTML = `<p style="color:#dc2626;">Lỗi tải file: ${e.message}</p>`;
             }
         }
 
@@ -1065,11 +1151,20 @@
             const el = document.getElementById('tenant-list');
             if (!el) return;
             if (!tenants.length) {
-                el.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:#94a3b8;">Chưa có tenant nào</td></tr>';
+                el.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:#94a3b8;">Chưa có tenant nào</td></tr>';
                 return;
             }
-            el.innerHTML = tenants.map(t => `
-                <tr style="border-bottom:1px solid #f1f5f9;">
+            el.innerHTML = tenants.map(t => {
+                const now = new Date();
+                const expired = t.expires_at && new Date(t.expires_at) < now;
+                const expStr = t.expires_at
+                    ? new Date(t.expires_at).toLocaleString('vi-VN')
+                    : '—';
+                const expClass = expired ? 'background:#fee2e2;color:#dc2626;' : 'color:#6b7280;';
+                const expBadge = expired
+                    ? `<span style="padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;background:#fee2e2;color:#dc2626;">Đã hết hạn</span>`
+                    : (t.expires_at ? `<span style="padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;background:#fef3c7;color:#92400e;">${expStr}</span>` : `<span style="color:#9ca3af;">—</span>`);
+                return `<tr style="border-bottom:1px solid #f1f5f9;">
                     <td style="padding:10px 12px;font-weight:600;color:#1e40af;">${t.tenant_id}</td>
                     <td style="padding:10px 12px;color:#374151;">${t.tenant_name}</td>
                     <td style="padding:10px 12px;color:#6b7280;font-size:12px;">${t.file_path || '—'}</td>
@@ -1078,14 +1173,15 @@
                             ${t.is_active ? 'Hoạt động' : 'Tắt'}
                         </span>
                     </td>
+                    <td style="padding:10px 12px;">${expBadge}</td>
                     <td style="padding:10px 12px;">
                         <button onclick="openEditTenant('${t.tenant_id}')"
                             style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-right:4px;">
                             Sửa
                         </button>
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
         }
 
         function renderUsers(users) {
@@ -1129,6 +1225,17 @@
             document.getElementById('editTenantName').value = t.tenant_name;
             document.getElementById('editTenantFilePath').value = t.file_path || '';
             document.getElementById('editTenantActive').value = t.is_active ? '1' : '0';
+
+            // Set expires_at datetime-local value
+            const expiresAtInput = document.getElementById('editTenantExpiresAt');
+            if (t.expires_at) {
+                const expDate = new Date(t.expires_at);
+                const local = new Date(expDate.getTime() - expDate.getTimezoneOffset() * 60000);
+                expiresAtInput.value = local.toISOString().slice(0, 16);
+            } else {
+                expiresAtInput.value = '';
+            }
+
             document.getElementById('editTenantTitle').textContent = 'Sửa Tenant: ' + tenantId;
             document.getElementById('editTenantMsg').textContent = '';
             document.getElementById('editTenantMsg').className = 'form-msg';
@@ -1154,9 +1261,11 @@
             const name = document.getElementById('editTenantName').value.trim();
             const filePath = document.getElementById('editTenantFilePath').value.trim();
             const isActive = document.getElementById('editTenantActive').value;
+            const expiresAt = document.getElementById('editTenantExpiresAt').value;
             if (name) body.tenant_name = name;
             if (filePath !== undefined) body.file_path = filePath || null;
             body.is_active = isActive === '1';
+            body.expires_at = expiresAt || '';
 
             try {
                 const resp = await authFetch(`/api/tenants/${tenantId}`, {
@@ -1268,17 +1377,21 @@
             const tenantId = document.getElementById('newTenantId').value.trim().replace(/[^a-zA-Z0-9_]/g, '_');
             const tenantName = document.getElementById('newTenantName').value.trim();
             const filePath = document.getElementById('newTenantFilePath').value;
+            const expiresAt = document.getElementById('newTenantExpiresAt').value;
 
             if (!tenantId) { alert('Vui long nhap ma tenant'); return; }
 
             msgEl.textContent = 'Đang tạo...';
             msgEl.className = 'form-msg running';
 
+            const body = { tenant_id: tenantId, tenant_name: tenantName, file_path: filePath };
+            if (expiresAt) body.expires_at = expiresAt;
+
             try {
                 const resp = await authFetch('/api/tenants', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tenant_id: tenantId, tenant_name: tenantName, file_path: filePath }),
+                    body: JSON.stringify(body),
                 });
                 const data = await resp.json();
                 if (resp.ok && data.success) {
@@ -1287,6 +1400,7 @@
                     document.getElementById('newTenantId').value = '';
                     document.getElementById('newTenantName').value = '';
                     document.getElementById('newTenantFilePath').value = '';
+                    document.getElementById('newTenantExpiresAt').value = '';
                     loadAdminData();
                     // Refresh tenant dropdown for user form
                     populateTenantDropdown();
@@ -1354,6 +1468,111 @@
             el.innerHTML = '<table class="admin-table"><thead><tr><th>Thời gian</th><th>Tenant</th><th>Bảng</th><th>Trạng thái</th><th>Dòng</th></tr></thead><tbody>' +
                 logs.slice(0, 20).map(l => `<tr><td>${l.start_time ? new Date(l.start_time).toLocaleString('vi-VN') : '—'}</td><td>${l.tenant_id}</td><td>${l.source_table}</td><td>${l.status}</td><td>${l.rows_inserted}</td></tr>`).join('') +
                 '</tbody></table>';
+        }
+
+        // ===== MANAGE PAGE (Tenant-level Admin) =====
+
+        if (USER_ROLE === 'admin') {
+            loadTenantUsers();
+        }
+
+        async function loadTenantUsers() {
+            const el = document.getElementById('tenant-user-list');
+            if (!el) return;
+            try {
+                const resp = await authFetch('/api/users');
+                if (!resp.ok) {
+                    el.innerHTML = '<tr><td colspan="5" style="padding:16px;color:#dc2626;">Lỗi tải danh sách user</td></tr>';
+                    return;
+                }
+                const data = await resp.json();
+                const users = data.users || [];
+                renderTenantUsers(users);
+            } catch (e) {
+                el.innerHTML = '<tr><td colspan="5" style="padding:16px;color:#dc2626;">Lỗi: ' + e.message + '</td></tr>';
+            }
+        }
+
+        function renderTenantUsers(users) {
+            const el = document.getElementById('tenant-user-list');
+            if (!el) return;
+            if (!users.length) {
+                el.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:#94a3b8;">Chưa có user nào</td></tr>';
+                return;
+            }
+            el.innerHTML = users.map(u => `
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:10px 12px;font-weight:600;color:#1e40af;">${u.username}</td>
+                    <td style="padding:10px 12px;">
+                        <span style="padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;background:#dbeafe;color:#1d4ed8;">
+                            ${u.role === 'viewer' ? 'Viewer' : u.role}
+                        </span>
+                    </td>
+                    <td style="padding:10px 12px;">
+                        <span style="padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;${u.is_active ? 'background:#dcfce7;color:#16a34a;' : 'background:#fee2e2;color:#dc2626;'}">
+                            ${u.is_active ? 'Hoạt động' : 'Tắt'}
+                        </span>
+                    </td>
+                    <td style="padding:10px 12px;color:#6b7280;font-size:12px;">${u.created_at ? new Date(u.created_at).toLocaleString('vi-VN') : '—'}</td>
+                    <td style="padding:10px 12px;">
+                        <button onclick="openEditTenantUser('${u.username}', ${u.user_id}, '${u.role}', ${u.is_active})"
+                            style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-right:4px;">
+                            Sửa
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function createTenantUser(e) {
+            e.preventDefault();
+            const msgEl = document.getElementById('userCreateMsg');
+            const username = document.getElementById('newUserUsername').value.trim();
+            const password = document.getElementById('newUserPassword').value;
+            msgEl.textContent = 'Đang tạo...';
+            msgEl.className = 'form-msg running';
+            try {
+                const resp = await authFetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, role: 'viewer' }),
+                });
+                const data = await resp.json();
+                if (resp.ok && data.success) {
+                    msgEl.textContent = '✓ User "' + username + '" đã được tạo!';
+                    msgEl.className = 'form-msg success';
+                    document.getElementById('newUserUsername').value = '';
+                    document.getElementById('newUserPassword').value = '';
+                    loadTenantUsers();
+                } else {
+                    throw new Error(data.detail || data.message || 'Tạo thất bại');
+                }
+            } catch (err) {
+                msgEl.textContent = '✕ ' + err.message;
+                msgEl.className = 'form-msg error';
+            }
+        }
+
+        async function openEditTenantUser(username, userId, role, isActive) {
+            const newRole = prompt(`Sửa user "${username}":\nNhập vai trò mới (viewer):`, role);
+            if (newRole === null) return;
+            const finalRole = (newRole === '' || newRole === 'viewer') ? 'viewer' : role;
+            const newActive = confirm(`User "${username}" — đổi trạng thái?\nOK = Bật, Cancel = Tắt`) ? 1 : 0;
+            try {
+                const resp = await authFetch(`/api/users/${userId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role: finalRole, is_active: newActive === 1 }),
+                });
+                const data = await resp.json();
+                if (resp.ok && data.success) {
+                    loadTenantUsers();
+                } else {
+                    alert('Lỗi: ' + (data.detail || data.message));
+                }
+            } catch (err) {
+                alert('Lỗi: ' + err.message);
+            }
         }
     </script>
 </body>

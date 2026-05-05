@@ -38,19 +38,25 @@ def get_mssql_conn():
 
 
 def require_admin(authorization: str = Header(...)):
-    """Dependency — chỉ admin mới được truy cập."""
+    """Dependency — chỉ admin (superadmin hoặc tenant-admin) mới được truy cập."""
     if not authorization.startswith('Bearer '):
         raise HTTPException(401, detail='Authorization header khong hop le')
     token = authorization[7:]
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
-        if payload.get('role') != 'admin':
+        role = payload.get('role', '')
+        if role not in ('superadmin', 'admin'):
             raise HTTPException(403, detail='Chi admin moi co quyen truy cap')
         return payload
     except jwt.ExpiredSignatureError:
         raise HTTPException(401, detail='Token da het han')
     except jwt.InvalidTokenError:
         raise HTTPException(401, detail='Token khong hop le')
+
+
+def is_superadmin(payload: dict) -> bool:
+    """True nếu user là superadmin (toàn quyền hệ thống)."""
+    return payload.get('role') == 'superadmin' and payload.get('tenant_id') is None
 
 
 def require_auth(authorization: str = Header(...)):
@@ -77,12 +83,14 @@ class TenantCreate(BaseModel):
     tenant_id: str
     tenant_name: str
     file_path: Optional[str] = None
+    expires_at: Optional[str] = None  # ISO datetime string
 
 
 class TenantUpdate(BaseModel):
     tenant_name: Optional[str] = None
     file_path: Optional[str] = None
     is_active: Optional[bool] = None
+    expires_at: Optional[str] = None  # ISO datetime string, None = không hết hạn
 
 
 class UserCreate(BaseModel):
@@ -107,7 +115,7 @@ def list_tenants(payload=Depends(require_admin)):
     """Danh sách tất cả tenant (Admin only)."""
     conn = get_mssql_conn()
     cursor = conn.cursor(as_dict=True)
-    cursor.execute('SELECT TenantID, TenantName, FilePath, IsActive, CreatedAt FROM Tenants ORDER BY CreatedAt DESC')
+    cursor.execute('SELECT TenantID, TenantName, FilePath, IsActive, ExpiresAt, CreatedAt FROM Tenants ORDER BY CreatedAt DESC')
     rows = cursor.fetchall()
     conn.close()
 
@@ -118,6 +126,7 @@ def list_tenants(payload=Depends(require_admin)):
                 'tenant_name': r['TenantName'],
                 'file_path': r['FilePath'],
                 'is_active': bool(r['IsActive']),
+                'expires_at': r['ExpiresAt'].isoformat() if r['ExpiresAt'] else None,
                 'created_at': r['CreatedAt'].isoformat() if r['CreatedAt'] else None,
             }
             for r in rows
@@ -127,7 +136,9 @@ def list_tenants(payload=Depends(require_admin)):
 
 @router.post('/tenants')
 def create_tenant(data: TenantCreate, payload=Depends(require_admin)):
-    """Tạo tenant mới (Admin only)."""
+    """Tạo tenant mới — chỉ superadmin."""
+    if not is_superadmin(payload):
+        raise HTTPException(403, detail='Chi superadmin moi co quyen tao tenant')
     conn = get_mssql_conn()
     cursor = conn.cursor()
     cursor.execute('SELECT 1 FROM Tenants WHERE TenantID = %s', (data.tenant_id,))
@@ -140,9 +151,18 @@ def create_tenant(data: TenantCreate, payload=Depends(require_admin)):
     tenant_dir.mkdir(parents=True, exist_ok=True)
     logger.info(f'[ADMIN] Created ETL logs directory: {tenant_dir}')
 
+    expires_at = None
+    if data.expires_at:
+        from datetime import datetime
+        try:
+            # Parse ISO datetime string (supports both with and without timezone)
+            expires_at = datetime.fromisoformat(data.expires_at.replace('Z', '+00:00'))
+        except ValueError:
+            raise HTTPException(400, detail='Dinh dang ExpiresAt khong hop le (VD: 2026-12-31T23:59:59)')
+
     cursor.execute(
-        'INSERT INTO Tenants (TenantID, TenantName, FilePath, IsActive) VALUES (%s, %s, %s, 1)',
-        (data.tenant_id, data.tenant_name, data.file_path)
+        'INSERT INTO Tenants (TenantID, TenantName, FilePath, IsActive, ExpiresAt) VALUES (%s, %s, %s, 1, %s)',
+        (data.tenant_id, data.tenant_name, data.file_path, expires_at)
     )
     conn.commit()
     conn.close()
@@ -152,7 +172,9 @@ def create_tenant(data: TenantCreate, payload=Depends(require_admin)):
 
 @router.put('/tenants/{tenant_id}')
 def update_tenant(tenant_id: str, data: TenantUpdate, payload=Depends(require_admin)):
-    """Cập nhật tenant (Admin only)."""
+    """Cập nhật tenant — chỉ superadmin."""
+    if not is_superadmin(payload):
+        raise HTTPException(403, detail='Chi superadmin moi co quyen sua tenant')
     conn = get_mssql_conn()
     cursor = conn.cursor()
     cursor.execute('SELECT 1 FROM Tenants WHERE TenantID = %s', (tenant_id,))
@@ -171,6 +193,18 @@ def update_tenant(tenant_id: str, data: TenantUpdate, payload=Depends(require_ad
     if data.is_active is not None:
         updates.append('IsActive = %s')
         params.append(1 if data.is_active else 0)
+    if data.expires_at is not None or data.expires_at == '':
+        # '' or null = no expiration
+        if data.expires_at and data.expires_at.strip():
+            from datetime import datetime
+            try:
+                expires_dt = datetime.fromisoformat(data.expires_at.replace('Z', '+00:00'))
+                updates.append('ExpiresAt = %s')
+                params.append(expires_dt)
+            except ValueError:
+                raise HTTPException(400, detail='Dinh dang ExpiresAt khong hop le (VD: 2026-12-31T23:59:59)')
+        else:
+            updates.append('ExpiresAt = NULL')
 
     if updates:
         params.append(tenant_id)
@@ -183,7 +217,9 @@ def update_tenant(tenant_id: str, data: TenantUpdate, payload=Depends(require_ad
 
 @router.delete('/tenants/{tenant_id}')
 def delete_tenant(tenant_id: str, payload=Depends(require_admin)):
-    """Xóa tenant (Admin only) — soft delete."""
+    """Xóa tenant — chỉ superadmin. Soft delete."""
+    if not is_superadmin(payload):
+        raise HTTPException(403, detail='Chi superadmin moi co quyen xoa tenant')
     if tenant_id in ('STORE_HN', 'STORE_HCM'):
         raise HTTPException(400, detail='Khong the xoa tenant mac dinh')
 
@@ -207,10 +243,26 @@ def delete_tenant(tenant_id: str, payload=Depends(require_admin)):
 
 @router.get('/users')
 def list_users(payload=Depends(require_admin)):
-    """Danh sách tất cả user (Admin only)."""
+    """
+    Danh sách user.
+    - superadmin: thấy TẤT CẢ user
+    - admin: chỉ thấy user thuộc tenant của mình
+    """
     conn = get_mssql_conn()
     cursor = conn.cursor(as_dict=True)
-    cursor.execute('SELECT UserID, Username, TenantID, Role, IsActive, CreatedAt FROM AppUsers ORDER BY CreatedAt DESC')
+    if is_superadmin(payload):
+        cursor.execute('SELECT UserID, Username, TenantID, Role, IsActive, CreatedAt FROM AppUsers ORDER BY CreatedAt DESC')
+    else:
+        # Admin: chỉ thấy user thuộc tenant của mình
+        my_tenant = payload.get('tenant_id')
+        if my_tenant is None:
+            # Admin chưa được gán tenant → trả danh sách rỗng
+            conn.close()
+            return {'users': []}
+        cursor.execute(
+            'SELECT UserID, Username, TenantID, Role, IsActive, CreatedAt FROM AppUsers WHERE TenantID = %s ORDER BY CreatedAt DESC',
+            (my_tenant,)
+        )
     rows = cursor.fetchall()
     conn.close()
 
@@ -243,9 +295,25 @@ def list_users_by_tenant(tenant_id: str, payload=Depends(require_admin)):
 
 @router.post('/users')
 def create_user(data: UserCreate, payload=Depends(require_admin)):
-    """Tạo user mới (Admin only)."""
-    if data.role not in ('admin', 'viewer'):
-        raise HTTPException(400, detail='Role phai la admin hoac viewer')
+    """
+    Tạo user mới.
+    - superadmin: tạo bất kỳ user nào
+    - admin: chỉ tạo viewer thuộc tenant của mình
+    """
+    if not is_superadmin(payload):
+        my_tenant = payload.get('tenant_id')
+        # Admin tenant chỉ được tạo user viewer thuộc tenant của mình
+        if data.role not in ('viewer',):
+            raise HTTPException(403, detail='Admin chi co quyen tao user viewer')
+        # Admin luôn phải có tenant_id để tạo user
+        if not my_tenant:
+            raise HTTPException(403, detail='Tai khoan admin chua duoc gan tenant — lien he superadmin de assign tenant')
+        # Nếu gửi tenant_id cụ thể thì phải khớp với tenant của mình
+        if data.tenant_id and data.tenant_id != my_tenant:
+            raise HTTPException(403, detail='Admin chi co quyen tao user thuoc tenant cua minh')
+        # Không gửi tenant_id → tự động dùng tenant của admin đang đăng nhập
+    elif data.role not in ('superadmin', 'admin', 'viewer'):
+        raise HTTPException(400, detail='Role phai la superadmin, admin hoac viewer')
 
     if data.tenant_id:
         conn_check = get_mssql_conn()
@@ -256,7 +324,7 @@ def create_user(data: UserCreate, payload=Depends(require_admin)):
             raise HTTPException(400, detail='TenantID khong hop le hoac khong hoat dong')
         conn_check.close()
 
-    tenant_for_user = None if data.role == 'admin' else data.tenant_id
+    tenant_for_user = data.tenant_id or (payload.get('tenant_id') if not is_superadmin(payload) else None)
 
     conn = get_mssql_conn()
     cursor = conn.cursor()
@@ -278,13 +346,29 @@ def create_user(data: UserCreate, payload=Depends(require_admin)):
 
 @router.put('/users/{user_id}')
 def update_user(user_id: int, data: UserUpdate, payload=Depends(require_admin)):
-    """Cập nhật user (Admin only)."""
+    """
+    Cập nhật user.
+    - superadmin: cập nhật bất kỳ user nào
+    - admin: chỉ cập nhật user thuộc tenant của mình
+    """
     conn = get_mssql_conn()
-    cursor = conn.cursor()
-    cursor.execute('SELECT 1 FROM AppUsers WHERE UserID = %s', (user_id,))
-    if not cursor.fetchone():
+    cursor = conn.cursor(as_dict=True)
+    cursor.execute('SELECT UserID, Username, TenantID, Role FROM AppUsers WHERE UserID = %s', (user_id,))
+    row = cursor.fetchone()
+    if not row:
         conn.close()
         raise HTTPException(404, detail='User khong ton tai')
+
+    # Quyền: superadmin thì được sửa tất cả, admin chỉ được sửa user cùng tenant
+    if not is_superadmin(payload):
+        my_tenant = payload.get('tenant_id')
+        if my_tenant != row['TenantID']:
+            conn.close()
+            raise HTTPException(403, detail='Admin chi co quyen sua user thuoc tenant cua minh')
+        # Admin không được nâng quyền user lên superadmin
+        if data.role == 'superadmin' or data.role == 'admin':
+            conn.close()
+            raise HTTPException(403, detail='Admin khong duoc thay doi vai tro cua user')
 
     updates = []
     params = []
@@ -292,9 +376,9 @@ def update_user(user_id: int, data: UserUpdate, payload=Depends(require_admin)):
         updates.append('PasswordHash = %s')
         params.append(hash_password(data.password))
     if data.role is not None:
-        if data.role not in ('admin', 'viewer'):
+        if data.role not in ('superadmin', 'admin', 'viewer'):
             conn.close()
-            raise HTTPException(400, detail='Role phai la admin hoac viewer')
+            raise HTTPException(400, detail='Role phai la superadmin, admin hoac viewer')
         updates.append('Role = %s')
         params.append(data.role)
     if data.is_active is not None:
@@ -306,29 +390,40 @@ def update_user(user_id: int, data: UserUpdate, payload=Depends(require_admin)):
         cursor.execute(f"UPDATE AppUsers SET {', '.join(updates)} WHERE UserID = %s", params)
         conn.commit()
     conn.close()
-    logger.info(f'[ADMIN] Updated user_id={user_id}')
+    logger.info(f'[ADMIN] Updated user_id={user_id} by {payload.get("username")}')
     return {'success': True}
 
 
 @router.delete('/users/{user_id}')
 def delete_user(user_id: int, payload=Depends(require_admin)):
-    """Xóa user (Admin only) — soft delete."""
+    """
+    Xóa user — soft delete.
+    - superadmin: xóa bất kỳ user nào (trừ tài khoản superadmin mặc định)
+    - admin: chỉ xóa user thuộc tenant của mình
+    """
     conn = get_mssql_conn()
-    cursor = conn.cursor()
-    cursor.execute('SELECT Username FROM AppUsers WHERE UserID = %s', (user_id,))
+    cursor = conn.cursor(as_dict=True)
+    cursor.execute('SELECT Username, TenantID, Role FROM AppUsers WHERE UserID = %s', (user_id,))
     row = cursor.fetchone()
     if not row:
         conn.close()
         raise HTTPException(404, detail='User khong ton tai')
 
-    if row[0] == 'admin':
+    # Quyền: superadmin được xóa tất cả, admin chỉ được xóa user cùng tenant
+    if not is_superadmin(payload):
+        my_tenant = payload.get('tenant_id')
+        if row['TenantID'] != my_tenant:
+            conn.close()
+            raise HTTPException(403, detail='Admin chi co quyen xoa user thuoc tenant cua minh')
+
+    if row['Username'] == 'admin':
         conn.close()
         raise HTTPException(400, detail='Khong the xoa tai khoan admin')
 
     cursor.execute('UPDATE AppUsers SET IsActive = 0 WHERE UserID = %s', (user_id,))
     conn.commit()
     conn.close()
-    logger.info(f'[ADMIN] Deactivated user_id={user_id}')
+    logger.info(f'[ADMIN] Deactivated user_id={user_id} by {payload.get("username")}')
     return {'success': True}
 
 
@@ -479,6 +574,7 @@ def get_kpi_summary(authorization: str = Header(...)):
     cursor = conn.cursor()
 
     is_viewer = payload.get('role') == 'viewer' and payload.get('tenant_id')
+    is_admin_level = payload.get('role') in ('superadmin', 'admin')
 
     if is_viewer:
         tid = payload['tenant_id']
@@ -487,6 +583,7 @@ def get_kpi_summary(authorization: str = Header(...)):
             'COUNT(*), COUNT(DISTINCT CustomerID) FROM FactSales WHERE TenantID = %s',
             (tid,)
         )
+        row = cursor.fetchone()
         cursor.execute(
             'SELECT TOP 12 YEAR(SaleDate), MONTH(SaleDate), ISNULL(SUM(Revenue),0) '
             'FROM FactSales WHERE TenantID = %s '
@@ -494,41 +591,73 @@ def get_kpi_summary(authorization: str = Header(...)):
             'ORDER BY YEAR(SaleDate) DESC, MONTH(SaleDate) DESC',
             (tid,)
         )
+        monthly = cursor.fetchall()
         cursor.execute(
             'SELECT TOP 5 p.ProductName, SUM(f.Quantity), SUM(f.Revenue) '
             'FROM FactSales f INNER JOIN DimProduct p ON p.ProductID = f.ProductID '
             'WHERE f.TenantID = %s GROUP BY p.ProductName ORDER BY SUM(f.Quantity) DESC',
             (tid,)
         )
+        top_products = cursor.fetchall()
         cursor.execute(
             'SELECT COUNT(*) FROM FactInventory i '
             'WHERE i.TenantID = %s AND i.QuantityOnHand <= i.ReorderLevel',
             (tid,)
         )
+        low_stock_row = cursor.fetchone()
+    elif is_admin_level and payload.get('tenant_id'):
+        # Admin có tenant_id: xem data tenant của mình
+        tid = payload['tenant_id']
+        cursor.execute(
+            'SELECT ISNULL(SUM(Revenue),0), ISNULL(SUM(Profit),0), '
+            'COUNT(*), COUNT(DISTINCT CustomerID) FROM FactSales WHERE TenantID = %s',
+            (tid,)
+        )
+        row = cursor.fetchone()
+        cursor.execute(
+            'SELECT TOP 12 YEAR(SaleDate), MONTH(SaleDate), ISNULL(SUM(Revenue),0) '
+            'FROM FactSales WHERE TenantID = %s '
+            'GROUP BY YEAR(SaleDate), MONTH(SaleDate) '
+            'ORDER BY YEAR(SaleDate) DESC, MONTH(SaleDate) DESC',
+            (tid,)
+        )
+        monthly = cursor.fetchall()
+        cursor.execute(
+            'SELECT TOP 5 p.ProductName, SUM(f.Quantity), SUM(f.Revenue) '
+            'FROM FactSales f INNER JOIN DimProduct p ON p.ProductID = f.ProductID '
+            'WHERE f.TenantID = %s GROUP BY p.ProductName ORDER BY SUM(f.Quantity) DESC',
+            (tid,)
+        )
+        top_products = cursor.fetchall()
+        cursor.execute(
+            'SELECT COUNT(*) FROM FactInventory i '
+            'WHERE i.TenantID = %s AND i.QuantityOnHand <= i.ReorderLevel',
+            (tid,)
+        )
+        low_stock_row = cursor.fetchone()
     else:
         cursor.execute(
             'SELECT ISNULL(SUM(Revenue),0), ISNULL(SUM(Profit),0), '
             'COUNT(*), COUNT(DISTINCT CustomerID) FROM FactSales'
         )
+        row = cursor.fetchone()
         cursor.execute(
             'SELECT TOP 12 YEAR(SaleDate), MONTH(SaleDate), ISNULL(SUM(Revenue),0) '
             'FROM FactSales GROUP BY YEAR(SaleDate), MONTH(SaleDate) '
             'ORDER BY YEAR(SaleDate) DESC, MONTH(SaleDate) DESC'
         )
+        monthly = cursor.fetchall()
         cursor.execute(
             'SELECT TOP 5 p.ProductName, SUM(f.Quantity), SUM(f.Revenue) '
             'FROM FactSales f INNER JOIN DimProduct p ON p.ProductID = f.ProductID '
             'GROUP BY p.ProductName ORDER BY SUM(f.Quantity) DESC'
         )
+        top_products = cursor.fetchall()
         cursor.execute(
             'SELECT COUNT(*) FROM FactInventory i '
             'WHERE i.QuantityOnHand <= i.ReorderLevel'
         )
-
-    row = cursor.fetchone()
-    monthly = cursor.fetchall()
-    top_products = cursor.fetchall()
-    low_stock_row = cursor.fetchone()
+        low_stock_row = cursor.fetchone()
     conn.close()
 
     if row is None:

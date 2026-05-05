@@ -1,6 +1,8 @@
 -- ============================================================
 -- FILE: sql/sp/usp_Load_DimProduct.sql
--- Mô tả: SCD Type 2 cho DimProduct (Shared — không cần TenantID)
+-- Mô tả: Upsert DimProduct từ STG_ProductRaw (SHARED — không cần TenantID)
+-- Schema: DimProduct(ProductKey, ProductID, ProductName, Category, SubCategory, UnitPrice, SupplierID, IsActive, TenantID)
+-- STG:   STG_ProductRaw(ProductID, ProductName, Category, SubCategory, UnitPrice, SupplierID, LoadStatus, ErrorMessage, CreatedAt, TenantID)
 -- ============================================================
 
 IF EXISTS (SELECT * FROM sys.procedures WHERE name = 'usp_Load_DimProduct')
@@ -14,44 +16,31 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Bước 1: Đóng bản ghi cũ khi giá thay đổi (SCD Type 2)
+    -- Upsert: cập nhật nếu ProductID đã tồn tại, insert nếu mới
     UPDATE dp
-    SET dp.ExpirationDate = DATEADD(DAY, -1, CAST(GETDATE() AS DATE)),
-        dp.IsCurrent = 0
+    SET dp.ProductName = stg.ProductName,
+        dp.Category    = stg.Category,
+        dp.SubCategory = stg.SubCategory,
+        dp.UnitPrice  = CAST(stg.UnitPrice AS DECIMAL(18,2)),
+        dp.SupplierID  = stg.SupplierID,
+        dp.IsActive    = 1
     FROM DimProduct dp
-    INNER JOIN STG_ProductRaw s
-        ON s.MaSP = dp.ProductCode
-    WHERE dp.IsCurrent = 1
-      AND (dp.UnitCostPrice <> s.GiaVon
-       OR dp.UnitListPrice <> s.GiaNiemYet);
+    INNER JOIN STG_ProductRaw stg ON stg.ProductID = dp.ProductID;
 
-    -- Bước 2: Chèn bản ghi mới (sản phẩm mới hoặc giá thay đổi)
-    INSERT INTO DimProduct (
-        ProductCode, ProductName, Brand, CategoryName,
-        SubCategory, UnitCostPrice, UnitListPrice,
-        UnitOfMeasure, Warranty_Months, IsActive,
-        EffectiveDate, ExpirationDate, IsCurrent
-    )
+    INSERT INTO DimProduct (ProductID, ProductName, Category, SubCategory, UnitPrice, SupplierID, IsActive)
     SELECT
-        s.MaSP,
-        s.TenSP,
-        s.ThuongHieu,
-        s.DanhMuc,
-        s.DanhMucCon,
-        s.GiaVon,
-        s.GiaNiemYet,
-        ISNULL(s.DonViTinh, N'cái'),
-        s.BaoHanh_Thang,
-        1,
-        CAST(GETDATE() AS DATE),
-        NULL,
+        stg.ProductID,
+        stg.ProductName,
+        stg.Category,
+        stg.SubCategory,
+        CAST(stg.UnitPrice AS DECIMAL(18,2)),
+        stg.SupplierID,
         1
-    FROM STG_ProductRaw s
+    FROM STG_ProductRaw stg
     WHERE NOT EXISTS (
-        SELECT 1 FROM DimProduct dp
-        WHERE dp.ProductCode = s.MaSP AND dp.IsCurrent = 1
+        SELECT 1 FROM DimProduct dp WHERE dp.ProductID = stg.ProductID
     );
+
+    PRINT 'usp_Load_DimProduct: Done';
 END;
 GO
-
-PRINT 'Created: usp_Load_DimProduct';

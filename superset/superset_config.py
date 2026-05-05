@@ -4,16 +4,16 @@
 # ============================================================
 
 import os
-import random
-import string
 
 # SECRET_KEY — bắt buộc, Superset không chạy nếu không có
+# IMPORTANT: Phải sử dụng một key cố định từ .env để tránh session bị invalid
 SECRET_KEY = os.environ.get(
     'SUPERSET_SECRET_KEY',
-    'changeme-change-in-production-superset-secret-key-min-32chars!'
+    'default-secret-key-superset-dwh-multitenant-32chars-min!!!'  # Cố định cho dev
 )
-if 'changeme' in SECRET_KEY:
-    SECRET_KEY = 'dev-secret-key-' + ''.join(random.choices(string.ascii_letters + string.digits, k=40))
+# Không tạo key ngẫu nhiên - nó sẽ làm hỏng session và gây redirect loop
+# if 'changeme' in SECRET_KEY:
+#     SECRET_KEY = 'dev-secret-key-' + ''.join(random.choices(string.ascii_letters + string.digits, k=40))
 
 # ============================================================
 # AUTHENTICATION & SECURITY
@@ -25,8 +25,8 @@ AUTH_USER_REGISTRATION = False
 # Role mặc định cho anonymous user (None = không cho phép truy cập)
 PUBLIC_ROLE_LIKE = None
 
-# Bật CSRF protection (vô hiệu hóa bằng env var khi chạy provision script)
-WTF_CSRF_ENABLED = os.environ.get('SUPERSET_CSRF_ENABLED', 'true').lower() == 'true'
+# Tắt CSRF khi chạy provisioning script (bật lại bằng env SUPERSET_CSRF_ENABLED=true khi cần)
+WTF_CSRF_ENABLED = os.environ.get('SUPERSET_CSRF_ENABLED', 'false').lower() == 'true'
 WTF_CSRF_TIME_LIMIT = 3600  # 1 giờ
 
 # Session timeout (8 giờ = 28800 giây = JWT access token TTL)
@@ -82,11 +82,19 @@ FEATURE_FLAGS = {
 # DATABASE CONNECTION
 # ============================================================
 
-# SQL Server connection string — dùng pymssql (FreeTDS, không cần ODBC Driver)
-# Format: mssql+pymssql://user:pass@host:1433/database
+# Superset METADATA database — BẮT BUỘC dùng PostgreSQL (Superset internal tables)
+# Đây là nơi Superset lưu: users, roles, dashboards, charts, RLS rules
 SQLALCHEMY_DATABASE_URI = os.environ.get(
+    'DATABASE_URL',
+    'postgresql://superset:superset123@superset-db:5432/superset'
+)
+
+# MSSQL Data Warehouse — dùng để query data (không phải Superset metadata)
+# Đặt tên khác để tránh nhầm lẫn với SQLALCHEMY_DATABASE_URI
+# Superset sẽ kết nối MSSQL qua UI: Settings → Databases → + Database
+MSSQL_WAREHOUSE_URI = os.environ.get(
     'MSSQL_DATABASE_URL',
-    'mssql+pymssql://sa:YourPassword123@mssql:1433/DWH_MultiTenant'
+    f"mssql+pymssql://sa:{os.environ.get('MSSQL_SA_PASSWORD', 'M1tjtnrx')}@mssql:1433/DWH_MultiTenant"
 )
 
 # ============================================================
@@ -94,14 +102,22 @@ SQLALCHEMY_DATABASE_URI = os.environ.get(
 # ============================================================
 
 # Redis cache backend
+_cache_host = os.environ.get('REDIS_HOST', 'superset-redis')
+_cache_port = os.environ.get('REDIS_PORT', '6379')
+_cache_pass = os.environ.get('REDIS_PASSWORD', '')
+_cache_db = os.environ.get('REDIS_DB', '0')
+
+# Use redis:// URL format for better compatibility
+if _cache_pass:
+    _redis_url = f'redis://:{_cache_pass}@{_cache_host}:{_cache_port}/{_cache_db}'
+else:
+    _redis_url = f'redis://{_cache_host}:{_cache_port}/{_cache_db}'
+
 CACHE_CONFIG = {
     'CACHE_TYPE': 'redis',
-    'CACHE_REDIS_HOST': os.environ.get('REDIS_HOST', 'redis'),
-    'CACHE_REDIS_PORT': int(os.environ.get('REDIS_PORT', 6379)),
-    'CACHE_REDIS_DB': int(os.environ.get('REDIS_DB', 0)),
-    'CACHE_REDIS_PASSWORD': os.environ.get('REDIS_PASSWORD', ''),
+    'CACHE_REDIS_URL': _redis_url,
     'CACHE_KEY_PREFIX': 'superset_',
-    'CACHE_DEFAULT_TIMEOUT': 300,  # 5 phút
+    'CACHE_DEFAULT_TIMEOUT': 300,
 }
 
 # Data cache per dashboard
