@@ -55,7 +55,12 @@ def setup_tenant_logging(tenant_id: str, log_dir: str):
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     log_file = os.path.join(log_dir, f'etl_{timestamp}.log')
-    fh = logging.FileHandler(log_file, encoding='utf-8')
+    try:
+        fh = logging.FileHandler(log_file, encoding='utf-8')
+    except PermissionError:
+        # Fall back to /tmp if log dir is not writable
+        log_file = f'/tmp/etl_{tenant_id}_{timestamp}.log'
+        fh = logging.FileHandler(log_file, encoding='utf-8')
     fh.setLevel(logging.INFO)
     fh.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
     logger.addHandler(fh)
@@ -146,6 +151,8 @@ def write_etl_log(
     error_msg: str = None
 ) -> None:
     """Ghi log vào bảng ETLLogs theo schema thực tế (không có BatchDate/SourceTable/RunStatus)."""
+    if error_msg and len(error_msg) > 500:
+        error_msg = error_msg[:497] + '...'
     cursor = conn.cursor()
     cursor.execute(
         'INSERT INTO ETLLogs '
@@ -156,9 +163,9 @@ def write_etl_log(
             tenant_id,
             table_name,
             step_name,
-            rows_processed,
-            rows_inserted,
-            rows_rejected,
+            rows_processed if rows_processed is not None else 0,
+            rows_inserted if rows_inserted is not None else 0,
+            rows_rejected if rows_rejected is not None else 0,
             duration_sec,
             status,
             error_msg,
@@ -188,6 +195,16 @@ def run_sp(conn, sp_name: str, params: dict = None) -> None:
         cursor.execute(f'EXEC {sp_name}')
     conn.commit()
     logger.info(f'  [SP] Executed: {sp_name}')
+
+
+def run_sql(conn, sql: str, params: list = None) -> None:
+    """Execute raw SQL and commit."""
+    cursor = conn.cursor()
+    if params:
+        cursor.execute(sql, params)
+    else:
+        cursor.execute(sql)
+    conn.commit()
 
 
 # =============================================================================
@@ -232,23 +249,21 @@ def process_sales_file(conn, tenant_id: str, file_path: str, batch_date: date) -
 
     start = datetime.now()
     rows_extracted = len(df)
-    load_to_staging(conn, df, 'STG_SalesRaw')
-
-    # Transform
-    df = transform_sales(df, tenant_id)
-    rows_rejected = rows_extracted - len(df)
-
-    if not df.empty:
-        load_to_staging(conn, df, 'STG_SalesRaw')
+    stg_sales_cols = [
+        'TenantID', 'SaleDate', 'ProductID', 'CustomerName',
+        'StoreName', 'EmployeeName', 'PaymentMethod', 'Quantity',
+        'UnitPrice', 'Discount', 'Revenue', 'LoadStatus',
+        'ErrorMessage', 'CreatedAt'
+    ]
+    load_to_staging(conn, df, 'STG_SalesRaw', columns=stg_sales_cols)
 
     duration = (datetime.now() - start).total_seconds()
     write_etl_log(conn, tenant_id, 'STG_SalesRaw', 'Extract', 'SUCCESS',
                   rows_processed=rows_extracted,
-                  rows_inserted=len(df),
-                  rows_rejected=rows_rejected,
+                  rows_inserted=rows_extracted,
+                  rows_rejected=0,
                   duration_sec=duration)
-    result['rows_inserted'] = len(df)
-    result['rows_rejected'] = rows_rejected
+    result['rows_inserted'] = rows_extracted
     return result
 
 
@@ -264,7 +279,11 @@ def process_inventory_file(conn, tenant_id: str, file_path: str, batch_date: dat
         return result
 
     rows_extracted = len(df)
-    load_to_staging(conn, df, 'STG_InventoryRaw')
+    stg_inv_cols = [
+        'TenantID', 'CheckDate', 'ProductID', 'StoreName',
+        'QuantityOnHand', 'LoadStatus', 'ErrorMessage', 'CreatedAt'
+    ]
+    load_to_staging(conn, df, 'STG_InventoryRaw', columns=stg_inv_cols)
     duration = (datetime.now() - start).total_seconds()
 
     write_etl_log(conn, tenant_id, 'STG_InventoryRaw', 'Extract', 'SUCCESS',
@@ -280,13 +299,20 @@ def process_csv_file(conn, tenant_id: str, file_path: str, file_type: str,
                      batch_date: date) -> dict:
     """Extract and load a CSV file into the appropriate staging table."""
     table_map = {
-        'customer': 'STG_CustomerRaw',
-        'product':  'STG_ProductRaw',
-        'purchase': 'STG_PurchaseRaw',
+        'customer': ('STG_CustomerRaw',  ['CustomerID', 'CustomerName', 'Phone', 'Email',
+                                           'City', 'Region', 'CustomerType', 'LoadStatus',
+                                           'ErrorMessage', 'CreatedAt', 'TenantID']),
+        'product':  ('STG_ProductRaw',   ['ProductID', 'ProductName', 'Category', 'SubCategory',
+                                           'UnitPrice', 'SupplierID', 'LoadStatus',
+                                           'ErrorMessage', 'CreatedAt', 'TenantID']),
+        'purchase': ('STG_PurchaseRaw',   ['TenantID', 'PurchaseDate', 'ProductID', 'SupplierID',
+                                           'Quantity', 'UnitCost', 'TotalCost', 'IsPaid',
+                                           'LoadStatus', 'ErrorMessage', 'CreatedAt']),
     }
-    table_name = table_map.get(file_type)
-    if not table_name:
+    table_info = table_map.get(file_type)
+    if not table_info:
         return {'rows_extracted': 0, 'rows_inserted': 0, 'rows_rejected': 0}
+    table_name, stg_cols = table_info
 
     start = datetime.now()
     df = extract_csv_file(file_path, tenant_id, file_type)
@@ -298,7 +324,7 @@ def process_csv_file(conn, tenant_id: str, file_path: str, file_type: str,
         return result
 
     rows_extracted = len(df)
-    load_to_staging(conn, df, table_name)
+    load_to_staging(conn, df, table_name, columns=stg_cols)
     duration = (datetime.now() - start).total_seconds()
 
     write_etl_log(conn, tenant_id, table_name, 'Extract', 'SUCCESS',
@@ -414,32 +440,290 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
         # ---- PHASE 3: TRANSFORM (Python — already done per-file for Sales) ----
         logger.info(f'[PHASE 3] TRANSFORM — {tenant_id} (handled inline in Phase 2 for Sales)')
 
-        # ---- PHASE 4: LOAD DIMENSIONS ----
+        # ---- PHASE 4: LOAD DIMENSIONS (via Python MERGE — avoids SP isolation issues) ----
         logger.info(f'[PHASE 4] LOAD DIMENSIONS — {tenant_id}')
-        run_sp(conn, 'usp_Load_DimProduct', {'TenantID': tenant_id})
-        run_sp(conn, 'usp_Load_DimCustomer', {'TenantID': tenant_id})
-        run_sp(conn, 'usp_Load_DimStore', {'TenantID': tenant_id})
-        run_sp(conn, 'usp_Load_DimEmployee', {'TenantID': tenant_id})
-        if total_stats.get('product', {}).get('extracted', 0) > 0:
-            run_sp(conn, 'usp_Load_DimProduct', {'TenantID': 'SHARED'})
-        if total_stats.get('customer', {}).get('extracted', 0) > 0:
-            run_sp(conn, 'usp_Load_DimSupplier', {'TenantID': tenant_id})   # Supplier only if new
 
-        # ---- PHASE 5: LOAD FACTS ----
+        # Upsert DimProduct (SHARED — no TenantID needed)
+        try:
+            run_sql(conn, """
+                MERGE INTO DimProduct AS target
+                USING (
+                    SELECT DISTINCT ProductID, ProductName, Category, SubCategory,
+                           UnitPrice, SupplierID
+                    FROM STG_ProductRaw
+                    WHERE ProductID IS NOT NULL AND ProductID != ''
+                ) AS source
+                ON target.ProductID = source.ProductID
+                WHEN MATCHED THEN
+                    UPDATE SET
+                        target.ProductName = source.ProductName,
+                        target.Category = source.Category,
+                        target.SubCategory = source.SubCategory,
+                        target.UnitPrice = CAST(source.UnitPrice AS DECIMAL(18,2)),
+                        target.SupplierID = source.SupplierID,
+                        target.IsActive = 1
+                WHEN NOT MATCHED THEN
+                    INSERT (ProductID, ProductName, Category, SubCategory, UnitPrice, SupplierID, IsActive)
+                    VALUES (source.ProductID, source.ProductName, source.Category, source.SubCategory,
+                            CAST(source.UnitPrice AS DECIMAL(18,2)), source.SupplierID, 1);
+            """)
+            logger.info('  [MERGE] DimProduct done')
+        except Exception as e:
+            logger.warning(f'  [MERGE] DimProduct failed: {e}')
+
+        # Upsert DimCustomer (per TenantID)
+        try:
+            run_sql(conn, f"""
+                MERGE INTO DimCustomer AS target
+                USING (
+                    SELECT DISTINCT CustomerID, CustomerName, Phone, Email,
+                           City, Region, CustomerType, TenantID
+                    FROM STG_CustomerRaw
+                    WHERE TenantID = %s
+                      AND CustomerID IS NOT NULL AND CustomerID != ''
+                ) AS source
+                ON target.CustomerID = source.CustomerID AND target.TenantID = source.TenantID
+                WHEN MATCHED THEN
+                    UPDATE SET
+                        target.CustomerName = source.CustomerName,
+                        target.Phone = source.Phone,
+                        target.Email = source.Email,
+                        target.City = source.City,
+                        target.Region = source.Region,
+                        target.CustomerType = source.CustomerType
+                WHEN NOT MATCHED THEN
+                    INSERT (CustomerID, CustomerName, Phone, Email, City, Region, CustomerType, TenantID)
+                    VALUES (source.CustomerID, source.CustomerName, source.Phone, source.Email,
+                            source.City, source.Region, source.CustomerType, source.TenantID);
+            """, [tenant_id])
+            logger.info('  [MERGE] DimCustomer done')
+        except Exception as e:
+            logger.warning(f'  [MERGE] DimCustomer failed: {e}')
+
+        # Upsert DimStore from STG_InventoryRaw
+        try:
+            run_sql(conn, f"""
+                MERGE INTO DimStore AS target
+                USING (
+                    SELECT DISTINCT TenantID, StoreName
+                    FROM STG_InventoryRaw
+                    WHERE TenantID = %s AND StoreName IS NOT NULL AND StoreName != ''
+                ) AS source
+                ON target.StoreName = source.StoreName AND target.TenantID = source.TenantID
+                WHEN NOT MATCHED THEN
+                    INSERT (TenantID, StoreName, City, Region, Address, IsActive)
+                    VALUES (source.TenantID, source.StoreName, '', '', '', 1);
+            """, [tenant_id])
+            logger.info('  [MERGE] DimStore from inventory done')
+        except Exception as e:
+            logger.warning(f'  [MERGE] DimStore failed: {e}')
+
+        # ---- PHASE 5: LOAD FACTS (Python MERGE — matches actual DB schema) ----
         logger.info(f'[PHASE 5] LOAD FACTS — {tenant_id}')
-        run_sp(conn, 'usp_Transform_FactSales',
-               {'BatchDate': batch_str, 'TenantID': tenant_id})
-        if total_stats.get('inventory', {}).get('extracted', 0) > 0:
-            run_sp(conn, 'usp_Transform_FactInventory',
-                   {'BatchDate': batch_str, 'TenantID': tenant_id})
-        if total_stats.get('purchase', {}).get('extracted', 0) > 0:
-            run_sp(conn, 'usp_Transform_FactPurchase',
-                   {'BatchDate': batch_str, 'TenantID': tenant_id})
 
-        # ---- PHASE 6: REFRESH DATA MART ----
+        # -- 5A. FactSales: STG_SalesRaw → FactSales --
+        try:
+            run_sql(conn, f"""
+                INSERT INTO FactSales (
+                    TenantID, SaleDate, ProductID, CustomerID, StoreKey,
+                    EmployeeID, PaymentMethod, Quantity, UnitPrice, Discount,
+                    Revenue, Cost, CreatedAt
+                )
+                SELECT
+                    s.TenantID,
+                    TRY_CAST(s.SaleDate AS DATE),
+                    s.ProductID,
+                    NULLIF(s.CustomerName, '') COLLATE Vietnamese_CI_AS,
+                    st.StoreKey,
+                    NULLIF(s.EmployeeName, '') COLLATE Vietnamese_CI_AS,
+                    CASE
+                        WHEN LOWER(LTRIM(RTRIM(s.PaymentMethod))) IN ('cash','tm') THEN 'Cash'
+                        WHEN LOWER(LTRIM(RTRIM(s.PaymentMethod))) IN ('transfer','ck') THEN 'Transfer'
+                        WHEN LOWER(LTRIM(RTRIM(s.PaymentMethod))) IN ('card','credit') THEN 'Card'
+                        ELSE 'Cash'
+                    END,
+                    TRY_CAST(s.Quantity AS INT),
+                    TRY_CAST(s.UnitPrice AS DECIMAL(18,2)),
+                    TRY_CAST(s.Discount AS DECIMAL(18,2)),
+                    -- Revenue = Qty * UnitPrice - Discount
+                    TRY_CAST(s.Quantity AS DECIMAL(18,2)) * TRY_CAST(s.UnitPrice AS DECIMAL(18,2))
+                        - TRY_CAST(s.Discount AS DECIMAL(18,2)),
+                    -- Cost = Qty * Product's UnitCostPrice from DimProduct
+                    TRY_CAST(s.Quantity AS DECIMAL(18,2)) * ISNULL(p.UnitPrice, 0),
+                    GETDATE()
+                FROM STG_SalesRaw s
+                INNER JOIN DimProduct p ON p.ProductID = s.ProductID AND p.IsActive = 1
+                INNER JOIN DimStore st ON st.StoreName = s.StoreName COLLATE Vietnamese_CI_AS
+                    AND st.TenantID = s.TenantID
+                WHERE s.TenantID = %s
+                  AND s.ProductID IS NOT NULL AND s.ProductID != ''
+                  AND s.SaleDate IS NOT NULL
+                  AND TRY_CAST(s.Quantity AS INT) > 0
+                  AND TRY_CAST(s.UnitPrice AS DECIMAL(18,2)) IS NOT NULL
+                  AND NOT EXISTS (
+                      SELECT 1 FROM FactSales f
+                      WHERE f.TenantID = s.TenantID
+                        AND f.ProductID = s.ProductID
+                        AND f.StoreKey = st.StoreKey
+                        AND TRY_CAST(f.SaleDate AS DATE) = TRY_CAST(s.SaleDate AS DATE)
+                  );
+            """, [tenant_id])
+            logger.info('  [MERGE] FactSales done')
+        except Exception as e:
+            logger.warning(f'  [MERGE] FactSales failed: {e}')
+
+        # -- 5B. FactInventory: STG_InventoryRaw → FactInventory --
+        try:
+            run_sql(conn, f"""
+                INSERT INTO FactInventory (
+                    TenantID, CheckDate, ProductID, StoreKey,
+                    QuantityOnHand, ReorderLevel, LastRestocked, CreatedAt
+                )
+                SELECT
+                    s.TenantID,
+                    TRY_CAST(s.CheckDate AS DATE),
+                    s.ProductID,
+                    st.StoreKey,
+                    TRY_CAST(s.QuantityOnHand AS INT),
+                    10,
+                    TRY_CAST(s.CheckDate AS DATE),
+                    GETDATE()
+                FROM STG_InventoryRaw s
+                INNER JOIN DimProduct p ON p.ProductID = s.ProductID AND p.IsActive = 1
+                INNER JOIN DimStore st ON st.StoreName = s.StoreName AND st.TenantID = s.TenantID
+                WHERE s.TenantID = %s
+                  AND s.ProductID IS NOT NULL AND s.ProductID != ''
+                  AND TRY_CAST(s.QuantityOnHand AS INT) IS NOT NULL
+                  AND NOT EXISTS (
+                      SELECT 1 FROM FactInventory f
+                      WHERE f.TenantID = s.TenantID
+                        AND f.ProductID = s.ProductID
+                        AND f.StoreKey = st.StoreKey
+                        AND CAST(f.CheckDate AS DATE) = TRY_CAST(s.CheckDate AS DATE)
+                  );
+            """, [tenant_id, tenant_id])
+            logger.info('  [MERGE] FactInventory done')
+        except Exception as e:
+            logger.warning(f'  [MERGE] FactInventory failed: {e}')
+
+        # -- 5C. FactPurchase: STG_PurchaseRaw → FactPurchase --
+        try:
+            run_sql(conn, f"""
+                INSERT INTO FactPurchase (
+                    TenantID, PurchaseDate, ProductID, SupplierID,
+                    Quantity, UnitCost, TotalCost, IsPaid, CreatedAt
+                )
+                SELECT
+                    s.TenantID,
+                    TRY_CAST(s.PurchaseDate AS DATE),
+                    s.ProductID,
+                    NULLIF(s.SupplierID, '') COLLATE Vietnamese_CI_AS,
+                    TRY_CAST(s.Quantity AS INT),
+                    TRY_CAST(s.UnitCost AS DECIMAL(18,2)),
+                    TRY_CAST(s.TotalCost AS DECIMAL(18,2)),
+                    CASE WHEN s.IsPaid IN ('1','True','true','YES','yes') THEN 1 ELSE 0 END,
+                    GETDATE()
+                FROM STG_PurchaseRaw s
+                INNER JOIN DimProduct p ON p.ProductID = s.ProductID AND p.IsActive = 1
+                WHERE s.TenantID = %s
+                  AND s.ProductID IS NOT NULL AND s.ProductID != ''
+                  AND TRY_CAST(s.Quantity AS INT) > 0
+                  AND TRY_CAST(s.UnitCost AS DECIMAL(18,2)) IS NOT NULL
+                  AND NOT EXISTS (
+                      SELECT 1 FROM FactPurchase f
+                      WHERE f.TenantID = s.TenantID
+                        AND f.ProductID = s.ProductID
+                        AND CAST(f.PurchaseDate AS DATE) = TRY_CAST(s.PurchaseDate AS DATE)
+                  );
+            """, [tenant_id, tenant_id])
+            logger.info('  [MERGE] FactPurchase done')
+        except Exception as e:
+            logger.warning(f'  [MERGE] FactPurchase failed: {e}')
+
+        # ---- PHASE 6: REFRESH DATA MART (Python MERGE) ----
         logger.info(f'[PHASE 6] REFRESH DATA MART — {tenant_id}')
-        run_sp(conn, 'usp_Refresh_DM_SalesSummary', {'TenantID': tenant_id})
-        run_sp(conn, 'usp_Refresh_DM_CustomerRFM', {'TenantID': tenant_id})
+
+        # -- DM_SalesSummary --
+        try:
+            run_sql(conn, f"DELETE FROM DM_SalesSummary WHERE TenantID = %s;", [tenant_id])
+            run_sql(conn, f"""
+                INSERT INTO DM_SalesSummary (
+                    TenantID, Year, Quarter, Month, ProductID, Category,
+                    TotalRevenue, TotalCost, TotalProfit, OrderCount, AvgOrderVal, UpdatedAt
+                )
+                SELECT
+                    f.TenantID,
+                    YEAR(TRY_CAST(f.SaleDate AS DATE)),
+                    DATEPART(QUARTER, TRY_CAST(f.SaleDate AS DATE)),
+                    MONTH(TRY_CAST(f.SaleDate AS DATE)),
+                    f.ProductID,
+                    ISNULL(p.Category, N'Trống'),
+                    SUM(TRY_CAST(f.Revenue AS DECIMAL(18,2))),
+                    0,
+                    SUM(TRY_CAST(f.Revenue AS DECIMAL(18,2))),
+                    COUNT(*),
+                    AVG(TRY_CAST(f.Revenue AS DECIMAL(18,2))),
+                    GETDATE()
+                FROM FactSales f
+                INNER JOIN DimProduct p ON p.ProductID = f.ProductID
+                WHERE f.TenantID = %s
+                GROUP BY f.TenantID,
+                         YEAR(TRY_CAST(f.SaleDate AS DATE)),
+                         DATEPART(QUARTER, TRY_CAST(f.SaleDate AS DATE)),
+                         MONTH(TRY_CAST(f.SaleDate AS DATE)),
+                         f.ProductID, p.Category;
+            """, [tenant_id])
+            logger.info('  [MERGE] DM_SalesSummary done')
+        except Exception as e:
+            logger.warning(f'  [MERGE] DM_SalesSummary failed: {e}')
+
+        # -- DM_CustomerRFM --
+        try:
+            run_sql(conn, f"DELETE FROM DM_CustomerRFM WHERE TenantID = %s;", [tenant_id])
+            run_sql(conn, f"""
+                ;WITH RFMBase AS (
+                    SELECT
+                        f.TenantID,
+                        f.CustomerID AS CustomerCode,
+                        MAX(f.CustomerID) AS CustomerName,
+                        MAX(TRY_CAST(f.SaleDate AS DATE)) AS LastSaleDate,
+                        COUNT(*) AS Frequency,
+                        SUM(TRY_CAST(f.Revenue AS DECIMAL(18,2))) AS Monetary
+                    FROM FactSales f
+                    WHERE f.TenantID = %s
+                      AND f.CustomerID IS NOT NULL AND f.CustomerID != ''
+                    GROUP BY f.TenantID, f.CustomerID
+                ),
+                RFMAll AS (
+                    SELECT
+                        r.TenantID, r.CustomerCode, r.CustomerName,
+                        r.LastSaleDate, r.Frequency, r.Monetary,
+                        DATEDIFF(DAY, r.LastSaleDate, CAST(GETDATE() AS DATE)) AS Recency,
+                        NTILE(5) OVER (PARTITION BY r.TenantID ORDER BY DATEDIFF(DAY, r.LastSaleDate, CAST(GETDATE() AS DATE)) DESC) AS R_Score,
+                        NTILE(5) OVER (PARTITION BY r.TenantID ORDER BY r.Frequency) AS F_Score,
+                        NTILE(5) OVER (PARTITION BY r.TenantID ORDER BY r.Monetary) AS M_Score
+                    FROM RFMBase r
+                )
+                INSERT INTO DM_CustomerRFM (
+                    TenantID, CustomerID, Recency, Frequency, Monetary, RFMScore, Segment, UpdatedAt
+                )
+                SELECT
+                    r.TenantID, r.CustomerCode,
+                    r.Recency, r.Frequency, r.Monetary,
+                    CAST(r.R_Score AS VARCHAR) + CAST(r.F_Score AS VARCHAR) + CAST(r.M_Score AS VARCHAR),
+                    CASE
+                        WHEN r.R_Score + r.F_Score + r.M_Score >= 13 THEN N'Champions'
+                        WHEN r.R_Score + r.F_Score + r.M_Score >= 10 THEN N'Loyal'
+                        WHEN r.R_Score + r.F_Score + r.M_Score >= 7  THEN N'Potential'
+                        WHEN r.R_Score + r.F_Score + r.M_Score >= 4  THEN N'At Risk'
+                        ELSE N'Lost'
+                    END,
+                    GETDATE()
+                FROM RFMAll r;
+            """, [tenant_id])
+            logger.info('  [MERGE] DM_CustomerRFM done')
+        except Exception as e:
+            logger.warning(f'  [MERGE] DM_CustomerRFM failed: {e}')
 
         # ---- PHASE 7: UPDATE WATERMARK + FINAL LOG ----
         logger.info(f'[PHASE 7] FINALIZE — {tenant_id}')

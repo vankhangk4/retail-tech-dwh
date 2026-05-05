@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký — DWH Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-box">
+            <!-- Logo / Header -->
+            <div class="login-header">
+                <div class="logo-icon">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <rect width="48" height="48" rx="12" fill="#2563EB"/>
+                        <rect x="10" y="14" width="12" height="12" rx="2" fill="white"/>
+                        <rect x="26" y="14" width="12" height="12" rx="2" fill="white" opacity="0.5"/>
+                        <rect x="10" y="28" width="12" height="12" rx="2" fill="white" opacity="0.5"/>
+                        <rect x="26" y="28" width="12" height="12" rx="2" fill="white"/>
+                    </svg>
+                </div>
+                <h1>Tạo tài khoản mới</h1>
+                <p>Đăng ký để truy cập Data Warehouse</p>
+            </div>
+
+            <!-- Register Form -->
+            <!-- Role description cards -->
+            <div style="margin-bottom:24px;">
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                    <div style="text-align:center;padding:10px 8px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;">
+                        <div style="font-size:18px;margin-bottom:4px;">👁</div>
+                        <div style="font-size:12px;font-weight:700;color:#1D4ED8;">Viewer</div>
+                        <div style="font-size:10px;color:#3B82F6;margin-top:2px;">Xem dashboard</div>
+                    </div>
+                    <div style="text-align:center;padding:10px 8px;background:#FEF9C3;border:1px solid #FDE047;border-radius:8px;">
+                        <div style="font-size:18px;margin-bottom:4px;">🛡</div>
+                        <div style="font-size:12px;font-weight:700;color:#854D0E;">Admin</div>
+                        <div style="font-size:10px;color:#CA8A04;margin-top:2px;">Quản lý tenant</div>
+                    </div>
+                    <div style="text-align:center;padding:10px 8px;background:#F3E8FF;border:1px solid #C084FC;border-radius:8px;opacity:0.6;">
+                        <div style="font-size:18px;margin-bottom:4px;">⚙</div>
+                        <div style="font-size:12px;font-weight:700;color:#6B21A8;">Superadmin</div>
+                        <div style="font-size:10px;color:#9333EA;margin-top:2px;">Hệ thống (admin tạo)</div>
+                    </div>
+                </div>
+            </div>
+
+            <form id="registerForm" class="login-form" novalidate>
+                <div class="form-group">
+                    <label for="username">Tên đăng nhập</label>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        placeholder="VD: nguyen.van.a"
+                        autocomplete="username"
+                        required
+                        maxlength="100"
+                        pattern="[a-zA-Z0-9_]+"
+                    />
+                    <span class="field-error" id="usernameError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Mật khẩu</label>
+                    <div class="password-wrapper">
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Ít nhất 6 ký tự"
+                            autocomplete="new-password"
+                            required
+                            minlength="6"
+                        />
+                        <button type="button" class="toggle-password" aria-label="Hiện/Ẩn mật khẩu">
+                            <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="password-strength" id="passwordStrength"></div>
+                    <span class="field-error" id="passwordError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Xác nhận mật khẩu</label>
+                    <div class="password-wrapper">
+                        <input
+                            type="password"
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            placeholder="Nhập lại mật khẩu"
+                            autocomplete="new-password"
+                            required
+                        />
+                        <button type="button" class="toggle-password2" aria-label="Hiện/Ẩn mật khẩu">
+                            <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <span class="field-error" id="confirmError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="role">Vai trò <small style="color:#9ca3af;font-weight:400;">(chọn quyền hạn)</small></label>
+                    <select id="role" name="role" required style="
+                        width: 100%;
+                        padding: 12px 16px;
+                        border: 1.5px solid #e5e7eb;
+                        border-radius: 8px;
+                        font-size: 15px;
+                        outline: none;
+                        background: white;
+                        cursor: pointer;
+                        transition: border-color 0.2s, box-shadow 0.2s;
+                    " onfocus="this.style.borderColor='#2563EB';this.style.boxShadow='0 0 0 3px rgba(37,99,235,0.1)'" onblur="this.style.borderColor='#e5e7eb';this.style.boxShadow='none'">
+                        <option value="viewer" selected>Viewer — Xem dashboard (mặc định)</option>
+                        <option value="admin">Admin — Quản lý tenant</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="tenant_id">Cửa hàng <small style="color:#9ca3af;font-weight:400;">(chọn tenant của bạn)</small></label>
+                    <select id="tenant_id" name="tenant_id" required style="
+                        width: 100%;
+                        padding: 12px 16px;
+                        border: 1.5px solid #e5e7eb;
+                        border-radius: 8px;
+                        font-size: 15px;
+                        outline: none;
+                        background: white;
+                        cursor: pointer;
+                        transition: border-color 0.2s, box-shadow 0.2s;
+                    " onfocus="this.style.borderColor='#2563EB';this.style.boxShadow='0 0 0 3px rgba(37,99,235,0.1)'" onblur="this.style.borderColor='#e5e7eb';this.style.boxShadow='none'">
+                        <option value="">— Đang tải... —</option>
+                    </select>
+                    <span class="field-error" id="tenantError"></span>
+                </div>
+
+                <div class="alert alert-danger" id="registerAlert" style="display:none;"></div>
+
+                <button type="submit" class="btn-login" id="registerBtn">
+                    <span class="btn-text">Đăng ký</span>
+                    <span class="btn-loader" style="display:none;">
+                        <svg class="spinner" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="30 70"/>
+                        </svg>
+                    </span>
+                </button>
+            </form>
+
+            <!-- Back to login -->
+            <div class="login-footer">
+                <p>Đã có tài khoản?
+                    <a href="/login" style="color:#2563EB;font-weight:600;text-decoration:none;margin-left:4px;">
+                        Đăng nhập ngay
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load tenants on page load
+        (async function loadTenants() {
+            try {
+                const resp = await fetch('/api/tenants', { method: 'GET' });
+                if (!resp.ok) throw new Error();
+                const data = await resp.json();
+                const tenants = data.tenants || [];
+                const select = document.getElementById('tenant_id');
+                if (!tenants.length) {
+                    select.innerHTML = '<option value="">Chưa có cửa hàng nào — liên hệ admin</option>';
+                    return;
+                }
+                select.innerHTML = tenants
+                    .filter(t => t.is_active)
+                    .map(t => `<option value="${t.tenant_id}">${t.tenant_id} — ${t.tenant_name}</option>`)
+                    .join('');
+            } catch (e) {
+                document.getElementById('tenant_id').innerHTML =
+                    '<option value="">Không tải được danh sách cửa hàng</option>';
+            }
+        })();
+
+        // Toggle password visibility
+        document.querySelector('.toggle-password').addEventListener('click', function () {
+            const pw = document.getElementById('password');
+            pw.type = pw.type === 'password' ? 'text' : 'password';
+        });
+        document.querySelector('.toggle-password2').addEventListener('click', function () {
+            const pw = document.getElementById('confirmPassword');
+            pw.type = pw.type === 'password' ? 'text' : 'password';
+        });
+
+        // Password strength indicator
+        document.getElementById('password').addEventListener('input', function () {
+            const val = this.value;
+            const strengthEl = document.getElementById('passwordStrength');
+            let strength = 0;
+            if (val.length >= 6) strength++;
+            if (val.length >= 10) strength++;
+            if (/[A-Z]/.test(val)) strength++;
+            if (/[0-9]/.test(val)) strength++;
+            if (/[^a-zA-Z0-9]/.test(val)) strength++;
+            const colors = ['#EF4444', '#F59E0B', '#F59E0B', '#22C55E', '#22C55E'];
+            const labels = ['', 'Yếu', 'Trung bình', 'Khá', 'Mạnh'];
+            if (!val) {
+                strengthEl.innerHTML = '';
+                return;
+            }
+            strengthEl.innerHTML = `
+                <div style="margin-top:6px;">
+                    <div style="display:flex;gap:4px;margin-bottom:2px;">
+                        ${[1,2,3,4].map(i => `<div style="flex:1;height:3px;border-radius:2px;background:${i<=strength?colors[strength]:'#E5E7EB'}"></div>`).join('')}
+                    </div>
+                    <small style="color:${colors[strength]||'#9CA3AF'};font-size:11px;">${labels[strength]||''}</small>
+                </div>`;
+        });
+
+        // Form submit
+        document.getElementById('registerForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const confirm   = document.getElementById('confirmPassword').value;
+            const role      = document.getElementById('role').value;
+            const tenant_id = document.getElementById('tenant_id').value;
+
+            // Clear errors
+            ['usernameError','passwordError','confirmError','tenantError'].forEach(id => {
+                document.getElementById(id).textContent = '';
+            });
+            document.getElementById('registerAlert').style.display = 'none';
+
+            // Validate
+            let hasError = false;
+            if (!username) {
+                document.getElementById('usernameError').textContent = 'Vui lòng nhập tên đăng nhập';
+                hasError = true;
+            } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                document.getElementById('usernameError').textContent = 'Chỉ chấp nhận chữ cái, số và dấu gạch dưới';
+                hasError = true;
+            }
+            if (!password) {
+                document.getElementById('passwordError').textContent = 'Vui lòng nhập mật khẩu';
+                hasError = true;
+            } else if (password.length < 6) {
+                document.getElementById('passwordError').textContent = 'Mật khẩu phải ít nhất 6 ký tự';
+                hasError = true;
+            }
+            if (!confirm) {
+                document.getElementById('confirmError').textContent = 'Vui lòng xác nhận mật khẩu';
+                hasError = true;
+            } else if (password !== confirm) {
+                document.getElementById('confirmError').textContent = 'Mật khẩu xác nhận không khớp';
+                hasError = true;
+            }
+            if (!tenant_id) {
+                document.getElementById('tenantError').textContent = 'Vui lòng chọn cửa hàng';
+                hasError = true;
+            }
+            if (hasError) return;
+
+            // Show loading
+            const btn = document.getElementById('registerBtn');
+            btn.disabled = true;
+            btn.querySelector('.btn-text').style.display = 'none';
+            btn.querySelector('.btn-loader').style.display = 'inline-block';
+
+            try {
+                const resp = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, role, tenant_id }),
+                });
+
+                const data = await resp.json();
+
+                if (resp.ok && data.success) {
+                    // Auto-login after registration
+                    const loginResp = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password }),
+                    });
+                    const loginData = await loginResp.json();
+                    if (loginData.success) {
+                        window.location.href = '/dashboard';
+                    } else {
+                        window.location.href = '/login';
+                    }
+                } else {
+                    const alertEl = document.getElementById('registerAlert');
+                    alertEl.textContent = data.detail || data.message || 'Đăng ký thất bại. Vui lòng thử lại.';
+                    alertEl.style.display = 'block';
+                }
+            } catch (err) {
+                document.getElementById('registerAlert').textContent =
+                    'Không kết nối được server. Vui lòng thử lại.';
+                document.getElementById('registerAlert').style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.querySelector('.btn-text').style.display = 'inline-block';
+                btn.querySelector('.btn-loader').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

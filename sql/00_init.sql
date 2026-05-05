@@ -28,6 +28,7 @@ BEGIN
         TenantName    NVARCHAR(200) NOT NULL,
         FilePath      NVARCHAR(500) NULL,
         IsActive      BIT          NOT NULL DEFAULT 1,
+        ExpiresAt     DATETIME2    NULL,
         CreatedAt     DATETIME2    NOT NULL DEFAULT GETDATE()
     );
     PRINT 'Created: Tenants';
@@ -42,10 +43,33 @@ BEGIN
         TenantID      VARCHAR(20) NULL,
         Role          VARCHAR(20) NOT NULL DEFAULT 'viewer',
         IsActive      BIT          NOT NULL DEFAULT 1,
-        CreatedAt     DATETIME2    NOT NULL DEFAULT GETDATE()
+        CreatedAt     DATETIME2    NOT NULL DEFAULT GETDATE(),
+        CONSTRAINT CHK_AppUsers_Role CHECK (Role IN ('admin', 'viewer', 'superadmin'))
     );
     PRINT 'Created: AppUsers';
 END
+
+-- ============================================================
+-- TENANTS: STORE_HN, STORE_HCM
+-- ============================================================
+IF NOT EXISTS (SELECT * FROM Tenants WHERE TenantID = 'STORE_HN')
+BEGIN
+    INSERT INTO Tenants (TenantID, TenantName, FilePath, IsActive)
+    VALUES ('STORE_HN', N'Cửa hàng Hà Nội', './data/STORE_HN/', 1);
+END
+
+IF NOT EXISTS (SELECT * FROM Tenants WHERE TenantID = 'STORE_HCM')
+BEGIN
+    INSERT INTO Tenants (TenantID, TenantName, FilePath, IsActive)
+    VALUES ('STORE_HCM', N'Cửa hàng Hồ Chí Minh', './data/STORE_HCM/', 1);
+END
+PRINT 'Created: default tenants';
+
+-- ============================================================
+-- USER: Default superadmin được tạo bởi Python bootstrap_users()
+-- khi API start, đọc từ env: DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASS, DEFAULT_ADMIN_ROLE
+-- Script này không insert gì.
+-- ============================================================
 
 -- ============================================================
 -- SCHEMA: 02_create_dimensions.sql
@@ -861,6 +885,25 @@ PRINT 'Created: v_DM_SalesSummary_ByTenant';
 -- ============================================================
 EXEC usp_Load_DimDate @StartDate = '2015-01-01', @EndDate = '2030-12-31';
 PRINT 'DimDate populated (2015-2030)';
+
+-- ============================================================
+-- BOOTSTRAP: Create default admin user
+-- NOTE: Hash = bcrypt(base64(SHA2_256(password))).
+--       Password: admin / M1tjtnrx
+--       Hash nay tuong thich voi passlib.verify(plain, hash) trong API.
+--       Neu can doi: thay the gia tri PasswordHash ben duoi roi chay lai script.
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM AppUsers WHERE Username = 'admin')
+BEGIN
+    DECLARE @AdminHash VARCHAR(255) = '$2b$12$OWPB.4o0QUxQchp2.qM1QOCumg5nZlJXpvO2Rerpqb74sNW2/Ovym';
+    INSERT INTO AppUsers (Username, PasswordHash, TenantID, Role, IsActive)
+    VALUES ('admin', @AdminHash, NULL, 'superadmin', 1);
+    PRINT 'Bootstrap: Created admin user (superadmin)';
+END
+ELSE
+BEGIN
+    PRINT 'Bootstrap: admin user already exists — skipping';
+END
 
 PRINT '============================================================';
 PRINT 'HOAN TAT TAO DATA WAREHOUSE - MULTI-TENANT';

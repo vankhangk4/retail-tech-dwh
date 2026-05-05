@@ -1,6 +1,8 @@
 -- ============================================================
 -- FILE: sql/sp/usp_Load_DimCustomer.sql
--- Mô tả: SCD Type 2 cho DimCustomer (Có @TenantID)
+-- Mô tả: Upsert DimCustomer từ STG_CustomerRaw (theo TenantID)
+-- Schema: DimCustomer(CustomerKey, CustomerID, CustomerName, Phone, Email, City, Region, CustomerType, TenantID, CreatedAt)
+-- STG:   STG_CustomerRaw(CustomerID, CustomerName, Phone, Email, City, Region, CustomerType, LoadStatus, ErrorMessage, CreatedAt, TenantID)
 -- ============================================================
 
 IF EXISTS (SELECT * FROM sys.procedures WHERE name = 'usp_Load_DimCustomer')
@@ -10,65 +12,37 @@ END
 GO
 
 CREATE PROCEDURE usp_Load_DimCustomer
-    @TenantID VARCHAR(20)
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF NOT EXISTS (SELECT 1 FROM Tenants WHERE TenantID = @TenantID AND IsActive = 1)
-    BEGIN
-        RAISERROR('Tenant khong hop le hoac khong hoat dong.', 16, 1);
-        RETURN;
-    END
-
-    -- Bước 1: Đóng bản ghi cũ khi thông tin thay đổi (SCD Type 2)
+    -- Upsert DimCustomer
     UPDATE dc
-    SET dc.ExpirationDate = DATEADD(DAY, -1, CAST(GETDATE() AS DATE)),
-        dc.IsCurrent = 0
+    SET dc.CustomerName  = stg.CustomerName,
+        dc.Phone         = stg.Phone,
+        dc.Email          = stg.Email,
+        dc.City           = stg.City,
+        dc.Region          = stg.Region,
+        dc.CustomerType   = stg.CustomerType
     FROM DimCustomer dc
-    INNER JOIN STG_CustomerRaw s
-        ON s.MaKH = dc.CustomerCode AND dc.TenantID = @TenantID
-    WHERE dc.IsCurrent = 1
-      AND dc.TenantID = @TenantID
-      AND (
-          dc.FullName <> s.HoTen
-          OR dc.CustomerType <> s.LoaiKH
-          OR dc.City <> s.ThanhPho
-      );
+    INNER JOIN STG_CustomerRaw stg ON stg.CustomerID = dc.CustomerID AND stg.TenantID = dc.TenantID;
 
-    -- Bước 2: Chèn bản ghi mới (khách hàng mới hoặc thay đổi thông tin)
-    INSERT INTO DimCustomer (
-        CustomerCode, TenantID, FullName, Gender,
-        City, CustomerType, LoyaltyPoint, MemberSince,
-        IsActive, EffectiveDate, ExpirationDate, IsCurrent,
-        Phone, Email, Province, DateOfBirth
-    )
+    INSERT INTO DimCustomer (CustomerID, CustomerName, Phone, Email, City, Region, CustomerType, TenantID)
     SELECT
-        s.MaKH,
-        @TenantID,
-        s.HoTen,
-        s.GioiTinh,
-        s.ThanhPho,
-        s.LoaiKH,
-        ISNULL(s.DiemTichLuy, 0),
-        s.NgayDangKy,
-        1,
-        CAST(GETDATE() AS DATE),
-        NULL,
-        1,
-        s.SoDienThoai,
-        s.Email,
-        s.TinhTP,
-        s.NgaySinh
-    FROM STG_CustomerRaw s
-    WHERE s.TenantID = @TenantID
-      AND NOT EXISTS (
-          SELECT 1 FROM DimCustomer dc
-          WHERE dc.CustomerCode = s.MaKH
-            AND dc.TenantID = @TenantID
-            AND dc.IsCurrent = 1
-      );
+        stg.CustomerID,
+        stg.CustomerName,
+        stg.Phone,
+        stg.Email,
+        stg.City,
+        stg.Region,
+        stg.CustomerType,
+        stg.TenantID
+    FROM STG_CustomerRaw stg
+    WHERE NOT EXISTS (
+        SELECT 1 FROM DimCustomer dc
+        WHERE dc.CustomerID = stg.CustomerID AND dc.TenantID = stg.TenantID
+    );
+
+    PRINT 'usp_Load_DimCustomer: Done';
 END;
 GO
-
-PRINT 'Created: usp_Load_DimCustomer';

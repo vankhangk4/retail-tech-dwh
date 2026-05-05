@@ -61,7 +61,7 @@ def validate_tenant(tenant_id: str) -> dict:
     conn = get_mssql_conn()
     cursor = conn.cursor(as_dict=True)
     cursor.execute(
-        'SELECT TenantID, TenantName, FilePath, IsActive FROM Tenants WHERE TenantID = %s',
+        'SELECT TenantID, TenantName, FilePath, IsActive, ExpiresAt FROM Tenants WHERE TenantID = %s',
         (tenant_id,)
     )
     row = cursor.fetchone()
@@ -70,6 +70,15 @@ def validate_tenant(tenant_id: str) -> dict:
         raise HTTPException(404, detail=f'Tenant "{tenant_id}" khong ton tai')
     if not row['IsActive']:
         raise HTTPException(400, detail=f'Tenant "{tenant_id}" khong con hoat dong')
+    # Check tenant expiration
+    if row['ExpiresAt']:
+        from datetime import datetime, timezone
+        now_utc = datetime.now(timezone.utc)
+        exp_utc = row['ExpiresAt']
+        if exp_utc.tzinfo is None:
+            exp_utc = exp_utc.replace(tzinfo=timezone.utc)
+        if now_utc > exp_utc:
+            raise HTTPException(403, detail=f'Tenant "{tenant_id}" da het han vao {exp_utc.strftime("%d/%m/%Y %H:%M")} — khong the truy cap')
     return row
 
 

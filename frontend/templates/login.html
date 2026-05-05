@@ -72,23 +72,11 @@
                 </button>
             </form>
 
-            <!-- Demo accounts -->
-            <div class="demo-accounts">
-                <p class="demo-title">Tài khoản demo</p>
-                <div class="demo-list">
-                    <button class="demo-btn" onclick="fillDemo('admin', '{{ demo_admin }}')">
-                        <span class="demo-role">Admin</span>
-                        <span class="demo-info">Xem toàn bộ dữ liệu</span>
-                    </button>
-                    <button class="demo-btn" onclick="fillDemo('manager_hn', '{{ demo_manager_hn }}')">
-                        <span class="demo-role">STORE_HN</span>
-                        <span class="demo-info">Chỉ xem Hà Nội</span>
-                    </button>
-                    <button class="demo-btn" onclick="fillDemo('manager_hcm', '{{ demo_manager_hcm }}')">
-                        <span class="demo-role">STORE_HCM</span>
-                        <span class="demo-info">Chỉ xem HCM</span>
-                    </button>
-                </div>
+            <!-- Register link -->
+            <div style="text-align:center;margin-bottom:20px;">
+                <a href="/register" style="color:#2563EB;font-weight:600;text-decoration:none;font-size:14px;">
+                    Chưa có tài khoản? Đăng ký ngay
+                </a>
             </div>
 
             <!-- Footer -->
@@ -112,13 +100,6 @@
             passwordInput.type = type;
             this.classList.toggle('showing');
         });
-
-        // Fill demo credentials
-        function fillDemo(username, password) {
-            usernameInput.value = username;
-            passwordInput.value = password;
-            alertBox.style.display = 'none';
-        }
 
         // Form submit
         form.addEventListener('submit', async function (e) {
@@ -159,10 +140,10 @@
 
                 if (data.success) {
                     // Redirect based on role
-                    if (data.role === 'admin') {
-                        window.location.href = '/dashboard?role=admin';
+                    if (data.role === 'superadmin' || data.role === 'admin') {
+                        window.location.href = '/dashboard';
                     } else {
-                        window.location.href = '/dashboard?role=viewer';
+                        window.location.href = '/dashboard';
                     }
                 } else {
                     alertBox.textContent = data.message || 'Sai tai khoan hoac mat khau';

@@ -19,7 +19,8 @@ from pydantic import BaseModel
 
 from api.models import (
     LoginRequest, LoginResponse, UserInfo,
-    DashboardTokenResponse, TokenPayload
+    DashboardTokenResponse, TokenPayload,
+    RegisterRequest,
 )
 
 # ---- Configuration ----
@@ -41,28 +42,6 @@ logger = logging.getLogger(__name__)
 # ---- Router ----
 router = APIRouter(prefix='/auth', tags=['Authentication'])
 
-
-# ============================================================
-# USER REGISTRY — tất cả credentials từ .env
-# Format: APP_{USERNAME}_HASH=bcrypt_hash
-# ============================================================
-APP_USERS = {
-    'admin': {
-        'password': 'Admin@1234',
-        'tenant_id': None,
-        'role': 'admin',
-    },
-    'manager_hn': {
-        'password': 'Pass@HN123',
-        'tenant_id': 'STORE_HN',
-        'role': 'viewer',
-    },
-    'manager_hcm': {
-        'password': 'Pass@HCM123',
-        'tenant_id': 'STORE_HCM',
-        'role': 'viewer',
-    },
-}
 
 # ---- Helpers ----
 
@@ -183,36 +162,43 @@ def bootstrap_tenants():
 
 
 def bootstrap_users():
-    """Tạo/upsert user từ APP_USERS vào bảng AppUsers (chạy 1 lần khi start)."""
+    """Upsert user từ env vào bảng AppUsers khi API start.
+
+    Đọc từ env: DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASS, DEFAULT_ADMIN_ROLE.
+    Nếu env không có giá trị → bỏ qua (không tạo user mặc định trong code).
+    """
     conn = get_mssql_conn()
     cursor = conn.cursor()
 
     try:
-        for username, info in APP_USERS.items():
-            password_hash = hash_password(info['password'])
+        username  = os.environ.get('DEFAULT_ADMIN_USER', '').strip()
+        password  = os.environ.get('DEFAULT_ADMIN_PASS', '').strip()
+        role      = os.environ.get('DEFAULT_ADMIN_ROLE', 'superadmin').strip()
 
+        if not username or not password:
+            logger.info('[BOOTSTRAP] DEFAULT_ADMIN_USER/PASS not set in env — skipping user bootstrap')
+            return
+
+        password_hash = hash_password(password)
+
+        cursor.execute('SELECT UserID FROM AppUsers WHERE Username = %s', (username,))
+        row = cursor.fetchone()
+
+        if row:
             cursor.execute(
-                'SELECT UserID FROM AppUsers WHERE Username = %s',
-                (username,)
+                'UPDATE AppUsers SET PasswordHash = %s, Role = %s, IsActive = 1 WHERE Username = %s',
+                (password_hash, role, username)
             )
-            row = cursor.fetchone()
+            logger.info(f'[BOOTSTRAP] Updated user: {username}')
+        else:
+            cursor.execute(
+                'INSERT INTO AppUsers (Username, PasswordHash, TenantID, Role, IsActive) VALUES (%s, %s, %s, %s, 1)',
+                (username, password_hash, None, role)
+            )
+            logger.info(f'[BOOTSTRAP] Created user: {username}')
 
-            if row:
-                cursor.execute(
-                    'UPDATE AppUsers SET PasswordHash = %s, TenantID = %s, Role = %s, IsActive = 1 WHERE Username = %s',
-                    (password_hash, info['tenant_id'], info['role'], username)
-                )
-                logger.info(f'[BOOTSTRAP] Updated user: {username}')
-            else:
-                cursor.execute(
-                    'INSERT INTO AppUsers (Username, PasswordHash, TenantID, Role, IsActive) VALUES (%s, %s, %s, %s, 1)',
-                    (username, password_hash, info['tenant_id'], info['role'])
-                )
-                logger.info(f'[BOOTSTRAP] Created user: {username}')
-
-            conn.commit()
-
-        logger.info('[BOOTSTRAP] All users synced to AppUsers table')
+        conn.commit()
+        logger.info('[BOOTSTRAP] User synced to AppUsers table')
 
     except Exception as e:
         logger.warning(f'[BOOTSTRAP] DB sync skipped: {e}')
@@ -262,40 +248,92 @@ def run_bootstrap():
 
 # ---- Endpoints ----
 
+@router.post('/register')
+def register(req: RegisterRequest):
+    """Đăng ký tài khoản mới — chỉ viewer hoặc admin (superadmin bị chặn)."""
+    username  = req.username.strip()
+    password  = req.password
+    role      = req.role or 'viewer'
+    tenant_id = req.tenant_id.strip() if req.tenant_id else None
+
+    # Chỉ cho phép viewer hoặc admin — superadmin phải do admin tạo
+    if role not in ('viewer', 'admin'):
+        raise HTTPException(400, detail='Chi cho phep dang ky vai tro viewer hoac admin')
+
+    # Validate username: chỉ chữ, số, dấu gạch dưới
+    import re
+    if not re.match(r'^[a-zA-Z0-9_]+$', username):
+        raise HTTPException(400, detail='Username chi chap nhan chu cai, so va dau gach duoi')
+
+    # Validate tenant tồn tại và đang hoạt động
+    conn_tenant = get_mssql_conn()
+    cursor_tenant = conn_tenant.cursor(as_dict=True)
+    try:
+        cursor_tenant.execute(
+            'SELECT TenantID, IsActive, ExpiresAt FROM Tenants WHERE TenantID = %s',
+            (tenant_id,)
+        )
+        t_row = cursor_tenant.fetchone()
+        if not t_row:
+            raise HTTPException(400, detail=f'Tenant "{tenant_id}" khong ton tai')
+        if not t_row['IsActive']:
+            raise HTTPException(400, detail=f'Tenant "{tenant_id}" da bi vo hieu hoa')
+        # Check expiration
+        if t_row['ExpiresAt']:
+            now = datetime.now(timezone.utc)
+            exp = t_row['ExpiresAt']
+            if exp.tzinfo is None:
+                exp = exp.replace(tzinfo=timezone.utc)
+            if now > exp:
+                raise HTTPException(400, detail=f'Tenant "{tenant_id}" da het han — khong the dang ky')
+    finally:
+        conn_tenant.close()
+
+    conn = get_mssql_conn()
+    cursor = conn.cursor()
+    try:
+        # Kiểm tra username đã tồn tại chưa
+        cursor.execute('SELECT UserID FROM AppUsers WHERE Username = %s', (username,))
+        if cursor.fetchone():
+            raise HTTPException(409, detail='Ten dang nhap da ton tai')
+
+        # Nếu role = admin, kiểm tra xem có user admin nào cho tenant này chưa
+        if role == 'admin':
+            cursor.execute(
+                'SELECT UserID FROM AppUsers WHERE TenantID = %s AND Role = %s',
+                (tenant_id, 'admin')
+            )
+            if cursor.fetchone():
+                raise HTTPException(403, detail='Tenant nay da co admin. Chi duoc phep tao 1 admin cho moi tenant.')
+
+        password_hash = hash_password(password)
+        cursor.execute(
+            'INSERT INTO AppUsers (Username, PasswordHash, TenantID, Role, IsActive) '
+            'VALUES (%s, %s, %s, %s, 1)',
+            (username, password_hash, tenant_id, role)
+        )
+        conn.commit()
+        logger.info(f'[REGISTER] User created: {username} | role={role} | tenant={tenant_id}')
+        return {'success': True, 'message': f'Tai khoan "{username}" da duoc tao thanh cong'}
+    finally:
+        conn.close()
+
+
 @router.post('/login', response_model=LoginResponse)
 def login(req: LoginRequest):
-    """
-    Đăng nhập — ưu tiên APP_USERS (demo), sau đó check AppUsers table (user tạo từ admin).
-    """
+    """Đăng nhập — verify qua AppUsers table (bcrypt)."""
     username = req.username.strip()
     password = req.password
 
-    # Ưu tiên 1: Check APP_USERS (demo users hardcoded)
-    if username in APP_USERS:
-        user_info = APP_USERS[username]
-        if password != user_info['password']:
-            logger.warning(f'Login failed: wrong password — {username}')
-            raise HTTPException(401, detail='Sai tai khoan hoac mat khau')
-        user_id = get_user_id_from_db(username)
-        if user_id is None:
-            import hashlib
-            user_id = int(hashlib.md5(username.encode()).hexdigest()[:8], 16) % 100000
-        tenant_id = user_info['tenant_id']
-        role = user_info['role']
-        logger.info(f'Login success (APP_USERS): {username} | tenant={tenant_id} | role={role}')
-    else:
-        # Ưu tiên 2: Check AppUsers table (user tạo từ admin panel)
-        conn = get_mssql_conn()
-        cursor = conn.cursor(as_dict=True)
-        try:
-            cursor.execute(
-                'SELECT UserID, Username, PasswordHash, TenantID, Role, IsActive '
-                'FROM AppUsers WHERE Username = %s',
-                (username,)
-            )
-            row = cursor.fetchone()
-        finally:
-            conn.close()
+    conn = get_mssql_conn()
+    cursor = conn.cursor(as_dict=True)
+    try:
+        cursor.execute(
+            'SELECT UserID, Username, PasswordHash, TenantID, Role, IsActive '
+            'FROM AppUsers WHERE Username = %s',
+            (username,)
+        )
+        row = cursor.fetchone()
 
         if not row:
             logger.warning(f'Login failed: user not found — {username}')
@@ -305,14 +343,36 @@ def login(req: LoginRequest):
             logger.warning(f'Login failed: user inactive — {username}')
             raise HTTPException(403, detail='Tai khoan bi khoa')
 
+        tenant_id = row['TenantID']
+
+        # Check tenant expiration
+        if tenant_id:
+            conn_check = get_mssql_conn()
+            cursor_check = conn_check.cursor(as_dict=True)
+            cursor_check.execute(
+                'SELECT ExpiresAt FROM Tenants WHERE TenantID = %s',
+                (tenant_id,)
+            )
+            tenant_row = cursor_check.fetchone()
+            conn_check.close()
+            if tenant_row and tenant_row['ExpiresAt']:
+                now_utc = datetime.now(timezone.utc)
+                exp_utc = tenant_row['ExpiresAt']
+                if exp_utc.tzinfo is None:
+                    exp_utc = exp_utc.replace(tzinfo=timezone.utc)
+                if now_utc > exp_utc:
+                    logger.warning(f'Login blocked: tenant {tenant_id} expired at {tenant_row["ExpiresAt"]}')
+                    raise HTTPException(403, detail=f'Tenant "{tenant_id}" da het han vao {exp_utc.strftime("%d/%m/%Y %H:%M")} — khong the dang nhap')
+
         if not verify_password(password, row['PasswordHash']):
             logger.warning(f'Login failed: wrong password — {username}')
             raise HTTPException(401, detail='Sai tai khoan hoac mat khau')
 
         user_id = row['UserID']
-        tenant_id = row['TenantID']
         role = row['Role']
-        logger.info(f'Login success (DB): {username} | tenant={tenant_id} | role={role}')
+        logger.info(f'Login success: {username} | tenant={tenant_id} | role={role}')
+    finally:
+        conn.close()
 
     access_token = create_access_token(user_id, username, tenant_id, role)
     refresh_token = create_refresh_token(user_id, username)
@@ -338,32 +398,23 @@ def refresh_token_endpoint(refresh_token: str):
 
     username = payload.get('username', '')
 
-    # Ưu tiên 1: APP_USERS (demo)
-    if username in APP_USERS:
-        user_info = APP_USERS[username]
-        user_id = get_user_id_from_db(username)
-        if user_id is None:
-            import hashlib
-            user_id = int(hashlib.md5(username.encode()).hexdigest()[:8], 16) % 100000
-        tenant_id = user_info['tenant_id']
-        role = user_info['role']
-    else:
-        # Ưu tiên 2: AppUsers table (user tạo từ admin)
-        conn = get_mssql_conn()
-        cursor = conn.cursor(as_dict=True)
-        try:
-            cursor.execute(
-                'SELECT UserID, TenantID, Role FROM AppUsers WHERE Username = %s AND IsActive = 1',
-                (username,)
-            )
-            row = cursor.fetchone()
-        finally:
-            conn.close()
-        if not row:
-            raise HTTPException(401, detail='User khong con hoat dong')
-        user_id = row['UserID']
-        tenant_id = row['TenantID']
-        role = row['Role']
+    conn = get_mssql_conn()
+    cursor = conn.cursor(as_dict=True)
+    try:
+        cursor.execute(
+            'SELECT UserID, TenantID, Role FROM AppUsers WHERE Username = %s AND IsActive = 1',
+            (username,)
+        )
+        row = cursor.fetchone()
+    finally:
+        conn.close()
+
+    if not row:
+        raise HTTPException(401, detail='User khong con hoat dong')
+
+    user_id = row['UserID']
+    tenant_id = row['TenantID']
+    role = row['Role']
 
     access_token = create_access_token(user_id, username, tenant_id, role)
     return {'access_token': access_token, 'token_type': 'bearer'}
@@ -384,7 +435,7 @@ def get_dashboard_token(
 
     payload = decode_token(token)
 
-    if payload.role not in ('admin', 'viewer'):
+    if payload.role not in ('superadmin', 'admin', 'viewer'):
         raise HTTPException(403, detail='Khong co quyen truy cap dashboard')
 
     # Validate dashboard_id (1-5)
@@ -397,7 +448,7 @@ def get_dashboard_token(
         raise HTTPException(502, detail='Khong ket noi duoc Superset')
 
     # Xác định RLS clause — dùng TenantID (capital) vì MSSQL column name
-    if payload.role == 'admin' and payload.tenant_id is None:
+    if payload.role in ('superadmin', 'admin') and payload.tenant_id is None:
         rls_clause = '1=1'
         username_for_token = f'admin_{payload.user_id}'
     else:

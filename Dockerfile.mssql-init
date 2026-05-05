@@ -1,0 +1,10 @@
+FROM python:3.11-slim
+WORKDIR /app
+
+# Pin bcrypt<4.1.0 — bcrypt 5.x break passlib
+RUN pip install --no-cache-dir "passlib[bcrypt]<1.8" "bcrypt<4.1.0" pymssql python-dotenv
+
+COPY sql/init_admin_user.py /app/init_admin_user.py
+COPY .env /app/.env
+
+CMD ["python", "init_admin_user.py"]

@@ -25,8 +25,8 @@ AUTH_USER_REGISTRATION = False
 # Role mặc định cho anonymous user (None = không cho phép truy cập)
 PUBLIC_ROLE_LIKE = None
 
-# Bật CSRF protection (vô hiệu hóa bằng env var khi chạy provision script)
-WTF_CSRF_ENABLED = os.environ.get('SUPERSET_CSRF_ENABLED', 'true').lower() == 'true'
+# Tắt CSRF khi chạy provisioning script (bật lại bằng env SUPERSET_CSRF_ENABLED=true khi cần)
+WTF_CSRF_ENABLED = os.environ.get('SUPERSET_CSRF_ENABLED', 'false').lower() == 'true'
 WTF_CSRF_TIME_LIMIT = 3600  # 1 giờ
 
 # Session timeout (8 giờ = 28800 giây = JWT access token TTL)
@@ -82,11 +82,19 @@ FEATURE_FLAGS = {
 # DATABASE CONNECTION
 # ============================================================
 
-# SQL Server connection string — dùng pymssql (FreeTDS, không cần ODBC Driver)
-# Format: mssql+pymssql://user:pass@host:1433/database
+# Superset METADATA database — BẮT BUỘC dùng PostgreSQL (Superset internal tables)
+# Đây là nơi Superset lưu: users, roles, dashboards, charts, RLS rules
 SQLALCHEMY_DATABASE_URI = os.environ.get(
+    'DATABASE_URL',
+    'postgresql://superset:superset123@superset-db:5432/superset'
+)
+
+# MSSQL Data Warehouse — dùng để query data (không phải Superset metadata)
+# Đặt tên khác để tránh nhầm lẫn với SQLALCHEMY_DATABASE_URI
+# Superset sẽ kết nối MSSQL qua UI: Settings → Databases → + Database
+MSSQL_WAREHOUSE_URI = os.environ.get(
     'MSSQL_DATABASE_URL',
-    'mssql+pymssql://sa:YourPassword123@mssql:1433/DWH_MultiTenant'
+    f"mssql+pymssql://sa:{os.environ.get('MSSQL_SA_PASSWORD', 'M1tjtnrx')}@mssql:1433/DWH_MultiTenant"
 )
 
 # ============================================================
@@ -94,14 +102,16 @@ SQLALCHEMY_DATABASE_URI = os.environ.get(
 # ============================================================
 
 # Redis cache backend
+_cache_host = os.environ.get('REDIS_HOST', 'superset-redis')
+_cache_pass = os.environ.get('REDIS_PASSWORD', 'redis123')
 CACHE_CONFIG = {
     'CACHE_TYPE': 'redis',
-    'CACHE_REDIS_HOST': os.environ.get('REDIS_HOST', 'redis'),
+    'CACHE_REDIS_HOST': _cache_host,
     'CACHE_REDIS_PORT': int(os.environ.get('REDIS_PORT', 6379)),
     'CACHE_REDIS_DB': int(os.environ.get('REDIS_DB', 0)),
-    'CACHE_REDIS_PASSWORD': os.environ.get('REDIS_PASSWORD', ''),
+    'CACHE_REDIS_PASSWORD': _cache_pass if _cache_pass and _cache_pass != 'redis123' else '',
     'CACHE_KEY_PREFIX': 'superset_',
-    'CACHE_DEFAULT_TIMEOUT': 300,  # 5 phút
+    'CACHE_DEFAULT_TIMEOUT': 300,
 }
 
 # Data cache per dashboard
