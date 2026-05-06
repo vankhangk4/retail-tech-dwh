@@ -746,13 +746,13 @@
         }
 
         function loadSupersetIframe(page) {
-            // Superset dashboard IDs: 11=doanh-thu, 12=san-pham, 13=ton-kho, 14=khach-hang, 15=nhan-vien
+            // Superset dashboard IDs are provisioned by slug order in provision_v2.py.
             const dashboardIds = {
-                'revenue': 11,
-                'products': 12,
-                'inventory': 13,
-                'customers': 14,
-                'employees': 15,
+                'revenue': 1,
+                'products': 2,
+                'inventory': 3,
+                'customers': 4,
+                'employees': 5,
             };
             const dashId = dashboardIds[page];
             if (!dashId) return;

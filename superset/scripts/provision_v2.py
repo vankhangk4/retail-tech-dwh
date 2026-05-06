@@ -50,6 +50,16 @@ TABLES = [
     ('V_SalesEnriched',   'dbo', 'View bán hàng đã join với dim'),
 ]
 
+TIME_COLUMNS = {
+    'FactSales': 'SaleDate',
+    'FactInventory': 'CheckDate',
+    'FactPurchase': 'PurchaseDate',
+    'DM_SalesSummary': 'LastRefreshed',
+    'DM_CustomerRFM': 'UpdatedAt',
+    'DM_InventoryAlert': 'CheckDate',
+    'V_SalesEnriched': 'SaleDate',
+}
+
 DASHBOARDS = [
     {'id': 1, 'slug': 'revenue',   'title': 'Dashboard Doanh thu',
      'charts': [
@@ -69,7 +79,7 @@ DASHBOARDS = [
      ]},
     {'id': 4, 'slug': 'customers','title': 'Dashboard Khách hàng',
      'charts': [
-         {'name': 'Phân bố phân khúc khách hàng', 'viz': 'pie', 'dataset': 'DM_CustomerRFM', 'dims': ['Segment'], 'metrics': [{'label': 'COUNT(*)', 'agg': 'COUNT'}]},
+         {'name': 'Phân bố phân khúc khách hàng', 'viz': 'pie', 'dataset': 'DM_CustomerRFM', 'dims': ['Segment'], 'metrics': [{'label': 'COUNT(Segment)', 'agg': 'COUNT'}]},
      ]},
     {'id': 5, 'slug': 'employees','title': 'Dashboard Nhân viên',
      'charts': [
@@ -186,15 +196,22 @@ def create_dataset(db_model: object, table_name: str, schema: str,
 
     existing = get_dataset_by_name(table_name, schema, db_model.id)
     if existing:
+        time_col = TIME_COLUMNS.get(table_name)
+        if time_col and existing.main_dttm_col != time_col:
+            existing.main_dttm_col = time_col
+            db.session.commit()
+            logger.info(f'[OK] Dataset "{table_name}": main_dttm_col={time_col}')
         logger.info(f'[SKIP] Dataset "{table_name}" (id={existing.id})')
         return existing
 
+    time_col = TIME_COLUMNS.get(table_name)
     ds = SqlaTable(
         table_name=table_name,
         schema=schema,
         database_id=db_model.id,
         description=description,
         cache_timeout=300,
+        main_dttm_col=time_col,
     )
     db.session.add(ds)
     db.session.commit()
@@ -219,11 +236,147 @@ def get_admin_user() -> object:
     return db.session.query(User).filter_by(username=ADMIN_USER).first()
 
 
-def create_chart(ds_id: int, chart_name: str, viz_type: str,
+def get_column_obj(ds_id: int, column_name: str) -> dict:
+    """Return Superset column metadata for adhoc metric params."""
+    from superset.extensions import db
+    from superset.connectors.sqla.models import TableColumn
+
+    col = db.session.query(TableColumn).filter_by(
+        table_id=ds_id,
+        column_name=column_name,
+    ).first()
+    if not col:
+        return {'column_name': column_name, 'type': 'NUMERIC'}
+    return {
+        'id': col.id,
+        'column_name': col.column_name,
+        'type': col.type or 'NUMERIC',
+        'type_generic': getattr(col, 'type_generic', None),
+    }
+
+
+def build_metric(metric_cfg: dict, ds_id: int) -> dict:
+    import re as _re
+
+    agg = metric_cfg.get('agg', 'SUM')
+    label = metric_cfg.get('label', '')
+    col_match = _re.search(r'(?:SUM|AVG|COUNT|MIN|MAX|STDDEV)\((\w+)\)', label)
+    if col_match:
+        col_name = col_match.group(1)
+        return {
+            'expressionType': 'SIMPLE',
+            'column': get_column_obj(ds_id, col_name),
+            'aggregate': agg,
+            'label': label,
+            'optionName': f'metric_{agg.lower()}_{col_name.lower()}',
+        }
+    return {
+        'expressionType': 'SQL',
+        'sqlExpression': label or 'COUNT(*)',
+        'label': label or 'COUNT(*)',
+        'optionName': 'metric_sql',
+    }
+
+
+def build_chart_params(ds_id: int, dataset_name: str, viz_type: str,
+                       dims: list, metrics: list) -> dict:
+    metric_objs = [build_metric(m, ds_id) for m in metrics] if metrics else []
+    first_metric = metric_objs[0] if metric_objs else None
+    time_col = TIME_COLUMNS.get(dataset_name)
+
+    params = {
+        'viz_type': viz_type,
+        'datasource': f'{ds_id}__table',
+        'groupby': dims,
+        'metrics': metric_objs or None,
+        'row_limit': 100,
+        'show_legend': True,
+        'color_scheme': 'supersetColors',
+        'time_range': 'No filter',
+        'adhoc_filters': [],
+    }
+
+    if first_metric and viz_type not in ('line',):
+        params['orderby'] = [[first_metric, False]]
+        params['order_desc'] = True
+
+    if time_col:
+        params['granularity_sqla'] = time_col
+        params['granularity'] = time_col
+
+    if viz_type == 'line':
+        params['groupby'] = []
+        params['time_grain_sqla'] = 'P1M'
+        params.pop('orderby', None)
+        params.pop('order_desc', None)
+
+    if viz_type in ('big_number', 'single_metric'):
+        params.pop('groupby', None)
+        params.pop('orderby', None)
+        params.pop('order_desc', None)
+
+    if viz_type == 'histogram':
+        params['all_columns_x'] = 'RFM_Score'
+        params['histogram'] = True
+        params.pop('groupby', None)
+        params.pop('metrics', None)
+        params.pop('orderby', None)
+        params.pop('order_desc', None)
+
+    return params
+
+
+def build_query_context(ds_id: int, chart_id: int, params: dict) -> str:
+    metrics = params.get('metrics') or []
+    groupby = params.get('groupby') or params.get('columns') or []
+    if not isinstance(groupby, list):
+        groupby = [groupby]
+
+    query = {
+        'filters': [],
+        'extras': {'having': '', 'where': ''},
+        'applied_time_extras': {},
+        'columns': groupby,
+        'metrics': metrics,
+        'annotation_layers': [],
+        'row_limit': params.get('row_limit', 100),
+        'series_limit': 0,
+        'url_params': {},
+        'custom_params': {},
+        'custom_form_data': {},
+        'time_range': params.get('time_range', 'No filter'),
+    }
+
+    if params.get('granularity'):
+        query['granularity'] = params['granularity']
+    if params.get('time_grain_sqla'):
+        query['time_grain'] = params['time_grain_sqla']
+    if params.get('orderby'):
+        query['orderby'] = params['orderby']
+    if params.get('order_desc') is not None:
+        query['order_desc'] = params['order_desc']
+
+    form_data = {
+        **params,
+        'slice_id': chart_id,
+        'force': False,
+        'result_format': 'json',
+        'result_type': 'full',
+    }
+    return json.dumps({
+        'datasource': {'id': ds_id, 'type': 'table'},
+        'force': False,
+        'queries': [query],
+        'form_data': form_data,
+        'result_format': 'json',
+        'result_type': 'full',
+    })
+
+
+def create_chart(ds_id: int, dataset_name: str, chart_name: str, viz_type: str,
                  dims: list, metrics: list, owner_id: int = 1) -> int:
     """Tạo chart trực tiếp vào database (bypass REST API permission issues)."""
     from superset.extensions import db
-    from superset.models import sql_lab
     try:
         # Import using different approaches for compatibility
         try:
@@ -238,32 +391,21 @@ def create_chart(ds_id: int, chart_name: str, viz_type: str,
                 # Fallback to API if we can't find Slice model
                 raise ImportError("Cannot find Slice model - will use REST API fallback")
 
-        import re as _re
-        agg = metrics[0]['agg'] if metrics else 'SUM'
-        label = metrics[0]['label'] if metrics else ''
-        _col_match = _re.search(r'(?:SUM|AVG|COUNT|MIN|MAX|STDDEV)\((\w+)\)', label)
-        _col_obj = {'column_name': _col_match.group(1), 'type': 'NUMERIC'} if _col_match else {}
+        params = build_chart_params(ds_id, dataset_name, viz_type, dims, metrics)
 
-        params = {
-            'viz_type': viz_type,
-            'datasource': f'{ds_id}__table',
-            'groupby': dims,
-            'metrics': [{'expressionType': 'SIMPLE', 'column': _col_obj, 'aggregate': agg,
-                         'sqlExpression': label, 'label': label}] if metrics else None,
-            'order_desc': True,
-            'row_limit': 100,
-            'show_legend': True,
-            'color_scheme': 'supersetColors',
-        }
-        if viz_type in ('big_number', 'single_metric'):
-            params.pop('groupby', None)
-            if params.get('metrics'):
-                params['metrics'] = [params['metrics'][0]]
-        if viz_type == 'histogram':
-            params['all_columns_x'] = 'RFM_Score'
-            params['histogram'] = True
-            params.pop('groupby', None)
-            params.pop('metrics', None)
+        existing = db.session.query(Slice).filter_by(
+            slice_name=chart_name,
+            datasource_id=ds_id,
+            datasource_type='table',
+        ).first()
+        if existing:
+            existing.viz_type = viz_type
+            existing.params = json.dumps(params)
+            existing.cache_timeout = 300
+            existing.query_context = build_query_context(ds_id, existing.id, params)
+            db.session.commit()
+            logger.info(f'[OK]   Updated chart "{chart_name}" (id={existing.id})')
+            return existing.id
 
         chart = Slice(
             slice_name=chart_name,
@@ -277,19 +419,21 @@ def create_chart(ds_id: int, chart_name: str, viz_type: str,
         db.session.add(chart)
         db.session.commit()
         db.session.refresh(chart)
+        chart.query_context = build_query_context(ds_id, chart.id, params)
+        db.session.commit()
         logger.info(f'[OK]   Chart "{chart_name}" (id={chart.id})')
         return chart.id
     except ImportError as ie:
         logger.info(f'[INFO] Using REST API fallback (programmatic failed): {str(ie)[:50]}')
         # Fallback to REST API approach
-        return _create_chart_via_api(ds_id, chart_name, viz_type, dims, metrics)
+        return _create_chart_via_api(ds_id, dataset_name, chart_name, viz_type, dims, metrics)
     except Exception as e:
         logger.warning(f'[WARN] Chart "{chart_name}": {str(e)[:150]}')
         db.session.rollback()
         return 0
 
 
-def _create_chart_via_api(ds_id: int, chart_name: str, viz_type: str,
+def _create_chart_via_api(ds_id: int, dataset_name: str, chart_name: str, viz_type: str,
                           dims: list, metrics: list) -> int:
     """Fallback: Tạo chart qua REST API (only if programmatic fails)."""
     import requests
@@ -304,32 +448,7 @@ def _create_chart_via_api(ds_id: int, chart_name: str, viz_type: str,
         return 0
 
     token = resp.json()['access_token']
-    import re as _re2
-    agg = metrics[0]['agg'] if metrics else 'SUM'
-    label = metrics[0]['label'] if metrics else ''
-    _col_match2 = _re2.search(r'(?:SUM|AVG|COUNT|MIN|MAX|STDDEV)\((\w+)\)', label)
-    _col_obj2 = {'column_name': _col_match2.group(1), 'type': 'NUMERIC'} if _col_match2 else {}
-
-    params = {
-        'viz_type': viz_type,
-        'datasource': f'{ds_id}__table',
-        'groupby': dims,
-        'metrics': [{'expressionType': 'SIMPLE', 'column': _col_obj2, 'aggregate': agg,
-                     'sqlExpression': label, 'label': label}] if metrics else None,
-        'order_desc': True,
-        'row_limit': 100,
-        'show_legend': True,
-        'color_scheme': 'supersetColors',
-    }
-    if viz_type in ('big_number', 'single_metric'):
-        params.pop('groupby', None)
-        if params.get('metrics'):
-            params['metrics'] = [params['metrics'][0]]
-    if viz_type == 'histogram':
-        params['all_columns_x'] = 'RFM_Score'
-        params['histogram'] = True
-        params.pop('groupby', None)
-        params.pop('metrics', None)
+    params = build_chart_params(ds_id, dataset_name, viz_type, dims, metrics)
 
     r = requests.post(
         'http://localhost:8088/api/v1/chart/',
@@ -706,7 +825,7 @@ def main():
                     if not ds_id:
                         continue
                     cid = create_chart(
-                        ds_id, chart_cfg['name'], chart_cfg['viz'],
+                        ds_id, chart_cfg['dataset'], chart_cfg['name'], chart_cfg['viz'],
                         chart_cfg['dims'], chart_cfg['metrics'])
                     if cid:
                         charts.append({'id': cid, 'name': chart_cfg['name']})

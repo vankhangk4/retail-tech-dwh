@@ -30,8 +30,16 @@ ALGORITHM = 'HS256'
 ACCESS_EXPIRE = timedelta(hours=8)
 REFRESH_EXPIRE = timedelta(days=7)
 SUPERSET_URL = os.environ.get('SUPERSET_URL', 'http://localhost:8088')
+SUPERSET_PUBLIC_URL = os.environ.get('SUPERSET_PUBLIC_URL', SUPERSET_URL)
 SUPERSET_ADMIN_USER = os.environ.get('SUPERSET_ADMIN_USER', 'admin')
 SUPERSET_ADMIN_PWD = os.environ.get('SUPERSET_ADMIN_PWD', 'admin')
+LEGACY_DASHBOARD_ID_MAP = {
+    11: 1,
+    12: 2,
+    13: 3,
+    14: 4,
+    15: 5,
+}
 
 # ---- Password hashing ----
 pwd_ctx = passlib.context.CryptContext(schemes=['bcrypt'], deprecated='auto')
@@ -434,6 +442,8 @@ def get_dashboard_token(
     if payload.role not in ('superadmin', 'admin', 'viewer'):
         raise HTTPException(403, detail='Khong co quyen truy cap dashboard')
 
+    dashboard_id = LEGACY_DASHBOARD_ID_MAP.get(dashboard_id, dashboard_id)
+
     # Validate dashboard_id (1-5)
     if dashboard_id < 1 or dashboard_id > 5:
         raise HTTPException(400, detail='Dashboard ID khong hop le (1–5)')
@@ -463,7 +473,7 @@ def get_dashboard_token(
                     'last_name': payload.tenant_id or 'admin',
                 },
                 'resources': [
-                    {'type': 'dashboard', 'id': dashboard_id},
+                    {'type': 'dashboard', 'id': str(dashboard_id)},
                 ],
                 'rls': [
                     {'clause': rls_clause}
@@ -480,7 +490,7 @@ def get_dashboard_token(
         raise HTTPException(502, detail=f'Tao guest token that bai: {r.text}')
 
     guest_token = r.json().get('token', '')
-    dashboard_url = f'{SUPERSET_URL}/superset/dashboard/{dashboard_id}/'
+    dashboard_url = f'{SUPERSET_PUBLIC_URL}/superset/dashboard/{dashboard_id}/'
 
     logger.info(
         f'Guest token issued: username={payload.username} | '

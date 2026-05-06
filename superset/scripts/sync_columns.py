@@ -18,9 +18,20 @@ logger = logging.getLogger(__name__)
 DATASETS = [
     'FactSales', 'FactInventory', 'FactPurchase',
     'DimProduct', 'DimCustomer', 'DimStore', 'DimEmployee', 'DimDate',
-    'DM_SalesSummary', 'DM_CustomerRFM', 'DM_InventoryAlert',
+    'DM_SalesSummary', 'DM_ProductPerformance', 'DM_CustomerRFM',
+    'DM_InventoryAlert', 'DM_EmployeePerformance',
     'V_SalesEnriched',
 ]
+
+TIME_COLUMNS = {
+    'FactSales': 'SaleDate',
+    'FactInventory': 'CheckDate',
+    'FactPurchase': 'PurchaseDate',
+    'DM_SalesSummary': 'LastRefreshed',
+    'DM_CustomerRFM': 'UpdatedAt',
+    'DM_InventoryAlert': 'CheckDate',
+    'V_SalesEnriched': 'SaleDate',
+}
 
 
 def sync_columns(ds_name: str):
@@ -36,6 +47,9 @@ def sync_columns(ds_name: str):
     try:
         # fetch_metadata() sẽ connect MSSQL, lấy schema, tạo TableColumn records
         ds.fetch_metadata()
+        time_col = TIME_COLUMNS.get(ds_name)
+        if time_col and ds.main_dttm_col != time_col:
+            ds.main_dttm_col = time_col
         db.session.commit()
 
         col_count = db.session.query(TableColumn).filter_by(table_id=ds.id).count()
