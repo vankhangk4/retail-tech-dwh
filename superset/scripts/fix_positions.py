@@ -16,33 +16,51 @@ logger = logging.getLogger(__name__)
 
 
 def build_position(chart_ids: list) -> dict:
-    """Build Superset 3.x dashboard position layout."""
-    children = [f'CHART-{cid}' for cid in chart_ids]
-
+    """
+    Build Superset 3.x compatible dashboard position layout.
+    Each chart MUST be wrapped in a ROW node inside GRID.
+    Placing charts directly under GRID_ID causes:
+      TypeError: Cannot read properties of undefined (reading 'width')
+    """
+    row_ids = []
     meta = {}
+
     for i, cid in enumerate(chart_ids):
-        # Layout: 2 columns, charts alternate left/right, then wrap
-        col = i % 2
-        row = i // 2
-        meta[f'CHART-{cid}'] = {
+        chart_key = f'CHART-{cid}'
+        row_key   = f'ROW-{i}'
+
+        # Chart node
+        meta[chart_key] = {
             'type': 'CHART',
-            'id': f'CHART-{cid}',
+            'id': chart_key,
+            'children': [],
+            'parents': ['ROOT_ID', 'GRID_ID', row_key],
             'meta': {
                 'chartId': cid,
-                'width': 6,
+                'width': 12,
                 'height': 50,
                 'uuid': f'chart-uuid-{cid}',
             },
         }
+
+        # ROW wrapper — each chart gets its own full-width row
+        meta[row_key] = {
+            'type': 'ROW',
+            'id': row_key,
+            'children': [chart_key],
+            'parents': ['ROOT_ID', 'GRID_ID'],
+            'meta': {'background': 'BACKGROUND_TRANSPARENT'},
+        }
+
+        row_ids.append(row_key)
 
     layout = {
         'ROOT_ID': {'type': 'ROOT', 'id': 'ROOT_ID', 'children': ['GRID_ID']},
         'GRID_ID': {
             'type': 'GRID',
             'id': 'GRID_ID',
-            'children': children,
+            'children': row_ids,
             'parents': ['ROOT_ID'],
-            'gridSize': {'default': {'rows': 600, 'columns': 12, 'rowHeight': 50}},
         },
         'DASHBOARD_VERSION_KEY': 'v2',
     }

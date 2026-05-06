@@ -354,18 +354,53 @@ def _create_chart_via_api(ds_id: int, chart_name: str, viz_type: str,
 
 
 def build_position(charts: list) -> str:
-    children = [f'CHART-{c["id"]}' for c in charts]
+    """
+    Build Superset 3.x compatible position_json.
+    Each chart MUST be wrapped in a ROW node inside GRID.
+    Placing charts directly under GRID causes:
+      TypeError: Cannot read properties of undefined (reading 'width')
+    """
+    row_ids = []
     meta = {}
-    for c in charts:
-        meta[f'CHART-{c["id"]}'] = {
-            'type': 'CHART', 'id': f'CHART-{c["id"]}',
-            'meta': {'chartId': c['id'], 'width': 6, 'height': 50, 'chartName': c['name']},
+
+    for i, c in enumerate(charts):
+        chart_key = f'CHART-{c["id"]}'
+        row_key   = f'ROW-{i}'
+
+        # Chart node
+        meta[chart_key] = {
+            'type': 'CHART',
+            'id': chart_key,
+            'children': [],
+            'parents': ['ROOT_ID', 'GRID_ID', row_key],
+            'meta': {
+                'chartId': c['id'],
+                'width': 12,
+                'height': 50,
+                'chartName': c['name'],
+                'sliceName': c['name'],
+            },
         }
+
+        # ROW wrapper — each chart gets its own row (width=12)
+        meta[row_key] = {
+            'type': 'ROW',
+            'id': row_key,
+            'children': [chart_key],
+            'parents': ['ROOT_ID', 'GRID_ID'],
+            'meta': {'background': 'BACKGROUND_TRANSPARENT'},
+        }
+
+        row_ids.append(row_key)
+
     layout = {
-        'ROOT_ID': {'type': 'ROOT', 'id': 'ROOT_ID', 'children': ['GRID_ID']},
-        'GRID_ID': {'type': 'GRID', 'id': 'GRID_ID', 'children': children,
-                     'parents': ['ROOT_ID'],
-                     'gridSize': {'default': {'rows': 12, 'columns': 12}}},
+        'ROOT_ID':  {'type': 'ROOT', 'id': 'ROOT_ID', 'children': ['GRID_ID']},
+        'GRID_ID':  {
+            'type': 'GRID',
+            'id': 'GRID_ID',
+            'children': row_ids,
+            'parents': ['ROOT_ID'],
+        },
         'DASHBOARD_VERSION_KEY': 'v2',
     }
     layout.update(meta)
