@@ -288,9 +288,9 @@ TONG (ca optional):        █████████████████�
 - [ ] Verify hien thi **5 dashboard chinh** tren UI Superset (Doanh thu, San pham, Ton kho, Khach hang RFM, Nhan vien)
 - [ ] Setup health-check service + Uptime monitoring (NFR-05) - dung Uptime Kuma hoac Grafana
 
-### Uu tien THAP (cleanup / nice-to-have) — **0%** (0/5)
+### Uu tien THAP (cleanup / nice-to-have) — **20%** (1/5)
 - [ ] Don dep [superset/scripts/](superset/scripts/) - hien co 7 file (provision_v2 + 6 fix/sync) - giu provision_v2.py + rebuild_dashboards.py + sync_dataset_columns.py
-- [ ] Don dep file rac trong root: [12.txt](12.txt), [_bootstrap.sql](_bootstrap.sql), [get-docker.sh](get-docker.sh), [etl_orchestrator.log](etl_orchestrator.log) - them vao `.gitignore`
+- [x] ✅ **Da don file rac trong root** (2026-05-06): xoa `12.txt`, `_bootstrap.sql`, `get-docker.sh`, `etl_orchestrator.log`, `.env.exampe2`, `tmp/`, va 8 thu muc `__pycache__/`
 - [ ] (Optional) Tich hop refresh DM trong `main_etl.py` PHASE 6 sang dung `EXEC usp_Refresh_DM_*` thay vi inline SQL MERGE - giup dong nhat voi bao cao
 - [ ] Archive file Excel/CSV nguon sau khi ETL thanh cong (di chuyen sang `./data/{tenant}/archive/`)
 - [ ] Script export Superset Dashboard JSON (`superset export-dashboards`) commit vao Git de version-control dashboard
