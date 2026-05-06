@@ -209,10 +209,10 @@
 
 ### 6.3. Superset RBAC + RLS - [superset/](superset/)
 - [x] **superset_config.py** - AUTH_USER_REGISTRATION=False, PUBLIC_ROLE_LIKE=None, CSRF, FEATURE_FLAGS, GUEST_TOKEN_JWT_SECRET - [superset_config.py](superset/superset_config.py)
-- [x] **scripts/create_users.py** - tao Superset users + role TenantViewer + RLS_<TenantID>
-- [x] **scripts/provision.py** - provisioning datasets + dashboards
+- [x] **api/superset_provision.py** - auto-provision Superset user + role `RLS_<TenantID>` khi tao tenant/admin qua auth-gateway
+- [x] **scripts/provision_v2.py** - provisioning datasets + dashboards + doc Tenants active tu MSSQL de tao RLS dong
 - [x] **scripts/provision_charts.py / v2.py / fix_*.py** - cong cu sua chart, position
-- [x] Role TenantViewer (read-only) + RLS rule `tenant_id='X'` per tenant
+- [x] Role TenantViewer (read-only) + RLS rule `TenantID = 'X'` per tenant
 
 ### 6.4. Monitoring + Alerting
 - [x] `send_email_alert(subject, body)` qua smtplib - [main_etl.py:87](etl/orchestrator/main_etl.py#L87)
@@ -260,5 +260,4 @@
 ---
 
 *Cap nhat tu dong: 2026-05-05 - dua tren scan codebase va doi chieu de cuong [Nguyen_Van_Khang_Bao_Cao.md](Nguyen_Van_Khang_Bao_Cao.md)*
-
 

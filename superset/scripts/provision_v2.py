@@ -13,6 +13,7 @@ import time
 import json
 import logging
 import argparse
+import re
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,7 +31,7 @@ MSSQL_URI = os.environ.get(
 )
 
 # ---- Tenants & Tables ----
-TENANTS = ['STORE_HN', 'STORE_HCM']
+TENANT_ID_RE = re.compile(r'^[A-Za-z0-9_]{1,20}$')
 
 TABLES = [
     ('FactSales',       'dbo', 'Bảng sự kiện bán hàng'),
@@ -41,26 +42,30 @@ TABLES = [
     ('DimStore',        'dbo', 'Chiều cửa hàng'),
     ('DimEmployee',     'dbo', 'Chiều nhân viên'),
     ('DimDate',         'dbo', 'Chiều thời gian'),
-    ('DM_SalesSummary', 'dbo', 'Datamart tổng hợp doanh thu'),
-    ('DM_CustomerRFM',  'dbo', 'Datamart RFM'),
+    ('DM_SalesSummary',   'dbo', 'Datamart tổng hợp doanh thu'),
+    ('DM_ProductPerformance', 'dbo', 'Datamart hiệu suất sản phẩm'),
+    ('DM_CustomerRFM',    'dbo', 'Datamart RFM'),
+    ('DM_InventoryAlert', 'dbo', 'Datamart cảnh báo tồn kho'),
+    ('DM_EmployeePerformance', 'dbo', 'Datamart hiệu suất nhân viên'),
+    ('V_SalesEnriched',   'dbo', 'View bán hàng đã join với dim'),
 ]
 
 DASHBOARDS = [
     {'id': 1, 'slug': 'revenue',   'title': 'Dashboard Doanh thu',
      'charts': [
-         {'name': 'Doanh thu theo tháng',   'viz': 'line',       'dataset': 'DM_SalesSummary', 'dims': ['MonthName'],         'metrics': [{'label': 'SUM(TotalRevenue)', 'agg': 'SUM'}]},
-         {'name': 'Doanh thu theo cửa hàng','viz': 'bar',       'dataset': 'DM_SalesSummary', 'dims': ['StoreName'],         'metrics': [{'label': 'SUM(TotalRevenue)', 'agg': 'SUM'}]},
-         {'name': 'TOP sản phẩm bán chạy',  'viz': 'big_number', 'dataset': 'FactSales',       'dims': [],                   'metrics': [{'label': 'SUM(Quantity)',      'agg': 'SUM'}]},
-         {'name': 'Doanh thu theo danh mục','viz': 'pie',       'dataset': 'DM_SalesSummary', 'dims': ['CategoryName'],     'metrics': [{'label': 'SUM(TotalRevenue)', 'agg': 'SUM'}]},
+         {'name': 'Doanh thu theo tháng',   'viz': 'line',       'dataset': 'V_SalesEnriched', 'dims': ['MonthName'],     'metrics': [{'label': 'SUM(Revenue)',  'agg': 'SUM'}]},
+         {'name': 'Doanh thu theo cửa hàng','viz': 'bar',        'dataset': 'V_SalesEnriched', 'dims': ['StoreName'],     'metrics': [{'label': 'SUM(Revenue)',  'agg': 'SUM'}]},
+         {'name': 'TOP sản phẩm bán chạy',  'viz': 'big_number', 'dataset': 'V_SalesEnriched', 'dims': [],                'metrics': [{'label': 'SUM(Quantity)', 'agg': 'SUM'}]},
+         {'name': 'Doanh thu theo danh mục','viz': 'pie',        'dataset': 'V_SalesEnriched', 'dims': ['CategoryName'],  'metrics': [{'label': 'SUM(Revenue)',  'agg': 'SUM'}]},
      ]},
     {'id': 2, 'slug': 'products',  'title': 'Dashboard Sản phẩm',
      'charts': [
-         {'name': 'TOP sản phẩm theo số lượng','viz': 'bar', 'dataset': 'FactSales',   'dims': ['ProductName'], 'metrics': [{'label': 'SUM(Quantity)', 'agg': 'SUM'}]},
-         {'name': 'TOP sản phẩm theo doanh thu','viz': 'bar', 'dataset': 'FactSales', 'dims': ['ProductName'], 'metrics': [{'label': 'SUM(Revenue)',  'agg': 'SUM'}]},
+         {'name': 'TOP sản phẩm theo số lượng','viz': 'bar', 'dataset': 'V_SalesEnriched', 'dims': ['ProductName'], 'metrics': [{'label': 'SUM(Quantity)', 'agg': 'SUM'}]},
+         {'name': 'TOP sản phẩm theo doanh thu','viz': 'bar', 'dataset': 'V_SalesEnriched', 'dims': ['ProductName'], 'metrics': [{'label': 'SUM(Revenue)',  'agg': 'SUM'}]},
      ]},
     {'id': 3, 'slug': 'inventory','title': 'Dashboard Tồn kho',
      'charts': [
-         {'name': 'Tồn kho thấp — Cảnh báo', 'viz': 'table', 'dataset': 'FactInventory', 'dims': ['ProductName', 'StoreName'], 'metrics': [{'label': 'SUM(ClosingStock)', 'agg': 'SUM'}]},
+         {'name': 'Tồn kho thấp — Cảnh báo', 'viz': 'table', 'dataset': 'DM_InventoryAlert', 'dims': ['ProductName', 'StoreName'], 'metrics': [{'label': 'SUM(ClosingStock)', 'agg': 'SUM'}]},
      ]},
     {'id': 4, 'slug': 'customers','title': 'Dashboard Khách hàng',
      'charts': [
@@ -68,14 +73,16 @@ DASHBOARDS = [
      ]},
     {'id': 5, 'slug': 'employees','title': 'Dashboard Nhân viên',
      'charts': [
-         {'name': 'Doanh số theo nhân viên', 'viz': 'bar', 'dataset': 'FactSales', 'dims': ['EmployeeName'], 'metrics': [{'label': 'SUM(Revenue)', 'agg': 'SUM'}]},
+         {'name': 'Doanh số theo nhân viên', 'viz': 'bar', 'dataset': 'V_SalesEnriched', 'dims': ['EmployeeName'], 'metrics': [{'label': 'SUM(Revenue)', 'agg': 'SUM'}]},
      ]},
 ]
 
 RLS_TABLES = [
     'FactSales', 'FactInventory', 'FactPurchase',
     'DimCustomer', 'DimStore', 'DimEmployee',
-    'DM_SalesSummary', 'DM_CustomerRFM',
+    'DM_SalesSummary', 'DM_ProductPerformance', 'DM_CustomerRFM',
+    'DM_InventoryAlert', 'DM_EmployeePerformance',
+    'V_SalesEnriched',
 ]
 
 
@@ -87,6 +94,32 @@ def get_superset_app():
     """Khởi tạo Superset Flask app (must run from /app directory)."""
     from superset.app import create_app
     return create_app()
+
+
+def get_active_tenant_ids() -> list:
+    """Đọc danh sách tenant active từ SQL Server thay vì hardcode trong script."""
+    from sqlalchemy import create_engine, text
+
+    try:
+        engine = create_engine(MSSQL_URI)
+        with engine.connect() as conn:
+            rows = conn.execute(text(
+                'SELECT TenantID FROM Tenants WHERE IsActive = 1 ORDER BY TenantID'
+            )).fetchall()
+
+        tenant_ids = []
+        for row in rows:
+            tenant_id = row[0]
+            if TENANT_ID_RE.match(tenant_id):
+                tenant_ids.append(tenant_id)
+            else:
+                logger.warning(f'[SKIP] Invalid TenantID for Superset RLS: {tenant_id!r}')
+
+        logger.info(f'[OK] Loaded {len(tenant_ids)} active tenants from MSSQL: {tenant_ids}')
+        return tenant_ids
+    except Exception as e:
+        logger.warning(f'[WARN] Cannot load tenants from MSSQL: {e}')
+        return []
 
 
 # ============================================================
@@ -205,14 +238,17 @@ def create_chart(ds_id: int, chart_name: str, viz_type: str,
                 # Fallback to API if we can't find Slice model
                 raise ImportError("Cannot find Slice model - will use REST API fallback")
 
+        import re as _re
         agg = metrics[0]['agg'] if metrics else 'SUM'
         label = metrics[0]['label'] if metrics else ''
+        _col_match = _re.search(r'(?:SUM|AVG|COUNT|MIN|MAX|STDDEV)\((\w+)\)', label)
+        _col_obj = {'column_name': _col_match.group(1), 'type': 'NUMERIC'} if _col_match else {}
 
         params = {
             'viz_type': viz_type,
             'datasource': f'{ds_id}__table',
             'groupby': dims,
-            'metrics': [{'expressionType': 'SIMPLE', 'column': {}, 'aggregate': agg,
+            'metrics': [{'expressionType': 'SIMPLE', 'column': _col_obj, 'aggregate': agg,
                          'sqlExpression': label, 'label': label}] if metrics else None,
             'order_desc': True,
             'row_limit': 100,
@@ -268,14 +304,17 @@ def _create_chart_via_api(ds_id: int, chart_name: str, viz_type: str,
         return 0
 
     token = resp.json()['access_token']
+    import re as _re2
     agg = metrics[0]['agg'] if metrics else 'SUM'
     label = metrics[0]['label'] if metrics else ''
+    _col_match2 = _re2.search(r'(?:SUM|AVG|COUNT|MIN|MAX|STDDEV)\((\w+)\)', label)
+    _col_obj2 = {'column_name': _col_match2.group(1), 'type': 'NUMERIC'} if _col_match2 else {}
 
     params = {
         'viz_type': viz_type,
         'datasource': f'{ds_id}__table',
         'groupby': dims,
-        'metrics': [{'expressionType': 'SIMPLE', 'column': {}, 'aggregate': agg,
+        'metrics': [{'expressionType': 'SIMPLE', 'column': _col_obj2, 'aggregate': agg,
                      'sqlExpression': label, 'label': label}] if metrics else None,
         'order_desc': True,
         'row_limit': 100,
@@ -525,6 +564,10 @@ def create_rls_filters(rls_role: object, tenant_id: str):
     from superset.extensions import db
     from superset.connectors.sqla.models import RowLevelSecurityFilter as RLS, SqlaTable
 
+    if not TENANT_ID_RE.match(tenant_id):
+        logger.warning(f'[SKIP] Invalid TenantID for RLS: {tenant_id!r}')
+        return
+
     clause = f"TenantID = '{tenant_id}'"
 
     for table_name in RLS_TABLES:
@@ -641,7 +684,8 @@ def main():
         if not args.skip_rls:
             logger.info('[STEP 4] RBAC + RLS...')
             viewer_role = create_tenant_viewer_role()
-            for tenant_id in TENANTS:
+            tenant_ids = get_active_tenant_ids()
+            for tenant_id in tenant_ids:
                 rls_role = create_role(f'RLS_{tenant_id}')
                 if rls_role:
                     create_rls_filters(rls_role, tenant_id)

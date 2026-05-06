@@ -17,6 +17,7 @@ import requests
 from fastapi import APIRouter, HTTPException, Header, Depends
 from pydantic import BaseModel
 
+from api.superset_provision import provision_user as superset_provision_user
 from api.models import (
     LoginRequest, LoginResponse, UserInfo,
     DashboardTokenResponse, TokenPayload,
@@ -250,15 +251,14 @@ def run_bootstrap():
 
 @router.post('/register')
 def register(req: RegisterRequest):
-    """Đăng ký tài khoản mới — chỉ viewer hoặc admin (superadmin bị chặn)."""
+    """Đăng ký tài khoản mới — chỉ viewer. Admin phải do superadmin tạo."""
     username  = req.username.strip()
     password  = req.password
     role      = req.role or 'viewer'
     tenant_id = req.tenant_id.strip() if req.tenant_id else None
 
-    # Chỉ cho phép viewer hoặc admin — superadmin phải do admin tạo
-    if role not in ('viewer', 'admin'):
-        raise HTTPException(400, detail='Chi cho phep dang ky vai tro viewer hoac admin')
+    if role != 'viewer':
+        raise HTTPException(400, detail='Admin phai duoc tao boi superadmin qua /api/admin/users')
 
     # Validate username: chỉ chữ, số, dấu gạch dưới
     import re
@@ -297,15 +297,6 @@ def register(req: RegisterRequest):
         if cursor.fetchone():
             raise HTTPException(409, detail='Ten dang nhap da ton tai')
 
-        # Nếu role = admin, kiểm tra xem có user admin nào cho tenant này chưa
-        if role == 'admin':
-            cursor.execute(
-                'SELECT UserID FROM AppUsers WHERE TenantID = %s AND Role = %s',
-                (tenant_id, 'admin')
-            )
-            if cursor.fetchone():
-                raise HTTPException(403, detail='Tenant nay da co admin. Chi duoc phep tao 1 admin cho moi tenant.')
-
         password_hash = hash_password(password)
         cursor.execute(
             'INSERT INTO AppUsers (Username, PasswordHash, TenantID, Role, IsActive) '
@@ -314,7 +305,12 @@ def register(req: RegisterRequest):
         )
         conn.commit()
         logger.info(f'[REGISTER] User created: {username} | role={role} | tenant={tenant_id}')
-        return {'success': True, 'message': f'Tai khoan "{username}" da duoc tao thanh cong'}
+        superset_ok = superset_provision_user(username, password, tenant_id=tenant_id)
+        return {
+            'success': True,
+            'message': f'Tai khoan "{username}" da duoc tao thanh cong',
+            'superset_user_provisioned': superset_ok,
+        }
     finally:
         conn.close()
 

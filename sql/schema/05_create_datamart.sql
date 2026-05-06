@@ -64,32 +64,26 @@ BEGIN
     SELECT
         i.TenantID,
         i.StoreKey,
-        i.ProductKey,
-        p.ProductCode,
-        p.ProductName,
-        p.CategoryName,
-        i.DateKey,
-        i.OpeningStock,
-        i.ClosingStock,
-        i.StockReceived,
-        i.StockSold,
-        i.StockAdjusted,
-        i.ReorderPoint,
-        i.UnitCost,
-        i.TotalInventoryValue,
-        s.StoreName,
+        i.ProductID,
+        ISNULL(p.ProductName, i.ProductID)                           AS ProductName,
+        p.Category                                                    AS CategoryName,
+        i.CheckDate,
+        i.QuantityOnHand                                              AS ClosingStock,
+        i.ReorderLevel                                                AS ReorderPoint,
+        ISNULL(s.StoreName, CAST(i.StoreKey AS NVARCHAR))            AS StoreName,
         CASE
-            WHEN i.ClosingStock <= ISNULL(i.ReorderPoint, 0) THEN N''Cảnh báo''
-            WHEN i.ClosingStock <= ISNULL(i.ReorderPoint, 0) * 1.5 THEN N''Sắp hết''
+            WHEN i.QuantityOnHand <= ISNULL(i.ReorderLevel, 0)       THEN N''Cảnh báo''
+            WHEN i.QuantityOnHand <= ISNULL(i.ReorderLevel, 0) * 1.5 THEN N''Sắp hết''
             ELSE N''Bình thường''
         END AS AlertLevel,
         CASE
-            WHEN i.ClosingStock <= ISNULL(i.ReorderPoint, 0) THEN ISNULL(i.ReorderPoint, 0) - i.ClosingStock
+            WHEN i.QuantityOnHand <= ISNULL(i.ReorderLevel, 0)
+            THEN ISNULL(i.ReorderLevel, 0) - i.QuantityOnHand
             ELSE 0
         END AS StockShortage
     FROM FactInventory i
-    INNER JOIN DimProduct p ON p.ProductKey = i.ProductKey AND p.IsCurrent = 1
-    INNER JOIN DimStore s ON s.StoreKey = i.StoreKey
+    LEFT JOIN DimProduct p ON p.ProductID = i.ProductID
+    LEFT JOIN DimStore   s ON s.StoreKey  = i.StoreKey
     ');
     PRINT 'Created: DM_InventoryAlert (View)';
 END

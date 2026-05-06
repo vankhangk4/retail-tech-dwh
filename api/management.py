@@ -4,6 +4,7 @@
 # ============================================================
 
 import os
+import re
 import pymssql as mssql
 import jwt
 import logging
@@ -14,12 +15,26 @@ from fastapi import APIRouter, HTTPException, Header, Depends
 from passlib.context import CryptContext
 from pydantic import BaseModel
 
+from api.superset_provision import (
+    provision_tenant as superset_provision_tenant,
+    provision_user as superset_provision_user,
+    deactivate_user as superset_deactivate_user,
+    deprovision_tenant as superset_deprovision_tenant,
+)
+
 # ---- Configuration ----
 JWT_SECRET = os.environ.get('JWT_SECRET_KEY', 'changeme-minimum-32-chars!!')
 ALGORITHM = 'HS256'
 
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 DATA_ROOT = PROJECT_ROOT / 'data'
+TENANT_ID_RE = re.compile(r'^[A-Za-z0-9_]{1,20}$')
+USERNAME_RE = re.compile(r'^[A-Za-z0-9_]{3,100}$')
+AUTO_TENANT_PREFIX = os.environ.get('AUTO_TENANT_PREFIX', 'tenant').strip() or 'tenant'
+try:
+    AUTO_TENANT_ID_WIDTH = int(os.environ.get('AUTO_TENANT_ID_WIDTH', '3'))
+except ValueError:
+    AUTO_TENANT_ID_WIDTH = 3
 
 pwd_ctx = CryptContext(schemes=['bcrypt'], deprecated='auto')
 logger = logging.getLogger(__name__)
@@ -77,6 +92,85 @@ def hash_password(password: str) -> str:
     return pwd_ctx.hash(password)
 
 
+def validate_tenant_id(tenant_id: str) -> None:
+    if not TENANT_ID_RE.match(tenant_id):
+        raise HTTPException(
+            400,
+            detail='TenantID chi chap nhan chu cai, so, dau gach duoi va toi da 20 ky tu'
+        )
+
+
+def validate_username(username: str) -> None:
+    if not USERNAME_RE.match(username):
+        raise HTTPException(
+            400,
+            detail='Username chi chap nhan chu cai, so, dau gach duoi va tu 3-100 ky tu'
+        )
+
+
+def parse_expires_at(expires_at: Optional[str]) -> Optional[datetime]:
+    if not expires_at or not expires_at.strip():
+        return None
+    try:
+        return datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+    except ValueError:
+        raise HTTPException(
+            400,
+            detail='Dinh dang ExpiresAt khong hop le (VD: 2026-12-31T23:59:59)'
+        )
+
+
+def ensure_tenant_dirs(tenant_id: str) -> None:
+    tenant_dir = DATA_ROOT / tenant_id / 'logs'
+    tenant_dir.mkdir(parents=True, exist_ok=True)
+    logger.info(f'[ADMIN] Ensured ETL logs directory: {tenant_dir}')
+
+
+def generate_tenant_id(cursor) -> str:
+    """Sinh TenantID dang tenant_001, tenant_002... theo DB hien tai."""
+    prefix = AUTO_TENANT_PREFIX
+    if not re.match(r'^[A-Za-z0-9_]{1,12}$', prefix):
+        raise HTTPException(500, detail='AUTO_TENANT_PREFIX khong hop le')
+
+    like_pattern = f'{prefix}[_]%'
+    cursor.execute('SELECT TenantID FROM Tenants WHERE TenantID LIKE %s', (like_pattern,))
+    suffix_re = re.compile(rf'^{re.escape(prefix)}_(\d+)$')
+    max_seq = 0
+    for row in cursor.fetchall():
+        match = suffix_re.match(row[0])
+        if match:
+            max_seq = max(max_seq, int(match.group(1)))
+
+    next_seq = max_seq + 1
+    while True:
+        tenant_id = f'{prefix}_{next_seq:0{AUTO_TENANT_ID_WIDTH}d}'
+        if len(tenant_id) > 20:
+            raise HTTPException(500, detail='TenantID tu sinh vuot qua 20 ky tu')
+        cursor.execute('SELECT 1 FROM Tenants WHERE TenantID = %s', (tenant_id,))
+        if not cursor.fetchone():
+            return tenant_id
+        next_seq += 1
+
+
+def create_tenant_record(
+    cursor,
+    tenant_id: str,
+    tenant_name: Optional[str],
+    file_path: Optional[str],
+    expires_at: Optional[str],
+) -> None:
+    validate_tenant_id(tenant_id)
+    tenant_name = (tenant_name or f'Tenant {tenant_id}').strip()
+    tenant_file_path = (file_path or f'./data/{tenant_id}/').strip()
+    expires_dt = parse_expires_at(expires_at)
+    cursor.execute(
+        'INSERT INTO Tenants (TenantID, TenantName, FilePath, IsActive, ExpiresAt) '
+        'VALUES (%s, %s, %s, 1, %s)',
+        (tenant_id, tenant_name, tenant_file_path, expires_dt)
+    )
+    ensure_tenant_dirs(tenant_id)
+
+
 # ---- Pydantic Models ----
 
 class TenantCreate(BaseModel):
@@ -97,6 +191,9 @@ class UserCreate(BaseModel):
     username: str
     password: str
     tenant_id: Optional[str] = None
+    tenant_name: Optional[str] = None
+    file_path: Optional[str] = None
+    expires_at: Optional[str] = None
     role: str = 'viewer'
 
 
@@ -139,35 +236,35 @@ def create_tenant(data: TenantCreate, payload=Depends(require_admin)):
     """Tạo tenant mới — chỉ superadmin."""
     if not is_superadmin(payload):
         raise HTTPException(403, detail='Chi superadmin moi co quyen tao tenant')
+    validate_tenant_id(data.tenant_id)
     conn = get_mssql_conn()
     cursor = conn.cursor()
-    cursor.execute('SELECT 1 FROM Tenants WHERE TenantID = %s', (data.tenant_id,))
-    if cursor.fetchone():
+    try:
+        cursor.execute('SELECT 1 FROM Tenants WHERE TenantID = %s', (data.tenant_id,))
+        if cursor.fetchone():
+            raise HTTPException(400, detail='TenantID da ton tai')
+
+        create_tenant_record(cursor, data.tenant_id, data.tenant_name, data.file_path, data.expires_at)
+        conn.commit()
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        logger.error(f'[ADMIN] Failed to create tenant {data.tenant_id}: {e}', exc_info=True)
+        raise HTTPException(500, detail='Loi khi tao tenant')
+    finally:
         conn.close()
-        raise HTTPException(400, detail='TenantID da ton tai')
-
-    # Tạo thư mục logs ETL cho tenant ngay lập tức
-    tenant_dir = PROJECT_ROOT / 'data' / data.tenant_id / 'logs'
-    tenant_dir.mkdir(parents=True, exist_ok=True)
-    logger.info(f'[ADMIN] Created ETL logs directory: {tenant_dir}')
-
-    expires_at = None
-    if data.expires_at:
-        from datetime import datetime
-        try:
-            # Parse ISO datetime string (supports both with and without timezone)
-            expires_at = datetime.fromisoformat(data.expires_at.replace('Z', '+00:00'))
-        except ValueError:
-            raise HTTPException(400, detail='Dinh dang ExpiresAt khong hop le (VD: 2026-12-31T23:59:59)')
-
-    cursor.execute(
-        'INSERT INTO Tenants (TenantID, TenantName, FilePath, IsActive, ExpiresAt) VALUES (%s, %s, %s, 1, %s)',
-        (data.tenant_id, data.tenant_name, data.file_path, expires_at)
-    )
-    conn.commit()
-    conn.close()
     logger.info(f'[ADMIN] Created tenant: {data.tenant_id} by user_id={payload["user_id"]}')
-    return {'success': True, 'tenant_id': data.tenant_id}
+
+    # Auto-provision Superset role + RLS rules cho tenant mới
+    superset_ok = superset_provision_tenant(data.tenant_id)
+
+    return {
+        'success': True,
+        'tenant_id': data.tenant_id,
+        'superset_tenant_provisioned': superset_ok,
+    }
 
 
 @router.put('/tenants/{tenant_id}')
@@ -234,6 +331,9 @@ def delete_tenant(tenant_id: str, payload=Depends(require_admin)):
     conn.commit()
     conn.close()
     logger.info(f'[ADMIN] Deactivated tenant: {tenant_id}')
+
+    superset_deprovision_tenant(tenant_id)
+
     return {'success': True}
 
 
@@ -293,13 +393,19 @@ def list_users_by_tenant(tenant_id: str, payload=Depends(require_admin)):
                        'role': r['Role'], 'is_active': bool(r['IsActive'])} for r in rows]}
 
 
+@router.post('/admin/users')
 @router.post('/users')
 def create_user(data: UserCreate, payload=Depends(require_admin)):
     """
     Tạo user mới.
     - superadmin: tạo bất kỳ user nào
+      + role=admin không có tenant_id: tự sinh TenantID và tạo tenant mới
+      + role=admin có tenant_id chưa tồn tại: tạo tenant mới với TenantID đó
     - admin: chỉ tạo viewer thuộc tenant của mình
     """
+    username = data.username.strip()
+    validate_username(username)
+
     if not is_superadmin(payload):
         my_tenant = payload.get('tenant_id')
         # Admin tenant chỉ được tạo user viewer thuộc tenant của mình
@@ -315,33 +421,119 @@ def create_user(data: UserCreate, payload=Depends(require_admin)):
     elif data.role not in ('superadmin', 'admin', 'viewer'):
         raise HTTPException(400, detail='Role phai la superadmin, admin hoac viewer')
 
-    if data.tenant_id:
-        conn_check = get_mssql_conn()
-        cur = conn_check.cursor()
-        cur.execute('SELECT 1 FROM Tenants WHERE TenantID = %s AND IsActive = 1', (data.tenant_id,))
-        if not cur.fetchone():
-            conn_check.close()
-            raise HTTPException(400, detail='TenantID khong hop le hoac khong hoat dong')
-        conn_check.close()
-
-    tenant_for_user = data.tenant_id or (payload.get('tenant_id') if not is_superadmin(payload) else None)
-
     conn = get_mssql_conn()
     cursor = conn.cursor()
-    cursor.execute('SELECT 1 FROM AppUsers WHERE Username = %s', (data.username,))
-    if cursor.fetchone():
-        conn.close()
-        raise HTTPException(400, detail='Username da ton tai')
+    created_tenant_id = None
+    tenant_for_user = None
+    superset_tenant_ok = None
+    superset_user_ok = None
+    try:
+        cursor.execute('SELECT 1 FROM AppUsers WHERE Username = %s', (username,))
+        if cursor.fetchone():
+            raise HTTPException(400, detail='Username da ton tai')
 
-    password_hash = hash_password(data.password)
-    cursor.execute(
-        'INSERT INTO AppUsers (Username, PasswordHash, TenantID, Role, IsActive) VALUES (%s, %s, %s, %s, 1)',
-        (data.username, password_hash, tenant_for_user, data.role)
-    )
-    conn.commit()
-    conn.close()
-    logger.info(f'[ADMIN] Created user: {data.username} role={data.role} tenant={tenant_for_user}')
-    return {'success': True, 'username': data.username}
+        if not is_superadmin(payload):
+            tenant_for_user = payload.get('tenant_id')
+            cursor.execute(
+                'SELECT 1 FROM Tenants WHERE TenantID = %s AND IsActive = 1',
+                (tenant_for_user,)
+            )
+            if not cursor.fetchone():
+                raise HTTPException(400, detail='Tenant cua admin khong hop le hoac khong hoat dong')
+        elif data.role == 'superadmin':
+            if data.tenant_id:
+                raise HTTPException(400, detail='Superadmin khong duoc gan TenantID')
+            tenant_for_user = None
+        elif data.role == 'viewer':
+            if not data.tenant_id:
+                raise HTTPException(400, detail='Viewer bat buoc phai co TenantID')
+            validate_tenant_id(data.tenant_id)
+            cursor.execute(
+                'SELECT 1 FROM Tenants WHERE TenantID = %s AND IsActive = 1',
+                (data.tenant_id,)
+            )
+            if not cursor.fetchone():
+                raise HTTPException(400, detail='TenantID khong hop le hoac khong hoat dong')
+            tenant_for_user = data.tenant_id
+        else:  # superadmin tạo tenant-admin
+            requested_tenant_id = data.tenant_id.strip() if data.tenant_id else None
+            if requested_tenant_id:
+                validate_tenant_id(requested_tenant_id)
+                cursor.execute(
+                    'SELECT TenantID, IsActive FROM Tenants WHERE TenantID = %s',
+                    (requested_tenant_id,)
+                )
+                tenant_row = cursor.fetchone()
+                if tenant_row:
+                    if not tenant_row[1]:
+                        raise HTTPException(400, detail='TenantID da ton tai nhung dang bi vo hieu hoa')
+                    tenant_for_user = requested_tenant_id
+                else:
+                    tenant_for_user = requested_tenant_id
+                    create_tenant_record(
+                        cursor,
+                        tenant_for_user,
+                        data.tenant_name,
+                        data.file_path,
+                        data.expires_at,
+                    )
+                    created_tenant_id = tenant_for_user
+            else:
+                tenant_for_user = generate_tenant_id(cursor)
+                create_tenant_record(
+                    cursor,
+                    tenant_for_user,
+                    data.tenant_name or f'Tenant cua {username}',
+                    data.file_path,
+                    data.expires_at,
+                )
+                created_tenant_id = tenant_for_user
+
+            cursor.execute(
+                'SELECT 1 FROM AppUsers WHERE TenantID = %s AND Role = %s AND IsActive = 1',
+                (tenant_for_user, 'admin')
+            )
+            if cursor.fetchone():
+                raise HTTPException(
+                    403,
+                    detail='Tenant nay da co admin dang hoat dong. Chi duoc phep tao 1 admin cho moi tenant.'
+                )
+
+        password_hash = hash_password(data.password)
+        cursor.execute(
+            'INSERT INTO AppUsers (Username, PasswordHash, TenantID, Role, IsActive) VALUES (%s, %s, %s, %s, 1)',
+            (username, password_hash, tenant_for_user, data.role)
+        )
+        conn.commit()
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        logger.error(f'[ADMIN] Failed to create user {username}: {e}', exc_info=True)
+        raise HTTPException(500, detail='Loi khi tao user')
+    finally:
+        conn.close()
+
+    logger.info(f'[ADMIN] Created user: {username} role={data.role} tenant={tenant_for_user}')
+
+    # Auto-provision Superset user (role TenantViewer/Gamma + RLS_<tenant_id>)
+    # Superadmin (role=superadmin, tenant_id=None) → role Admin trong Superset
+    if data.role == 'superadmin':
+        superset_user_ok = superset_provision_user(username, data.password, tenant_id=None)
+    elif tenant_for_user:
+        superset_tenant_ok = superset_provision_tenant(tenant_for_user)
+        superset_user_ok = superset_provision_user(username, data.password, tenant_id=tenant_for_user)
+
+    return {
+        'success': True,
+        'username': username,
+        'tenant_id': tenant_for_user,
+        'tenant_created': created_tenant_id is not None,
+        'created_tenant_id': created_tenant_id,
+        'superset_tenant_provisioned': superset_tenant_ok,
+        'superset_user_provisioned': superset_user_ok,
+    }
 
 
 @router.put('/users/{user_id}')
@@ -424,6 +616,9 @@ def delete_user(user_id: int, payload=Depends(require_admin)):
     conn.commit()
     conn.close()
     logger.info(f'[ADMIN] Deactivated user_id={user_id} by {payload.get("username")}')
+
+    superset_deactivate_user(row['Username'])
+
     return {'success': True}
 
 
@@ -438,6 +633,11 @@ def get_etl_logs(
     payload=Depends(require_admin)
 ):
     """Danh sách ETL logs (Admin only)."""
+    if not is_superadmin(payload):
+        tenant_id = payload.get('tenant_id')
+        if not tenant_id:
+            return {'logs': []}
+
     conn = get_mssql_conn()
     cursor = conn.cursor(as_dict=True)
 
@@ -487,10 +687,21 @@ def get_watermarks(payload=Depends(require_admin)):
     """Danh sách watermark của tất cả tenant (Admin only)."""
     conn = get_mssql_conn()
     cursor = conn.cursor(as_dict=True)
-    cursor.execute(
-        'SELECT WatermarkID, TenantID, TableName, LastRunTime, LastRunStatus, UpdatedAt '
-        'FROM ETL_Watermark ORDER BY TenantID, TableName'
-    )
+    if is_superadmin(payload):
+        cursor.execute(
+            'SELECT WatermarkID, TenantID, TableName, LastRunTime, LastRunStatus, UpdatedAt '
+            'FROM ETL_Watermark ORDER BY TenantID, TableName'
+        )
+    else:
+        tenant_id = payload.get('tenant_id')
+        if not tenant_id:
+            conn.close()
+            return {'watermarks': []}
+        cursor.execute(
+            'SELECT WatermarkID, TenantID, TableName, LastRunTime, LastRunStatus, UpdatedAt '
+            'FROM ETL_Watermark WHERE TenantID = %s ORDER BY TenantID, TableName',
+            (tenant_id,)
+        )
     rows = cursor.fetchall()
     conn.close()
 
@@ -514,6 +725,9 @@ def trigger_etl(tenant_id: str, payload=Depends(require_admin)):
     """Trigger ETL cho 1 tenant cụ thể (Admin only)."""
     import subprocess
     import sys
+
+    if not is_superadmin(payload) and payload.get('tenant_id') != tenant_id:
+        raise HTTPException(403, detail='Admin chi duoc trigger ETL cho tenant cua minh')
 
     script_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'etl', 'orchestrator', 'main_etl.py')
 

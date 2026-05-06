@@ -88,6 +88,14 @@ def get_tenant_data_dir(tenant_id: str) -> Path:
     return data_dir
 
 
+def ensure_tenant_access(payload: dict, tenant_id: str) -> None:
+    """Superadmin được thao tác mọi tenant; các role khác chỉ được đúng tenant trong JWT."""
+    if payload.get('role') == 'superadmin':
+        return
+    if payload.get('tenant_id') != tenant_id:
+        raise HTTPException(403, detail='Chi duoc thao tac tren tenant cua minh')
+
+
 def detect_file_type(filename: str) -> Optional[str]:
     fname = filename.upper()
     if 'BAOCAODOANHTHU' in fname or 'DOANHTHU' in fname:
@@ -219,10 +227,7 @@ async def upload_files(
     """
     payload = require_auth(authorization)
 
-    role = payload.get('role', '')
-    user_tenant = payload.get('tenant_id', '')
-    if role == 'viewer' and user_tenant != tenant_id:
-        raise HTTPException(403, detail='Viewer chi duoc upload cho tenant cua minh')
+    ensure_tenant_access(payload, tenant_id)
 
     validate_tenant(tenant_id)
 
@@ -312,10 +317,7 @@ async def trigger_etl(
     """Trigger ETL cho tenant — nap du lieu tu file da upload vao Data Warehouse."""
     payload = require_auth(authorization)
 
-    role = payload.get('role', '')
-    user_tenant = payload.get('tenant_id', '')
-    if role == 'viewer' and user_tenant != tenant_id:
-        raise HTTPException(403, detail='Chi co admin hoac manager cua tenant nay moi co quyen')
+    ensure_tenant_access(payload, tenant_id)
 
     validate_tenant(tenant_id)
 
@@ -340,10 +342,7 @@ def get_etl_status(
     """Lay trang thai cuoi cua ETL chay cho tenant."""
     payload = require_auth(authorization)
 
-    role = payload.get('role', '')
-    user_tenant = payload.get('tenant_id', '')
-    if role == 'viewer' and user_tenant != tenant_id:
-        raise HTTPException(403, detail='Khong co quyen')
+    ensure_tenant_access(payload, tenant_id)
 
     validate_tenant(tenant_id)
 
@@ -387,10 +386,7 @@ def list_uploaded_files(
     """Danh sach file da upload cho tenant."""
     payload = require_auth(authorization)
 
-    role = payload.get('role', '')
-    user_tenant = payload.get('tenant_id', '')
-    if role == 'viewer' and user_tenant != tenant_id:
-        raise HTTPException(403, detail='Khong co quyen')
+    ensure_tenant_access(payload, tenant_id)
 
     validate_tenant(tenant_id)
 
@@ -417,8 +413,9 @@ def delete_uploaded_file(
 ):
     """Xoa file da upload (Admin only)."""
     payload = require_auth(authorization)
-    if payload.get('role') != 'admin':
+    if payload.get('role') not in ('admin', 'superadmin'):
         raise HTTPException(403, detail='Chi admin moi co quyen xoa file')
+    ensure_tenant_access(payload, tenant_id)
 
     validate_tenant(tenant_id)
 

@@ -447,21 +447,67 @@ BEGIN
     PRINT 'Created: DM_ProductPerformance';
 END
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'DM_InventoryAlert')
+IF NOT EXISTS (SELECT * FROM sys.views WHERE name = 'DM_InventoryAlert')
 BEGIN
-    CREATE TABLE DM_InventoryAlert (
-        AlertKey    BIGINT IDENTITY(1,1) PRIMARY KEY,
-        TenantID    VARCHAR(20)   NOT NULL,
-        ProductID   VARCHAR(20)   NOT NULL,
-        AlertDate   DATE          NOT NULL,
-        AlertType   NVARCHAR(50)  NOT NULL,
-        CurrentQty  INT           NOT NULL,
-        Threshold   INT           NOT NULL,
-        Message     NVARCHAR(500) NULL,
-        IsResolved  BIT           NOT NULL DEFAULT 0,
-        CreatedAt   DATETIME2     NOT NULL DEFAULT GETDATE()
-    );
-    PRINT 'Created: DM_InventoryAlert';
+    EXEC('
+    CREATE VIEW DM_InventoryAlert AS
+    SELECT
+        i.TenantID,
+        i.StoreKey,
+        i.ProductID,
+        ISNULL(p.ProductName, i.ProductID) AS ProductName,
+        p.Category                          AS CategoryName,
+        i.CheckDate,
+        i.QuantityOnHand                    AS ClosingStock,
+        i.ReorderLevel                      AS ReorderPoint,
+        ISNULL(s.StoreName, CAST(i.StoreKey AS NVARCHAR)) AS StoreName,
+        CASE
+            WHEN i.QuantityOnHand <= ISNULL(i.ReorderLevel, 0)       THEN N''Cảnh báo''
+            WHEN i.QuantityOnHand <= ISNULL(i.ReorderLevel, 0) * 1.5 THEN N''Sắp hết''
+            ELSE N''Bình thường''
+        END AS AlertLevel
+    FROM FactInventory i
+    LEFT JOIN DimProduct p ON p.ProductID = i.ProductID
+    LEFT JOIN DimStore   s ON s.StoreKey  = i.StoreKey
+    ');
+    PRINT 'Created: DM_InventoryAlert (View)';
+END
+
+-- V_SalesEnriched — Sales fact joined với dimensions, dùng cho dashboards
+IF NOT EXISTS (SELECT * FROM sys.views WHERE name = 'V_SalesEnriched')
+BEGIN
+    EXEC('
+    CREATE VIEW V_SalesEnriched AS
+    SELECT
+        f.SalesKey,
+        f.TenantID,
+        f.SaleDate,
+        YEAR(f.SaleDate)                                        AS Year,
+        MONTH(f.SaleDate)                                       AS Month,
+        DATEPART(quarter, f.SaleDate)                           AS Quarter,
+        DATENAME(month, f.SaleDate)                             AS MonthName,
+        f.ProductID,
+        ISNULL(p.ProductName, f.ProductID)                      AS ProductName,
+        p.Category                                              AS CategoryName,
+        p.SubCategory,
+        f.CustomerID,
+        f.StoreKey,
+        ISNULL(s.StoreName, CAST(f.StoreKey AS NVARCHAR))       AS StoreName,
+        f.EmployeeID,
+        ISNULL(e.EmployeeName, f.EmployeeID)                    AS EmployeeName,
+        f.PaymentMethod,
+        f.Quantity,
+        f.UnitPrice,
+        f.Discount,
+        f.Revenue,
+        f.Cost,
+        f.Profit
+    FROM FactSales f
+    LEFT JOIN DimProduct  p ON p.ProductID  = f.ProductID
+    LEFT JOIN DimStore    s ON s.StoreKey   = f.StoreKey
+    LEFT JOIN DimEmployee e ON e.EmployeeID = f.EmployeeID
+    ');
+    PRINT 'Created: V_SalesEnriched (View)';
 END
 
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'DM_EmployeePerformance')

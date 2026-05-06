@@ -16,25 +16,19 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 DATASETS = [
-    {'id': 1,  'name': 'FactSales'},
-    {'id': 2,  'name': 'FactInventory'},
-    {'id': 3,  'name': 'FactPurchase'},
-    {'id': 4,  'name': 'DimProduct'},
-    {'id': 5,  'name': 'DimCustomer'},
-    {'id': 6,  'name': 'DimStore'},
-    {'id': 7,  'name': 'DimEmployee'},
-    {'id': 8,  'name': 'DimDate'},
-    {'id': 9,  'name': 'DM_SalesSummary'},
-    {'id': 10, 'name': 'DM_CustomerRFM'},
+    'FactSales', 'FactInventory', 'FactPurchase',
+    'DimProduct', 'DimCustomer', 'DimStore', 'DimEmployee', 'DimDate',
+    'DM_SalesSummary', 'DM_CustomerRFM', 'DM_InventoryAlert',
+    'V_SalesEnriched',
 ]
 
 
-def sync_columns(ds_id: int, ds_name: str):
+def sync_columns(ds_name: str):
     """Force-fetch columns bằng fetch_metadata()."""
     from superset.extensions import db
     from superset.connectors.sqla.models import SqlaTable, TableColumn
 
-    ds = db.session.query(SqlaTable).filter_by(id=ds_id).first()
+    ds = db.session.query(SqlaTable).filter_by(table_name=ds_name).first()
     if not ds:
         logger.warning(f'[{ds_name}] Dataset not found')
         return False
@@ -44,7 +38,7 @@ def sync_columns(ds_id: int, ds_name: str):
         ds.fetch_metadata()
         db.session.commit()
 
-        col_count = db.session.query(TableColumn).filter_by(table_id=ds_id).count()
+        col_count = db.session.query(TableColumn).filter_by(table_id=ds.id).count()
         logger.info(f'[{ds_name}] Fetched {col_count} columns')
 
         # Nếu vẫn 0 columns, thử cách khác
@@ -84,14 +78,14 @@ def main():
 
     with app.app_context():
         success = 0
-        for ds in DATASETS:
-            ok = sync_columns(ds['id'], ds['name'])
+        for ds_name in DATASETS:
+            ok = sync_columns(ds_name)
             if ok:
                 success += 1
             time.sleep(1)
 
     logger.info('=' * 60)
-    logger.info(f'Sync complete: {success}/{len(DATASETS)} datasets OK')
+    logger.info(f'Sync complete: {success}/{len(DATASETS)} datasets OK')  # noqa
     logger.info('Refresh dashboards in Superset UI')
     logger.info('=' * 60)
     return 0

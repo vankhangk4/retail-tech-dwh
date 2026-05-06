@@ -63,20 +63,11 @@ FEATURE_FLAGS = {
 # ============================================================
 # ROW LEVEL SECURITY (RLS) CONFIGURATION
 # ============================================================
-# Superset RLS tự động append WHERE clause vào mọi query
-# Cấu hình được thiết lập trong Superset UI:
-#   Security → Row Level Security → (+)
-#   Table: FactSales, Role: RLS_STORE_HN, Clause: tenant_id = 'STORE_HN'
-#
-# Các Role RLS cần tạo trong Superset:
-#   - RLS_STORE_HN  → thấy data STORE_HN
-#   - RLS_STORE_HCM → thấy data STORE_HCM
-#   - Admin: không có RLS filter (toàn quyền)
-#
-# Các bảng cần cấu hình RLS:
-#   - FactSales, FactInventory, FactPurchase (TenantID)
-#   - DimCustomer, DimStore, DimEmployee (TenantID)
-#   - DM_SalesSummary, DM_CustomerRFM (TenantID)
+# Superset RLS tự động append WHERE clause vào query.
+# RLS được provision động:
+#   - Superset startup script đọc Tenants active từ MSSQL.
+#   - Auth Gateway tạo role RLS_<TenantID> + RLS rules khi superadmin tạo tenant/admin.
+#   - Admin Superset không có RLS filter; user tenant luôn có role RLS_<TenantID>.
 
 # ============================================================
 # DATABASE CONNECTION

@@ -25,6 +25,10 @@ xlrd>=2.0.0
 # HTTP client
 requests>=2.31.0
 
+# Superset provisioning (PostgreSQL + werkzeug PBKDF2 hashing)
+psycopg2-binary>=2.9.0
+werkzeug>=2.3.0
+
 # Email
 aiosmtplib>=3.0.0
 

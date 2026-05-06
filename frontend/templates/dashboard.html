@@ -709,7 +709,9 @@
                     .map(t => `<option value="${t.tenant_id}">${t.tenant_id} — ${t.tenant_name}</option>`)
                     .join('');
             } catch (e) {
-                tenantSelect.innerHTML = '<option value="STORE_HN">STORE_HN</option><option value="STORE_HCM">STORE_HCM</option>';
+                tenantSelect.innerHTML = USER_TENANT
+                    ? `<option value="${USER_TENANT}">${USER_TENANT}</option>`
+                    : '<option value="">— Không tải được tenant —</option>';
             }
         }
 
@@ -884,7 +886,7 @@
 
         function getCurrentTenant() {
             if (etlTenantSelect) return etlTenantSelect.value;
-            return USER_TENANT || 'STORE_HN';
+            return USER_TENANT || '';
         }
 
         if (fileInput) {
@@ -1441,6 +1443,12 @@
             const tenantId = document.getElementById('newUserTenant').value || null;
             const role = document.getElementById('newUserRole').value;
 
+            if (role === 'viewer' && !tenantId) {
+                msgEl.textContent = '✕ Viewer phải chọn tenant';
+                msgEl.className = 'form-msg error';
+                return;
+            }
+
             msgEl.textContent = 'Đang tạo...';
             msgEl.className = 'form-msg running';
 
@@ -1452,10 +1460,14 @@
                 });
                 const data = await resp.json();
                 if (resp.ok && data.success) {
-                    msgEl.textContent = '✓ User "' + username + '" đã được tạo!';
+                    msgEl.textContent = data.tenant_created
+                        ? `✓ Admin "${username}" đã được tạo với tenant ${data.tenant_id}!`
+                        : '✓ User "' + username + '" đã được tạo!';
                     msgEl.className = 'form-msg success';
                     document.getElementById('newUserUsername').value = '';
                     document.getElementById('newUserPassword').value = '';
+                    document.getElementById('newUserTenant').value = '';
+                    populateTenantDropdown();
                     loadAdminData();
                 } else {
                     throw new Error(data.detail || data.message || 'Tạo thất bại');
