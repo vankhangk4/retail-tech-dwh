@@ -428,6 +428,10 @@ body.shell-body {
     grid-column: span 4;
 }
 
+.panel--span-8 {
+    grid-column: span 8;
+}
+
 .workspace-card--span-4 {
     grid-column: span 4;
 }
@@ -751,6 +755,7 @@ body.sidebar-collapsed .rail-footer .button {
     .panel--span-7,
     .panel--span-5,
     .panel--span-4,
+    .panel--span-8,
     .workspace-card--span-4,
     .workspace-card--span-6,
     .workspace-card--span-8 {

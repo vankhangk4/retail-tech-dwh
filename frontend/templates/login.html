@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Đăng nhập điều hành | DWH Multi-Tenant</title>
+    <title>Đăng nhập | DWH Operations Console</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
 </head>
@@ -25,50 +25,40 @@
                     </div>
                     <div class="auth-brand__copy">
                         <span class="auth-brand__name">DWH Operations Console</span>
-                        <span class="auth-brand__meta">Data Warehouse multi-tenant cho chuỗi bán lẻ công nghệ</span>
+                        <span class="auth-brand__meta">Cổng truy cập theo tenant cho nền tảng dữ liệu bán lẻ</span>
                     </div>
                 </div>
 
                 <div class="auth-hero">
-                    <span class="eyebrow">Truy cập điều hành</span>
-                    <h1>Vào bàn điều hành để kiểm tra sức khỏe hệ thống và điều phối tenant.</h1>
-                    <p>Giao diện này được thiết kế cho người vận hành toàn hệ thống, tập trung vào tín hiệu rõ, trạng thái tin cậy và đường đi demo mạch lạc.</p>
+                    <span class="eyebrow">Secure Access</span>
+                    <h1>Truy cập an toàn vào nền tảng dữ liệu bán lẻ.</h1>
+                    <p>Đăng nhập để kiểm tra trạng thái hệ thống, theo dõi dữ liệu và mở dashboard trong đúng phạm vi tenant đã được cấp.</p>
+                </div>
 
-                    <div class="auth-bullet-list">
-                        <div class="auth-bullet">
-                            <div class="auth-bullet__icon" aria-hidden="true">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M4 13h6V4H4z"/><path d="M14 20h6v-9h-6z"/><path d="M14 10h6V4h-6z"/><path d="M4 20h6v-3H4z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <strong>Tổng quan vận hành trước</strong>
-                                <span>Nhìn thấy tình trạng hệ thống, độ tươi dữ liệu và tenant cần chú ý trước khi đi vào phân tích.</span>
-                            </div>
+                <div class="auth-status-cluster" aria-label="Tín hiệu hệ thống và bảo mật">
+                    <section class="auth-signal">
+                        <span class="auth-signal__title">Tư thế bảo mật</span>
+                        <div class="auth-signal__row">
+                            <span>Auth Gateway</span>
+                            <strong>Sẵn sàng</strong>
                         </div>
-                        <div class="auth-bullet">
-                            <div class="auth-bullet__icon" aria-hidden="true">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21 12a9 9 0 1 1-9-9"/><path d="M21 3v9h-9"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <strong>Truy vết ETL và quản trị tenant</strong>
-                                <span>Từ upload dữ liệu đến log ETL, mọi hành động đều đặt trong cùng một nhịp điều hành.</span>
-                            </div>
+                        <div class="auth-signal__row">
+                            <span>Chính sách phiên</span>
+                            <strong>Bắt buộc</strong>
                         </div>
-                        <div class="auth-bullet">
-                            <div class="auth-bullet__icon" aria-hidden="true">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 1l3 6 6 .9-4.5 4.4 1.1 6.2L12 15.9l-5.6 2.6 1.1-6.2L3 7.9 9 7z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <strong>Tin cậy khi trình bày</strong>
-                                <span>Thích hợp cho demo trên laptop hoặc máy chiếu, ưu tiên cấu trúc rõ và tương phản chắc.</span>
-                            </div>
+                    </section>
+
+                    <section class="auth-signal">
+                        <span class="auth-signal__title">Phân quyền dữ liệu</span>
+                        <div class="auth-signal__row">
+                            <span>Phạm vi tenant</span>
+                            <strong>Được áp dụng</strong>
                         </div>
-                    </div>
+                        <div class="auth-signal__row">
+                            <span>Quyền truy cập</span>
+                            <strong>Theo vai trò</strong>
+                        </div>
+                    </section>
                 </div>
             </div>
         </aside>
@@ -77,21 +67,21 @@
             <section class="auth-card">
                 <div class="auth-card__head">
                     <span class="eyebrow">Đăng nhập</span>
-                    <h2>Vào bàn điều hành</h2>
-                    <p>Dùng tài khoản đã được cấp để mở lớp điều hành frontend và các dashboard BI nhúng.</p>
+                    <h2>Vào nền tảng</h2>
+                    <p>Dùng tài khoản đã được cấp để mở dashboard, tín hiệu vận hành và lớp dữ liệu liên quan đến tenant của bạn.</p>
                 </div>
 
                 <form id="loginForm" class="auth-form" novalidate>
                     <div class="field">
                         <label for="username">Tên đăng nhập</label>
-                        <input class="input" type="text" id="username" name="username" autocomplete="username" placeholder="ví dụ: admin" required>
-                        <span class="field-error" id="usernameError"></span>
+                        <input class="input" type="text" id="username" name="username" autocomplete="username" aria-describedby="usernameError" placeholder="ví dụ: admin" required>
+                        <span class="field-error" id="usernameError" data-input="username"></span>
                     </div>
 
                     <div class="field">
                         <label for="password">Mật khẩu</label>
                         <div class="password-shell">
-                            <input class="input" type="password" id="password" name="password" autocomplete="current-password" placeholder="Nhập mật khẩu" required>
+                            <input class="input" type="password" id="password" name="password" autocomplete="current-password" aria-describedby="passwordError" placeholder="Nhập mật khẩu" required>
                             <button class="password-toggle" type="button" data-toggle-password data-target="password" aria-label="Hiện hoặc ẩn mật khẩu" aria-pressed="false">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -99,19 +89,24 @@
                                 </svg>
                             </button>
                         </div>
-                        <span class="field-error" id="passwordError"></span>
+                        <span class="field-error" id="passwordError" data-input="password"></span>
                     </div>
 
                     <div class="alert alert--danger" id="loginAlert" aria-live="polite"></div>
 
                     <button id="loginBtn" class="button button--primary" type="submit">
-                        <span class="button__label">Vào bàn điều hành</span>
+                        <span class="button__label">Đăng nhập vào hệ thống</span>
                     </button>
+
+                    <div class="auth-trust-strip">
+                        <span class="auth-trust-strip__dot" aria-hidden="true"></span>
+                        <span>Phiên được mã hóa, quyền truy cập áp theo tenant và vai trò.</span>
+                    </div>
                 </form>
 
                 <div class="auth-footer">
-                    <span>Chưa có tài khoản? <a class="auth-link" href="/register">Tạo quyền truy cập</a></span>
-                    <span>© 2026 · Nguyễn Văn Khang · ĐH Thủy Lợi</span>
+                    <span>Chưa có tài khoản? <a class="auth-link" href="/register">Tạo tài khoản User</a></span>
+                    <span>Đăng nhập là điểm vào cho dữ liệu, dashboard và tín hiệu hệ thống.</span>
                 </div>
             </section>
         </main>

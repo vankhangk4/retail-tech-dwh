@@ -202,15 +202,15 @@
                 <div class="mission-brief">
                     <div class="mission-brief__copy">
                         <span class="eyebrow">System briefing</span>
-                        <h2>Đi từ sức khỏe hệ thống tới bằng chứng phân tích, theo một nhịp demo mạch lạc.</h2>
-                        <p>Trang này là điểm mở đầu cho admin toàn hệ thống. Mục tiêu không phải hiển thị nhiều card, mà là giúp anh, giảng viên và hội đồng hiểu ngay hệ thống có ổn không, dữ liệu có đáng tin không, và nên bấm vào đâu tiếp theo.</p>
+                        <h2>Hệ thống Phân tích Dữ liệu Bán lẻ.</h2>
+                        <p>Nền tảng hỗ trợ theo dõi hiệu năng hệ thống, giám sát luồng dữ liệu (pipeline) và phân tích chỉ số kinh doanh đa chi nhánh (multi-tenant).</p>
                         <div class="inline-actions">
-                            <button class="button button--primary" type="button" data-open-page="revenue">Mở phòng doanh thu</button>
-                            <button class="button button--secondary" type="button" data-open-page="etl">Xem vận hành ETL</button>
+                            <button class="button button--primary" type="button" data-open-page="revenue">Xem báo cáo</button>
+                            <button class="button button--secondary" type="button" data-open-page="etl">Giám sát ETL</button>
                             {% if user.role == 'superadmin' %}
-                            <button class="button button--secondary" type="button" data-open-page="admin">Đi tới quản trị hệ thống</button>
+                            <button class="button button--secondary" type="button" data-open-page="admin">Quản trị hệ thống</button>
                             {% elif user.role == 'admin' %}
-                            <button class="button button--secondary" type="button" data-open-page="manage">Đi tới quản lý tenant</button>
+                            <button class="button button--secondary" type="button" data-open-page="manage">Quản trị hệ thống</button>
                             {% endif %}
                         </div>
                     </div>

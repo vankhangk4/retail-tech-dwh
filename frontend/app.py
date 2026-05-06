@@ -150,6 +150,8 @@ def api_register():
         return jsonify({'success': False, 'message': 'Tên đăng nhập phải từ 3 ký tự'}), 400
     if len(password) < 6:
         return jsonify({'success': False, 'message': 'Mật khẩu phải ít nhất 6 ký tự'}), 400
+    if role == 'user':
+        role = 'viewer'
     if role not in ('viewer', 'admin'):
         return jsonify({'success': False, 'message': 'Vai trò không hợp lệ'}), 400
     if not tenant_id:

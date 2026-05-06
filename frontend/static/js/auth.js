@@ -1,5 +1,7 @@
-function showAlert(element, message) {
+function showAlert(element, message, tone = 'danger') {
     if (!element) return;
+    element.classList.remove('alert--danger', 'alert--success');
+    element.classList.add(tone === 'success' ? 'alert--success' : 'alert--danger');
     element.textContent = message;
     element.classList.add('is-visible');
 }
@@ -14,6 +16,16 @@ function setFieldError(id, message) {
     const el = document.getElementById(id);
     if (!el) return;
     el.textContent = message || '';
+    const inputId = el.dataset.input;
+    if (inputId) {
+        let input = document.getElementById(inputId);
+        if (inputId === 'tenant_id' && input && input.disabled) {
+            input = document.getElementById('tenant_id_manual') || input;
+        }
+        if (input) {
+            input.setAttribute('aria-invalid', message ? 'true' : 'false');
+        }
+    }
 }
 
 function togglePasswordVisibility(button) {
@@ -33,7 +45,6 @@ function bindPasswordToggles() {
 
 async function handleLoginSubmit(event) {
     event.preventDefault();
-    const form = event.currentTarget;
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
     const button = document.getElementById('loginBtn');
@@ -55,7 +66,7 @@ async function handleLoginSubmit(event) {
     if (!username || !password) return;
 
     button.disabled = true;
-    button.querySelector('.button__label').textContent = 'Đang xác thực...';
+    button.querySelector('.button__label').textContent = 'Đang xác thực truy cập...';
 
     try {
         const response = await fetch('/api/login', {
@@ -70,10 +81,10 @@ async function handleLoginSubmit(event) {
         }
         window.location.href = '/dashboard';
     } catch (error) {
-        showAlert(alertBox, 'Không kết nối được Auth Gateway. Kiểm tra dịch vụ rồi thử lại.');
+        showAlert(alertBox, 'Không kết nối được lớp xác thực. Kiểm tra dịch vụ rồi thử lại.');
     } finally {
         button.disabled = false;
-        button.querySelector('.button__label').textContent = 'Vào bàn điều hành';
+        button.querySelector('.button__label').textContent = 'Đăng nhập vào hệ thống';
     }
 }
 
@@ -121,13 +132,13 @@ async function populateTenantOptions() {
             )).join('');
         select.disabled = false;
         if (manualWrapper) manualWrapper.classList.remove('is-visible');
-        if (tenantHint) tenantHint.textContent = 'Danh sách tenant active được nạp từ hệ thống.';
+        if (tenantHint) tenantHint.textContent = 'Chọn tenant được phép self-signup trong hệ thống.';
     } catch (error) {
         select.innerHTML = '<option value="">Không tải được danh sách tenant</option>';
         select.disabled = true;
         if (manualWrapper) manualWrapper.classList.add('is-visible');
         if (tenantHint) {
-            tenantHint.textContent = 'Nếu hệ thống chưa mở danh sách tenant công khai, nhập trực tiếp mã tenant do admin cấp.';
+            tenantHint.textContent = 'Danh sách tenant không mở công khai. Nhập trực tiếp mã tenant do admin cung cấp.';
         }
     }
 }
@@ -145,7 +156,8 @@ async function handleRegisterSubmit(event) {
     const confirmPassword = document.getElementById('confirmPassword').value;
     const tenantSelect = document.getElementById('tenant_id');
     const tenantManual = document.getElementById('tenant_id_manual');
-    const role = document.getElementById('role').value;
+    const roleInput = document.getElementById('role');
+    const role = roleInput ? roleInput.value : 'user';
     const tenantId = tenantSelect.disabled ? tenantManual.value.trim() : tenantSelect.value;
 
     let valid = true;
@@ -176,7 +188,7 @@ async function handleRegisterSubmit(event) {
     if (!valid) return;
 
     button.disabled = true;
-    button.querySelector('.button__label').textContent = 'Đang tạo quyền truy cập...';
+    button.querySelector('.button__label').textContent = 'Đang cấp quyền truy cập...';
 
     try {
         const response = await fetch('/api/register', {
@@ -189,17 +201,15 @@ async function handleRegisterSubmit(event) {
             showAlert(alertBox, data.message || 'Không thể tạo tài khoản. Kiểm tra dữ liệu rồi thử lại.');
             return;
         }
-        showAlert(alertBox, data.message || 'Tài khoản đã được tạo. Chuyển sang đăng nhập...');
-        alertBox.classList.remove('alert--danger');
-        alertBox.classList.add('alert--success');
+        showAlert(alertBox, data.message || 'Tài khoản User đã được tạo. Chuyển sang đăng nhập...', 'success');
         setTimeout(() => {
             window.location.href = '/login';
         }, 1100);
     } catch (error) {
-        showAlert(alertBox, 'Không kết nối được hệ thống đăng ký. Thử lại sau ít phút.');
+        showAlert(alertBox, 'Không kết nối được dịch vụ đăng ký. Kiểm tra Auth Gateway rồi thử lại.');
     } finally {
         button.disabled = false;
-        button.querySelector('.button__label').textContent = 'Tạo tài khoản';
+        button.querySelector('.button__label').textContent = 'Tạo tài khoản User';
     }
 }
 
