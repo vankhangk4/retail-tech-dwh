@@ -317,8 +317,6 @@ def delete_tenant(tenant_id: str, payload=Depends(require_admin)):
     """Xóa tenant — chỉ superadmin. Soft delete."""
     if not is_superadmin(payload):
         raise HTTPException(403, detail='Chi superadmin moi co quyen xoa tenant')
-    if tenant_id in ('STORE_HN', 'STORE_HCM'):
-        raise HTTPException(400, detail='Khong the xoa tenant mac dinh')
 
     conn = get_mssql_conn()
     cursor = conn.cursor()

@@ -192,31 +192,34 @@ def get_or_create_embedded_dashboard_uuid(dashboard_id: int, admin_token: str) -
 # BOOTSTRAP — tạo user vào AppUsers khi API khởi động
 # ============================================================
 
-def bootstrap_tenants():
-    """Tạo các tenant mặc định nếu chưa tồn tại (dùng cho demo users)."""
-    conn = get_mssql_conn()
-    cursor = conn.cursor()
+def sync_existing_tenants_to_superset():
+    """Sync existing tenants from MSSQL to Superset RLS provisioning.
 
+    Called on API startup to provision RLS roles for all active tenants.
+    Requires Superset to be running and PostgreSQL database accessible.
+    """
     try:
-        default_tenants = [
-            ('STORE_HN', 'Cua hang Ha Noi', './data/STORE_HN/'),
-            ('STORE_HCM', 'Cua hang Ho Chi Minh', './data/STORE_HCM/'),
-        ]
-        for tid, tname, tpath in default_tenants:
-            cursor.execute('SELECT 1 FROM Tenants WHERE TenantID = %s', (tid,))
-            if not cursor.fetchone():
-                cursor.execute(
-                    'INSERT INTO Tenants (TenantID, TenantName, FilePath, IsActive) VALUES (%s, %s, %s, 1)',
-                    (tid, tname, tpath)
-                )
-                logger.info(f'[BOOTSTRAP] Created tenant: {tid}')
-                conn.commit()
-            else:
-                logger.info(f'[BOOTSTRAP] Tenant already exists: {tid}')
-    except Exception as e:
-        logger.warning(f'[BOOTSTRAP] Tenant bootstrap skipped: {e}')
-    finally:
+        from api.superset_provision import provision_tenant
+
+        conn = get_mssql_conn()
+        cursor = conn.cursor()
+
+        cursor.execute('SELECT TenantID FROM Tenants WHERE IsActive = 1 ORDER BY TenantID')
+        tenants = [row[0] for row in cursor.fetchall()]
         conn.close()
+
+        logger.info(f'[BOOTSTRAP] Syncing {len(tenants)} tenants to Superset RLS...')
+        for tenant_id in tenants:
+            try:
+                success = provision_tenant(tenant_id)
+                if success:
+                    logger.info(f'[BOOTSTRAP] Provisioned Superset RLS for tenant: {tenant_id}')
+                else:
+                    logger.warning(f'[BOOTSTRAP] Failed to provision tenant {tenant_id} (may not be critical)')
+            except Exception as e:
+                logger.warning(f'[BOOTSTRAP] Error provisioning tenant {tenant_id}: {e}')
+    except Exception as e:
+        logger.warning(f'[BOOTSTRAP] Tenant sync to Superset skipped: {e}')
 
 
 def bootstrap_users():
@@ -298,10 +301,10 @@ def run_bootstrap():
     if not wait_for_mssql(max_retries=10, delay=5):
         logger.error('[BOOTSTRAP] MSSQL not available — skipping bootstrap')
         return
-    # Tạo tenant mặc định trước (để demo users có tenant hợp lệ)
-    bootstrap_tenants()
-    # Sau đó sync users
+    # Sync users từ env
     bootstrap_users()
+    # Sync existing tenants to Superset RLS (idempotent)
+    sync_existing_tenants_to_superset()
 
 
 # ---- Endpoints ----

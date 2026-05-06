@@ -52,18 +52,18 @@ services:
     volumes:
       - ./sql:/sql
     command: >
-      bash -c "
-        echo '[INIT] Cho MSSQL san sang...';
+      bash -c '
+        echo "[INIT] Cho MSSQL san sang...";
         sleep 3;
         for i in 1 2 3 4 5; do
-          /opt/mssql-tools18/bin/sqlcmd -S mssql -U sa -P '${MSSQL_SA_PASSWORD}' -d master -Q 'SELECT 1' -C && break;
+          /opt/mssql-tools18/bin/sqlcmd -S mssql -U sa -P "${MSSQL_SA_PASSWORD}" -d master -Q "SELECT 1" -C && break;
           echo "[INIT] Thu $$i - cho 5s...";
           sleep 5;
         done;
-        echo '[INIT] Dang chay 00_init.sql...';
-        /opt/mssql-tools18/bin/sqlcmd -S mssql -U sa -P '${MSSQL_SA_PASSWORD}' -d master -i /sql/00_init.sql -C;
-        echo '[INIT] Hoan tat. DB DWH_MultiTenant da duoc tao.';
-      "
+        echo "[INIT] Dang chay 00_init.sql...";
+        /opt/mssql-tools18/bin/sqlcmd -S mssql -U sa -P "${MSSQL_SA_PASSWORD}" -d master -i /sql/00_init.sql -C;
+        echo "[INIT] Hoan tat. DB DWH_MultiTenant da duoc tao.";
+      '
     networks:
       - dwh-network
     restart: 'no'
