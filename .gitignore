@@ -45,6 +45,7 @@ superset_home/
 
 # IDE & Editor
 .vscode/
+.claude/
 .idea/
 *.swp
 *.swo

@@ -65,8 +65,8 @@ DASHBOARDS = [
      'charts': [
          {'name': 'Doanh thu theo tháng',   'viz': 'line',       'dataset': 'V_SalesEnriched', 'dims': ['MonthName'],     'metrics': [{'label': 'SUM(Revenue)',  'agg': 'SUM'}]},
          {'name': 'Doanh thu theo phương thức TT','viz': 'bar',  'dataset': 'V_SalesEnriched', 'dims': ['PaymentMethod'], 'metrics': [{'label': 'SUM(Revenue)',  'agg': 'SUM'}]},
-         {'name': 'TOP sản phẩm bán chạy',  'viz': 'big_number', 'dataset': 'V_SalesEnriched', 'dims': [],                'metrics': [{'label': 'SUM(Quantity)', 'agg': 'SUM'}]},
-         {'name': 'Doanh thu theo danh mục','viz': 'pie',        'dataset': 'V_SalesEnriched', 'dims': ['CategoryName'],  'metrics': [{'label': 'SUM(Revenue)',  'agg': 'SUM'}]},
+         {'name': 'TOP sản phẩm bán chạy',  'viz': 'bar',        'dataset': 'V_SalesEnriched', 'dims': ['ProductName'],   'metrics': [{'label': 'SUM(Quantity)', 'agg': 'SUM'}]},
+         {'name': 'Doanh thu theo danh mục','viz': 'bar',        'dataset': 'V_SalesEnriched', 'dims': ['CategoryName'],  'metrics': [{'label': 'SUM(Revenue)',  'agg': 'SUM'}]},
      ]},
     {'id': 2, 'slug': 'products',  'title': 'Dashboard Sản phẩm',
      'charts': [
@@ -79,7 +79,7 @@ DASHBOARDS = [
      ]},
     {'id': 4, 'slug': 'customers','title': 'Dashboard Khách hàng',
      'charts': [
-         {'name': 'Phân bố phân khúc khách hàng', 'viz': 'pie', 'dataset': 'DM_CustomerRFM', 'dims': ['Segment'], 'metrics': [{'label': 'COUNT(Segment)', 'agg': 'COUNT'}]},
+         {'name': 'Phân bố phân khúc khách hàng', 'viz': 'bar', 'dataset': 'DM_CustomerRFM', 'dims': ['Segment'], 'metrics': [{'label': 'COUNT(Segment)', 'agg': 'COUNT'}]},
      ]},
     {'id': 5, 'slug': 'employees','title': 'Dashboard Nhân viên',
      'charts': [
