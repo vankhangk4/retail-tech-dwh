@@ -500,21 +500,37 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
         except Exception as e:
             logger.warning(f'  [MERGE] DimCustomer failed: {e}')
 
-        # Upsert DimStore from STG_InventoryRaw
+        # Sync DimStore from tenant master instead of trusting StoreName in uploaded files.
         try:
             run_sql(conn, f"""
-                MERGE INTO DimStore AS target
-                USING (
-                    SELECT DISTINCT TenantID, StoreName
-                    FROM STG_InventoryRaw
-                    WHERE TenantID = %s AND StoreName IS NOT NULL AND StoreName != ''
-                ) AS source
-                ON target.StoreName = source.StoreName AND target.TenantID = source.TenantID
-                WHEN NOT MATCHED THEN
-                    INSERT (TenantID, StoreName, City, Region, Address, IsActive)
-                    VALUES (source.TenantID, source.StoreName, '', '', '', 1);
-            """, [tenant_id])
-            logger.info('  [MERGE] DimStore from inventory done')
+                UPDATE ds
+                SET
+                    ds.StoreName = t.TenantName,
+                    ds.IsActive = t.IsActive
+                FROM DimStore ds
+                INNER JOIN Tenants t ON t.TenantID = ds.TenantID
+                WHERE ds.TenantID = %s;
+
+                IF NOT EXISTS (SELECT 1 FROM DimStore WHERE TenantID = %s)
+                BEGIN
+                    INSERT INTO DimStore (
+                        TenantID, StoreName, City, Region, Address,
+                        ManagerName, OpenDate, IsActive
+                    )
+                    SELECT
+                        TenantID,
+                        TenantName,
+                        '',
+                        '',
+                        '',
+                        NULL,
+                        CAST(GETDATE() AS DATE),
+                        IsActive
+                    FROM Tenants
+                    WHERE TenantID = %s;
+                END
+            """, [tenant_id, tenant_id, tenant_id])
+            logger.info('  [MERGE] DimStore synced from Tenants done')
         except Exception as e:
             logger.warning(f'  [MERGE] DimStore failed: {e}')
 
@@ -553,8 +569,12 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                     GETDATE()
                 FROM STG_SalesRaw s
                 INNER JOIN DimProduct p ON p.ProductID = s.ProductID AND p.IsActive = 1
-                INNER JOIN DimStore st ON st.StoreName = s.StoreName COLLATE Vietnamese_CI_AS
-                    AND st.TenantID = s.TenantID
+                CROSS APPLY (
+                    SELECT TOP 1 ds.StoreKey
+                    FROM DimStore ds
+                    WHERE ds.TenantID = s.TenantID
+                    ORDER BY ds.StoreKey
+                ) st
                 WHERE s.TenantID = %s
                   AND s.ProductID IS NOT NULL AND s.ProductID != ''
                   AND s.SaleDate IS NOT NULL
@@ -590,7 +610,12 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                     GETDATE()
                 FROM STG_InventoryRaw s
                 INNER JOIN DimProduct p ON p.ProductID = s.ProductID AND p.IsActive = 1
-                INNER JOIN DimStore st ON st.StoreName = s.StoreName AND st.TenantID = s.TenantID
+                CROSS APPLY (
+                    SELECT TOP 1 ds.StoreKey
+                    FROM DimStore ds
+                    WHERE ds.TenantID = s.TenantID
+                    ORDER BY ds.StoreKey
+                ) st
                 WHERE s.TenantID = %s
                   AND s.ProductID IS NOT NULL AND s.ProductID != ''
                   AND TRY_CAST(s.QuantityOnHand AS INT) IS NOT NULL
@@ -601,7 +626,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                         AND f.StoreKey = st.StoreKey
                         AND CAST(f.CheckDate AS DATE) = TRY_CAST(s.CheckDate AS DATE)
                   );
-            """, [tenant_id, tenant_id])
+            """, [tenant_id])
             logger.info('  [MERGE] FactInventory done')
         except Exception as e:
             logger.warning(f'  [MERGE] FactInventory failed: {e}')

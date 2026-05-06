@@ -70,7 +70,6 @@ BEGIN
         i.CheckDate,
         i.QuantityOnHand                                              AS ClosingStock,
         i.ReorderLevel                                                AS ReorderPoint,
-        ISNULL(s.StoreName, CAST(i.StoreKey AS NVARCHAR))            AS StoreName,
         CASE
             WHEN i.QuantityOnHand <= ISNULL(i.ReorderLevel, 0)       THEN N''Cảnh báo''
             WHEN i.QuantityOnHand <= ISNULL(i.ReorderLevel, 0) * 1.5 THEN N''Sắp hết''
@@ -83,7 +82,6 @@ BEGIN
         END AS StockShortage
     FROM FactInventory i
     LEFT JOIN DimProduct p ON p.ProductID = i.ProductID
-    LEFT JOIN DimStore   s ON s.StoreKey  = i.StoreKey
     ');
     PRINT 'Created: DM_InventoryAlert (View)';
 END

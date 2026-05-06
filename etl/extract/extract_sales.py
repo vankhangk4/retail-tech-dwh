@@ -198,7 +198,8 @@ def extract_sales_from_excel(
         out['SaleDate']        = df['SaleDate'].astype(str) if 'SaleDate' in df.columns else _empty_str
         out['ProductID']       = df['ProductID'].fillna('').astype(str).str.strip().str.upper() if 'ProductID' in df.columns else _empty_str
         out['CustomerName']   = df['CustomerName'].fillna('').astype(str).str.strip() if 'CustomerName' in df.columns else _empty_str
-        out['StoreName']      = df['StoreName'].fillna('').astype(str).str.strip().str.upper() if 'StoreName' in df.columns else _empty_str
+        # Ignore store code embedded in the source file; tenant upload context is authoritative.
+        out['StoreName']      = pd.Series([tenant_id] * len(df), index=df.index)
         out['EmployeeName']   = df['EmployeeName'].fillna('').astype(str).str.strip() if 'EmployeeName' in df.columns else _empty_str
         out['PaymentMethod']  = df['PaymentMethod'].fillna('Tiền mặt').astype(str).str.strip() if 'PaymentMethod' in df.columns else pd.Series(['Tiền mặt'] * len(df))
         out['Quantity']        = qty
@@ -256,7 +257,7 @@ def extract_inventory_from_excel(
         # Normalize column names
         df = df.rename(columns=COLUMN_MAP_INVENTORY)
 
-        required_cols = ['MaSP', 'MaCH', 'NgayChupAnh']
+        required_cols = ['MaSP', 'NgayChupAnh']
         missing = [c for c in required_cols if c not in df.columns]
         if missing:
             logger.warning(
@@ -276,7 +277,8 @@ def extract_inventory_from_excel(
         out['TenantID']       = [tenant_id] * len(df)
         out['CheckDate']      = df['NgayChupAnh'].astype(str)
         out['ProductID']      = df['MaSP'].fillna('').astype(str).str.strip().str.upper() if 'MaSP' in df.columns else _empty_str
-        out['StoreName']      = df['MaCH'].fillna('').astype(str).str.strip() if 'MaCH' in df.columns else _empty_str
+        # Ignore store code embedded in the source file; tenant upload context is authoritative.
+        out['StoreName']      = pd.Series([tenant_id] * len(df), index=df.index)
         out['QuantityOnHand'] = pd.to_numeric(df['TonCuoiNgay'], errors='coerce').fillna(0) if 'TonCuoiNgay' in df.columns else pd.Series([0] * len(df))
         out['LoadStatus']     = 'LOADED'
         out['ErrorMessage']   = None

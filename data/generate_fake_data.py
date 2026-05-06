@@ -5,14 +5,12 @@ Sinh fake data cho Data Warehouse Multi-Tenant.
 Dựa trên schema SQL: STG_SalesRaw, STG_InventoryRaw, STG_PurchaseRaw,
 STG_ProductRaw, STG_CustomerRaw.
 
-Output: Excel/CSV files theo format trong data/STORE_HN/ và data/STORE_HCM/
+Output: Excel/CSV files theo format trong data/fake_data/
 """
 
 import os
 import random
-import string
 from datetime import date, timedelta
-from pathlib import Path
 
 try:
     import openpyxl
@@ -24,12 +22,9 @@ except ImportError:
 # 1. MASTER DATA
 # ============================================================
 
-TENANTS = {
-    "STORE_HN": {"name": "Cửa hàng Hà Nội", "city": "Hà Nội", "district": "Đống Đa"},
-    "STORE_HCM": {"name": "Cửa hàng Hồ Chí Minh", "city": "Hồ Chí Minh", "district": "Quận 3"},
-}
+OUTPUT_FOLDER = "data"
 
-# Danh mục sản phẩm công nghệ (Shared — dùng chung 2 store)
+# Danh mục sản phẩm công nghệ (Shared — dùng chung nhiều tenant)
 PRODUCTS = [
     # (MaSP, TenSP, ThuongHieu, DanhMuc, DanhMucCon, GiaVon, GiaNiemYet)
     ("SP001", "iPhone 15 Pro 256GB", "Apple", "Điện thoại", "iPhone", 18000000, 25000000),
@@ -73,21 +68,12 @@ SUPPLIERS = [
     ("NCC010", "Anker Innovations Việt Nam", "Trung Quốc"),
 ]
 
-# Nhân viên theo store
-EMPLOYEES = {
-    "STORE_HN": [
-        ("NV_HN_001", "Nguyễn Văn An"),
-        ("NV_HN_002", "Trần Thị Bình"),
-        ("NV_HN_003", "Lê Đức Chung"),
-        ("NV_HN_004", "Phạm Minh Đức"),
-    ],
-    "STORE_HCM": [
-        ("NV_HCM_001", "Hoàng Văn Em"),
-        ("NV_HCM_002", "Đặng Thị Phượng"),
-        ("NV_HCM_003", "Bùi Quang Giỏi"),
-        ("NV_HCM_004", "Vũ Thị Hoa"),
-    ],
-}
+EMPLOYEE_NAMES = [
+    "Nguyễn Văn An",
+    "Trần Thị Bình",
+    "Lê Đức Chung",
+    "Phạm Minh Đức",
+]
 
 # Khách hàng mẫu (sẽ sinh thêm ngẫu nhiên)
 FIRST_NAMES_MALE = ["Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Bùi", "Đặng", "Vũ", "Ngô", "Đỗ", "Trương", "Hồ", "Dương", "Đinh", "Cao"]
@@ -129,8 +115,15 @@ def format_date(d: date):
     return d.strftime("%d/%m/%Y")
 
 
-def generate_invoice_number(tenant_prefix: str, seq: int):
-    return f"HD_{tenant_prefix}_{seq:04d}"
+def build_employees():
+    return [
+        (f"{idx:03d}", full_name)
+        for idx, full_name in enumerate(EMPLOYEE_NAMES, start=1)
+    ]
+
+
+def generate_invoice_number(seq: int):
+    return f"{seq:06d}"
 
 
 def generate_order_number(seq: int):
@@ -142,7 +135,7 @@ def generate_order_number(seq: int):
 # ============================================================
 
 def generate_product_csv(output_dir: str):
-    """Sinh file DanhMucSanPham.csv — dùng chung cho cả 2 store."""
+    """Sinh file DanhMucSanPham.csv."""
     rows = []
     for i, p in enumerate(PRODUCTS):
         ma_sp, ten_sp, thuong_hieu, danh_muc, danh_muc_con, gia_von, gia_niem_yet = p
@@ -173,11 +166,11 @@ def generate_product_csv(output_dir: str):
 
 
 # ============================================================
-# 4. GENERATE CUSTOMERS (DanhMucKhachHang per store)
+# 4. GENERATE CUSTOMERS
 # ============================================================
 
-def generate_customer_csv(tenant_id: str, output_dir: str, num_customers: int = 50):
-    """Sinh file DanhMucKhachHang.csv cho từng store."""
+def generate_customer_csv(output_dir: str, num_customers: int = 50):
+    """Sinh file DanhMucKhachHang.csv."""
     rows = []
     base_date = date(2024, 1, 1)
     end_date = date(2026, 1, 1)
@@ -188,7 +181,7 @@ def generate_customer_csv(tenant_id: str, output_dir: str, num_customers: int = 
         last = random.choice(LAST_NAMES_MALE if gender == "M" else LAST_NAMES_FEMALE)
         mid = random.choice(MIDDLE_NAMES)
         full_name = f"{first} {mid} {last}"
-        ma_kh = f"KH{tenant_id.split('_')[1]}_{i+1:03d}"
+        ma_kh = f"{i+1:05d}"
 
         dob_year = random.randint(1980, 2006)
         dob_month = random.randint(1, 12)
@@ -241,18 +234,17 @@ def generate_customer_csv(tenant_id: str, output_dir: str, num_customers: int = 
 
 
 # ============================================================
-# 5. GENERATE SALES (BaoCaoDoanhThu per store per day)
+# 5. GENERATE SALES
 # ============================================================
 
 def generate_sales_excel(
-    tenant_id: str,
     output_dir: str,
     start_date: date,
     end_date: date,
     days_per_file: int = 1,
 ):
     """
-    Sinh file BaoCaoDoanhThu_TENANT_YYYYMMDD.xlsx
+    Sinh file BaoCaoDoanhThu_YYYYMMDD.xlsx
     Sheet: "DanhSachHoaDon"
     Mỗi file chứa dữ liệu N ngày.
     """
@@ -262,14 +254,13 @@ def generate_sales_excel(
 
     # Header
     headers = [
-        "Mã hóa đơn", "Mã sản phẩm", "Mã khách hàng", "Mã cửa hàng",
+        "Mã hóa đơn", "Mã sản phẩm", "Mã khách hàng",
         "Mã nhân viên", "Ngày bán", "Số lượng", "Đơn giá",
         "Chiết khấu", "Thuế VAT", "Phương thức TT", "Kênh bán", "Hoàn trả",
     ]
     ws.append(headers)
 
-    tenant_prefix = tenant_id.replace("STORE_", "")
-    employees = EMPLOYEES[tenant_id]
+    employees = build_employees()
     num_employees = len(employees)
     num_products = len(PRODUCTS)
 
@@ -284,7 +275,7 @@ def generate_sales_excel(
         for _ in range(num_invoices):
             # Chọn ngày trong khoảng (để tạo vài ngày nghỉ)
             invoice_date = current - timedelta(days=random.randint(0, 0))
-            ma_hd = generate_invoice_number(tenant_prefix, invoice_counter)
+            ma_hd = generate_invoice_number(invoice_counter)
             ma_nv = employees[random.randint(0, num_employees - 1)][0]
 
             # 1-4 dòng sản phẩm trong hóa đơn
@@ -299,7 +290,7 @@ def generate_sales_excel(
                 # Khách hàng ngẫu nhiên (hoặc null ~20%)
                 if random.random() > 0.15:
                     kh_seq = random.randint(1, 50)
-                    ma_kh = f"KH{tenant_prefix}_{kh_seq:03d}"
+                    ma_kh = f"{kh_seq:05d}"
                 else:
                     ma_kh = ""
 
@@ -327,7 +318,6 @@ def generate_sales_excel(
                     ma_hd,
                     ma_sp,
                     ma_kh,
-                    tenant_id,
                     ma_nv,
                     format_date(invoice_date),
                     so_luong,
@@ -352,11 +342,11 @@ def generate_sales_excel(
 
     # Format number columns
     for row in ws.iter_rows(min_row=2):
-        row[7].number_format = "#,##0"  # Đơn giá
-        row[8].number_format = "#,##0"  # Chiết khấu
-        row[9].number_format = "#,##0"  # Thuế VAT
+        row[6].number_format = "#,##0"  # Đơn giá
+        row[7].number_format = "#,##0"  # Chiết khấu
+        row[8].number_format = "#,##0"  # Thuế VAT
 
-    filename = f"BaoCaoDoanhThu_{tenant_prefix}_{start_date.strftime('%Y%m%d')}.xlsx"
+    filename = f"BaoCaoDoanhThu_{start_date.strftime('%Y%m%d')}.xlsx"
     filepath = os.path.join(output_dir, filename)
     wb.save(filepath)
     print(f"  [OK] {filepath} ({row_count} dòng)")
@@ -364,18 +354,17 @@ def generate_sales_excel(
 
 
 # ============================================================
-# 6. GENERATE INVENTORY (QuanLyKho per store per day)
+# 6. GENERATE INVENTORY
 # ============================================================
 
 def generate_inventory_excel(
-    tenant_id: str,
     output_dir: str,
     start_date: date,
     end_date: date,
     days_per_file: int = 7,
 ):
     """
-    Sinh file QuanLyKho_TENANT_YYYYMMDD.xlsx
+    Sinh file QuanLyKho_YYYYMMDD.xlsx
     Mỗi sản phẩm có 1 dòng mỗi ngày ghi nhận tồn kho.
     """
     wb = openpyxl.Workbook()
@@ -383,13 +372,12 @@ def generate_inventory_excel(
     ws.title = "QuanLyKho"
 
     headers = [
-        "Mã sản phẩm", "Mã cửa hàng", "Ngày chụp ảnh",
+        "Mã sản phẩm", "Ngày chụp ảnh",
         "Tồn đầu ngày", "Tồn cuối ngày", "Nhập trong ngày",
         "Bán trong ngày", "Điều chỉnh", "Đơn giá vốn",
     ]
     ws.append(headers)
 
-    tenant_prefix = tenant_id.replace("STORE_", "")
     row_count = 0
     current = start_date
 
@@ -418,7 +406,6 @@ def generate_inventory_excel(
 
             row = [
                 ma_sp,
-                tenant_id,
                 format_date(current),
                 opening,
                 closing,
@@ -442,9 +429,9 @@ def generate_inventory_excel(
 
     # Format number columns
     for row in ws.iter_rows(min_row=2):
-        row[8].number_format = "#,##0"  # Đơn giá vốn
+        row[7].number_format = "#,##0"  # Đơn giá vốn
 
-    filename = f"QuanLyKho_{tenant_prefix}_{start_date.strftime('%Y%m%d')}.xlsx"
+    filename = f"QuanLyKho_{start_date.strftime('%Y%m%d')}.xlsx"
     filepath = os.path.join(output_dir, filename)
     wb.save(filepath)
     print(f"  [OK] {filepath} ({row_count} dòng)")
@@ -452,12 +439,12 @@ def generate_inventory_excel(
 
 
 # ============================================================
-# 7. GENERATE PURCHASE (PhieuNhapHang per store)
+# 7. GENERATE PURCHASE
 # ============================================================
 
-def generate_purchase_csv(tenant_id: str, output_dir: str, num_orders: int = 30):
+def generate_purchase_csv(output_dir: str, num_orders: int = 30):
     """
-    Sinh file PhieuNhapHang.csv cho mỗi store.
+    Sinh file PhieuNhapHang.csv.
     """
     rows = []
     start_date = date(2025, 1, 1)
@@ -479,7 +466,6 @@ def generate_purchase_csv(tenant_id: str, output_dir: str, num_orders: int = 30)
             "Số phiếu đặt": generate_order_number(i + 1),
             "Mã SP": ma_sp,
             "Mã NCC": ma_ncc,
-            "Mã cửa hàng": tenant_id,
             "Ngày đặt": format_date(ngay_dat),
             "Ngày nhận": format_date(ngay_nhan),
             "Số lượng đặt": so_luong_dat,
@@ -534,7 +520,7 @@ def generate_supplier_csv(output_dir: str):
 
 def main():
     print("=" * 60)
-    print("FAKE DATA GENERATOR — DWH Multi-Tenant")
+    print("FAKE DATA GENERATOR")
     print("=" * 60)
 
     # Khoảng thời gian dữ liệu
@@ -542,53 +528,45 @@ def main():
     end_date = date(2026, 1, 31)
 
     total_rows = 0
+    output_dir = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), OUTPUT_FOLDER
+    )
+    os.makedirs(output_dir, exist_ok=True)
 
-    for tenant_id, info in TENANTS.items():
-        print(f"\n[{tenant_id}] {info['name']}")
-        output_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), tenant_id
-        )
-        os.makedirs(output_dir, exist_ok=True)
+    print(f"\n[output] {OUTPUT_FOLDER}")
 
-        # 1. Products (chung, nhưng mỗi store giữ bản sao)
-        generate_product_csv(output_dir)
+    # 1. Products
+    generate_product_csv(output_dir)
 
-        # 2. Customers
-        generate_customer_csv(tenant_id, output_dir, num_customers=50)
+    # 2. Customers
+    generate_customer_csv(output_dir, num_customers=50)
 
-        # 3. Sales (1 file cho toàn bộ khoảng thời gian)
-        rows = generate_sales_excel(
-            tenant_id, output_dir, start_date, end_date, days_per_file=1
-        )
-        total_rows += rows
+    # 3. Sales
+    rows = generate_sales_excel(output_dir, start_date, end_date, days_per_file=1)
+    total_rows += rows
 
-        # 4. Inventory (1 file cho toàn bộ khoảng thời gian)
-        generate_inventory_excel(
-            tenant_id, output_dir, start_date, end_date, days_per_file=7
-        )
+    # 4. Inventory
+    generate_inventory_excel(output_dir, start_date, end_date, days_per_file=7)
 
-        # 5. Purchase orders
-        generate_purchase_csv(tenant_id, output_dir, num_orders=30)
+    # 5. Purchase orders
+    generate_purchase_csv(output_dir, num_orders=30)
 
-        # 6. Suppliers (chung, lưu ở STORE_HN)
-        if tenant_id == "STORE_HN":
-            generate_supplier_csv(output_dir)
+    # 6. Suppliers
+    generate_supplier_csv(output_dir)
 
     print(f"\n{'=' * 60}")
     print(f"TỔNG CỘNG: {total_rows} dòng hóa đơn được sinh")
-    print("Thư mục output: data/STORE_HN/ và data/STORE_HCM/")
+    print(f"Thư mục output: data/{OUTPUT_FOLDER}/")
     print("=" * 60)
 
     # Danh sách file đã tạo
     print("\nFile đã tạo:")
-    for tenant_id in TENANTS:
-        od = os.path.join(os.path.dirname(os.path.abspath(__file__)), tenant_id)
-        for f in sorted(os.listdir(od)):
-            if f.startswith("."):
-                continue
-            fpath = os.path.join(od, f)
-            size = os.path.getsize(fpath)
-            print(f"  {tenant_id}/{f}  ({size/1024:.1f} KB)")
+    for f in sorted(os.listdir(output_dir)):
+        if f.startswith("."):
+            continue
+        fpath = os.path.join(output_dir, f)
+        size = os.path.getsize(fpath)
+        print(f"  {OUTPUT_FOLDER}/{f}  ({size/1024:.1f} KB)")
 
 
 if __name__ == "__main__":

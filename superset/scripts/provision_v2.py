@@ -64,7 +64,7 @@ DASHBOARDS = [
     {'id': 1, 'slug': 'revenue',   'title': 'Dashboard Doanh thu',
      'charts': [
          {'name': 'Doanh thu theo tháng',   'viz': 'line',       'dataset': 'V_SalesEnriched', 'dims': ['MonthName'],     'metrics': [{'label': 'SUM(Revenue)',  'agg': 'SUM'}]},
-         {'name': 'Doanh thu theo cửa hàng','viz': 'bar',        'dataset': 'V_SalesEnriched', 'dims': ['StoreName'],     'metrics': [{'label': 'SUM(Revenue)',  'agg': 'SUM'}]},
+         {'name': 'Doanh thu theo phương thức TT','viz': 'bar',  'dataset': 'V_SalesEnriched', 'dims': ['PaymentMethod'], 'metrics': [{'label': 'SUM(Revenue)',  'agg': 'SUM'}]},
          {'name': 'TOP sản phẩm bán chạy',  'viz': 'big_number', 'dataset': 'V_SalesEnriched', 'dims': [],                'metrics': [{'label': 'SUM(Quantity)', 'agg': 'SUM'}]},
          {'name': 'Doanh thu theo danh mục','viz': 'pie',        'dataset': 'V_SalesEnriched', 'dims': ['CategoryName'],  'metrics': [{'label': 'SUM(Revenue)',  'agg': 'SUM'}]},
      ]},
@@ -75,7 +75,7 @@ DASHBOARDS = [
      ]},
     {'id': 3, 'slug': 'inventory','title': 'Dashboard Tồn kho',
      'charts': [
-         {'name': 'Tồn kho thấp — Cảnh báo', 'viz': 'table', 'dataset': 'DM_InventoryAlert', 'dims': ['ProductName', 'StoreName'], 'metrics': [{'label': 'SUM(ClosingStock)', 'agg': 'SUM'}]},
+         {'name': 'Tồn kho thấp — Cảnh báo', 'viz': 'table', 'dataset': 'DM_InventoryAlert', 'dims': ['ProductName'], 'metrics': [{'label': 'SUM(ClosingStock)', 'agg': 'SUM'}]},
      ]},
     {'id': 4, 'slug': 'customers','title': 'Dashboard Khách hàng',
      'charts': [
@@ -549,11 +549,6 @@ def create_dashboard(title: str, slug: str, description: str,
     """Tạo dashboard trực tiếp vào database (bypass REST API permission issues)."""
     from superset.extensions import db
 
-    existing = get_dashboard_by_slug(slug)
-    if existing:
-        logger.info(f'[SKIP] Dashboard "{title}" (id={existing.id})')
-        return existing.id
-
     try:
         # Import Dashboard + Slice models
         try:
@@ -563,8 +558,24 @@ def create_dashboard(title: str, slug: str, description: str,
 
         from superset.models.slice import Slice
 
-        # Build position/layout for charts
+        existing = get_dashboard_by_slug(slug)
         position = build_position(charts)
+
+        if existing:
+            existing.dashboard_title = title
+            existing.description = description
+            existing.position_json = position
+            existing.published = True
+
+            for c in charts:
+                chart = db.session.query(Slice).filter_by(id=c['id']).first()
+                if chart and chart not in existing.slices:
+                    existing.slices.append(chart)
+                    logger.info(f'  [LINK] Chart {c["id"]} "{c["name"]}" -> dashboard {existing.id}')
+
+            db.session.commit()
+            logger.info(f'[OK] Updated dashboard "{title}" (id={existing.id})')
+            return existing.id
 
         dash = Dashboard(
             dashboard_title=title,
