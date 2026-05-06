@@ -170,3 +170,74 @@ ALERT_REPORTS_WORKING_TIMEOUT = 3600
 
 # Hide left navbar for tenants (view only mode)
 FAB_VIEW_MENU__hide_nav_if_no_perms = True
+
+# ============================================================
+# WORKAROUND: Superset 3.1.1 guest user chart payload check
+# ============================================================
+# Issue: superset/security/manager.py raise_for_access() compares incoming
+#   form_data.metrics / queries[].metrics với chart.params_dict["metrics"]
+#   bằng strict equality. Khi embedded SDK normalize lại metric (đổi
+#   optionName, thêm hasCustomLabel...), comparison fail → "Guest user
+#   cannot modify chart payload" → chart hiện "Unexpected error".
+#
+# Fix: trước khi gọi check gốc, ép form_data.metrics và queries[].metrics
+#   = stored chart.params_dict["metrics"]. Truy vấn thực thi với metric
+#   của chart đã lưu (đúng ý đồ embedded — guest không được đổi metric).
+def _patch_guest_chart_payload_check():
+    """Re-implement raise_for_access without strict metrics comparison.
+
+    Original Superset 3.1.1 logic compares form_data['metrics'] vs
+    chart.params['metrics'] by Python equality. Frontend embedded SDK
+    re-serializes metrics (different optionName, adds hasCustomLabel...)
+    nên equality fail dù chart đúng. Replace bằng check chỉ slice_id.
+    """
+    from superset.security.manager import SupersetSecurityManager
+    from superset.exceptions import SupersetSecurityException
+    from superset.errors import SupersetError, SupersetErrorType, ErrorLevel
+    from flask_babel import gettext as _
+
+    _original = SupersetSecurityManager.raise_for_access
+
+    def lenient(self, **kwargs):
+        qc = kwargs.get('query_context')
+        is_guest = False
+        try:
+            is_guest = self.is_guest_user()
+        except Exception:
+            pass
+        if qc is not None and is_guest:
+            stored = qc.slice_
+            fd = qc.form_data
+            # qc.slice_ có thể None khi guest gọi /chart/data — load từ form_data
+            if stored is None and fd is not None and fd.get('slice_id'):
+                try:
+                    from superset.extensions import db
+                    from superset.models.slice import Slice
+                    stored = db.session.query(Slice).get(fd['slice_id'])
+                    if stored is not None:
+                        qc.slice_ = stored
+                except Exception:
+                    pass
+            if fd is not None and stored is not None:
+                if fd.get('slice_id') != stored.id:
+                    raise SupersetSecurityException(
+                        SupersetError(
+                            error_type=SupersetErrorType.DASHBOARD_SECURITY_ACCESS_ERROR,
+                            message=_("Guest user cannot modify chart payload"),
+                            level=ErrorLevel.ERROR,
+                        )
+                    )
+                # Đồng bộ metrics: ép trùng với stored params để original block
+                # không raise vì frontend normalize khác chút (optionName, hasCustomLabel...)
+                stored_metrics = stored.params_dict.get('metrics', []) or []
+                fd['metrics'] = stored_metrics
+                for q in qc.queries:
+                    try:
+                        q.metrics = stored_metrics
+                    except (AttributeError, TypeError):
+                        pass
+        return _original(self, **kwargs)
+
+    SupersetSecurityManager.raise_for_access = lenient
+
+_patch_guest_chart_payload_check()

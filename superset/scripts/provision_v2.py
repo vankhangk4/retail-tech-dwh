@@ -664,6 +664,8 @@ VIEWER_PERMS = [
     ('can_read', 'css_template'),
     ('menu_access', 'Dashboards'),
     ('menu_access', 'Charts'),
+    # Cần để guest user query datasource — RLS đã giới hạn theo TenantID
+    ('all_datasource_access', 'all_datasource_access'),
 ]
 
 # Admin user permissions (can create, edit, delete charts + dashboards)
@@ -729,6 +731,15 @@ def create_tenant_viewer_role() -> object:
             logger.info(f'[OK]   TenantViewer: {action} {resource}')
         else:
             logger.info(f'[SKIP] TenantViewer: {action} {resource}')
+
+    # GUEST_ROLE_NAME (Gamma) cũng cần all_datasource_access vì embedded
+    # token gán role này. RLS_<tenant_id> sẽ append WHERE TenantID=...
+    gamma_role = sm.find_role('Gamma')
+    if gamma_role:
+        ads = sm.find_permission_view_menu('all_datasource_access', 'all_datasource_access')
+        if ads and ads not in gamma_role.permissions:
+            sm.add_permission_role(gamma_role, ads)
+            logger.info('[OK]   Gamma: all_datasource_access (for guest tokens)')
 
     db.session.commit()
     return role
