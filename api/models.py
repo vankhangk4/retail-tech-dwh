@@ -29,6 +29,7 @@ class DashboardTokenResponse(BaseModel):
     """Response model cho endpoint /dashboard-token"""
     dashboard_url: str
     dashboard_id: int
+    embedded_dashboard_uuid: Optional[str] = None
     guest_token: str
     token_type: str = 'bearer'
     expires_in: int = 3600  # 1 giờ

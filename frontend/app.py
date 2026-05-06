@@ -13,6 +13,10 @@ from flask import Blueprint
 
 app = Flask(__name__, template_folder='templates', static_folder='static', root_path=os.path.dirname(os.path.abspath(__file__)))
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key-change-in-prod')
+app.config['SESSION_COOKIE_NAME'] = os.environ.get(
+    'FRONTEND_SESSION_COOKIE_NAME',
+    'dwh_frontend_session'
+)
 
 # ---- Configuration ----
 API_BASE_URL = os.environ.get('API_BASE_URL', 'http://localhost:8000')

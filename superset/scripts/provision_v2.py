@@ -236,6 +236,24 @@ def get_admin_user() -> object:
     return db.session.query(User).filter_by(username=ADMIN_USER).first()
 
 
+def enable_embedded_dashboard(dashboard: object) -> str:
+    """Bật Superset Embedded cho dashboard và giữ UUID ổn định qua các lần chạy."""
+    try:
+        from superset.daos.dashboard import EmbeddedDashboardDAO
+
+        embedded = EmbeddedDashboardDAO.upsert(dashboard, [])
+        logger.info(
+            f'[OK] Embedded dashboard "{dashboard.dashboard_title}" uuid={embedded.uuid}'
+        )
+        return str(embedded.uuid)
+    except Exception as e:
+        logger.warning(
+            f'[WARN] Embedded dashboard "{getattr(dashboard, "dashboard_title", "")}": '
+            f'{str(e)[:150]}'
+        )
+        return ''
+
+
 def get_column_obj(ds_id: int, column_name: str) -> dict:
     """Return Superset column metadata for adhoc metric params."""
     from superset.extensions import db
@@ -845,6 +863,10 @@ def main():
                 dash.owners.append(admin)
                 logger.info(f'[OK]   Dashboard "{dash.dashboard_title}" assigned to admin')
         db.session.commit()
+
+        logger.info('[STEP 3C] Enabling embedded dashboards...')
+        for dash in dashboards:
+            enable_embedded_dashboard(dash)
 
         # Step 4: RBAC + RLS
         if not args.skip_rls:

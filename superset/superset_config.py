@@ -25,6 +25,9 @@ AUTH_USER_REGISTRATION = False
 # Role mặc định cho anonymous user (None = không cho phép truy cập)
 PUBLIC_ROLE_LIKE = None
 
+# Embedded guest token cần role có quyền đọc dashboard/chart API.
+GUEST_ROLE_NAME = os.environ.get('SUPERSET_GUEST_ROLE_NAME', 'Gamma')
+
 # Tắt CSRF khi chạy provisioning script (bật lại bằng env SUPERSET_CSRF_ENABLED=true khi cần)
 WTF_CSRF_ENABLED = os.environ.get('SUPERSET_CSRF_ENABLED', 'false').lower() == 'true'
 WTF_CSRF_TIME_LIMIT = 3600  # 1 giờ
@@ -33,6 +36,7 @@ WTF_CSRF_TIME_LIMIT = 3600  # 1 giờ
 PERMANENT_SESSION_LIFETIME = 28800
 
 # Cookie settings
+SESSION_COOKIE_NAME = os.environ.get('SUPERSET_SESSION_COOKIE_NAME', 'superset_session')
 SESSION_COOKIE_HTTPONLY = True  # Không cho JavaScript truy cập
 SESSION_COOKIE_SAMESITE = 'Lax'  # CSRF protection
 
@@ -44,6 +48,36 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Cookie settings (HTTP trong dev, HTTPS trong prod)
 SESSION_COOKIE_SECURE = os.environ.get('SUPERSET_COOKIE_SECURE', 'False').lower() == 'true'
+
+# Superset embedded dashboard chạy trong iframe từ frontend app.
+# Tắt riêng X-Frame-Options: SAMEORIGIN, đồng thời giới hạn frame-ancestors bằng CSP.
+_frame_ancestors = [
+    origin.strip()
+    for origin in os.environ.get(
+        'SUPERSET_FRAME_ANCESTORS',
+        "'self',http://localhost:3000,http://127.0.0.1:3000"
+    ).split(',')
+    if origin.strip()
+]
+
+TALISMAN_ENABLED = os.environ.get('SUPERSET_TALISMAN_ENABLED', 'true').lower() == 'true'
+TALISMAN_CONFIG = {
+    'force_https': False,
+    'session_cookie_secure': SESSION_COOKIE_SECURE,
+    'frame_options': None,
+    'content_security_policy': {
+        'base-uri': ["'self'"],
+        'default-src': ["'self'"],
+        'img-src': ["'self'", 'blob:', 'data:'],
+        'worker-src': ["'self'", 'blob:'],
+        'connect-src': ["'self'", 'https://api.mapbox.com', 'https://events.mapbox.com'],
+        'object-src': "'none'",
+        'style-src': ["'self'", "'unsafe-inline'"],
+        'script-src': ["'self'", "'strict-dynamic'"],
+        'frame-ancestors': _frame_ancestors,
+    },
+    'content_security_policy_nonce_in': ['script-src'],
+}
 
 # ============================================================
 # FEATURE FLAGS

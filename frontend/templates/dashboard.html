@@ -761,6 +761,8 @@
             if (!iframe) return;
 
             // Fetch fresh guest token for this specific dashboard
+            iframe.onload = null;
+            iframe.removeAttribute('srcdoc');
             iframe.src = 'about:blank';
             fetch(`/api/dashboard-token?dashboard_id=${dashId}`)
                 .then(resp => {
@@ -768,8 +770,7 @@
                     return resp.json();
                 })
                 .then(data => {
-                    const url = data.dashboard_url || `${SUPERSET_URL}/superset/dashboard/${dashId}/`;
-                    iframe.src = `${url}?standalone=2&guest_token=${data.guest_token}`;
+                    renderEmbeddedDashboard(iframe, data);
                 })
                 .catch(err => {
                     console.error('Dashboard token error:', err);
@@ -777,10 +778,65 @@
                 });
         }
 
+        function renderEmbeddedDashboard(iframe, data) {
+            if (!data.guest_token) {
+                throw new Error('Missing guest token');
+            }
+
+            const fallbackUrl = data.embedded_dashboard_uuid
+                ? `${SUPERSET_URL}/embedded/${data.embedded_dashboard_uuid}`
+                : null;
+            const dashboardUrl = data.dashboard_url || fallbackUrl;
+            if (!dashboardUrl) {
+                throw new Error('Missing embedded dashboard URL');
+            }
+
+            const url = new URL(dashboardUrl, window.location.origin);
+            url.searchParams.set('standalone', '2');
+
+            iframe.onload = function () {
+                const channel = new MessageChannel();
+                const messageId = `guest_token_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+                const timeout = window.setTimeout(() => {
+                    console.warn('Superset embedded token handshake timeout');
+                }, 5000);
+
+                channel.port1.onmessage = function (event) {
+                    const message = event.data || {};
+                    if (message.messageId !== messageId) return;
+                    window.clearTimeout(timeout);
+                    if (message.switchboardAction === 'error') {
+                        console.error('Superset embedded token error:', message.error);
+                    }
+                };
+                channel.port1.start();
+
+                iframe.contentWindow.postMessage(
+                    { type: '__embedded_comms__', handshake: 'port transfer' },
+                    url.origin,
+                    [channel.port2]
+                );
+
+                window.setTimeout(() => {
+                    channel.port1.postMessage({
+                        switchboardAction: 'get',
+                        method: 'guestToken',
+                        messageId: messageId,
+                        args: { guestToken: data.guest_token },
+                    });
+                }, 100);
+            };
+
+            iframe.src = url.toString();
+        }
+
         // ===== Superset modal =====
         function openSupersetDashboard(dashId) {
             document.getElementById('modalTitle').textContent = 'Dashboard — Superset';
-            document.getElementById('modalIframe').src = 'about:blank';
+            const modalIframe = document.getElementById('modalIframe');
+            modalIframe.onload = null;
+            modalIframe.removeAttribute('srcdoc');
+            modalIframe.src = 'about:blank';
 
             // Fetch fresh guest token for the requested dashboard
             fetch(`/api/dashboard-token?dashboard_id=${dashId}`)
@@ -789,9 +845,7 @@
                     return resp.json();
                 })
                 .then(data => {
-                    const url = data.dashboard_url || `${SUPERSET_URL}/superset/dashboard/${dashId}/`;
-                    document.getElementById('modalIframe').src =
-                        `${url}?standalone=2&guest_token=${data.guest_token}`;
+                    renderEmbeddedDashboard(modalIframe, data);
                 })
                 .catch(err => {
                     console.error('Dashboard token error:', err);
@@ -803,6 +857,7 @@
 
         function closeModal() {
             document.getElementById('modalOverlay').style.display = 'none';
+            document.getElementById('modalIframe').onload = null;
             document.getElementById('modalIframe').src = 'about:blank';
         }
 

@@ -33,6 +33,11 @@ SUPERSET_URL = os.environ.get('SUPERSET_URL', 'http://localhost:8088')
 SUPERSET_PUBLIC_URL = os.environ.get('SUPERSET_PUBLIC_URL', SUPERSET_URL)
 SUPERSET_ADMIN_USER = os.environ.get('SUPERSET_ADMIN_USER', 'admin')
 SUPERSET_ADMIN_PWD = os.environ.get('SUPERSET_ADMIN_PWD', 'admin')
+SUPERSET_EMBED_ALLOWED_DOMAINS = [
+    domain.strip()
+    for domain in os.environ.get('SUPERSET_EMBED_ALLOWED_DOMAINS', '').split(',')
+    if domain.strip()
+]
 LEGACY_DASHBOARD_ID_MAP = {
     11: 1,
     12: 2,
@@ -137,6 +142,50 @@ def get_superset_admin_token() -> str:
     if r.status_code != 200:
         raise HTTPException(502, detail=f'Khong lay duoc Superset admin token: {r.text}')
     return r.json()['access_token']
+
+
+def get_or_create_embedded_dashboard_uuid(dashboard_id: int, admin_token: str) -> str:
+    """Ensure Superset embedded config exists and return its UUID."""
+    headers = {'Authorization': f'Bearer {admin_token}'}
+    embedded_url = f'{SUPERSET_URL}/api/v1/dashboard/{dashboard_id}/embedded'
+
+    try:
+        r = requests.get(embedded_url, headers=headers, timeout=30)
+    except requests.RequestException as e:
+        logger.error(f'Embedded dashboard lookup error: {e}')
+        raise HTTPException(502, detail=f'Loi doc embedded dashboard Superset: {str(e)}')
+
+    if r.status_code == 200:
+        embedded_uuid = r.json().get('result', {}).get('uuid')
+        if embedded_uuid:
+            return embedded_uuid
+        raise HTTPException(502, detail='Superset embedded dashboard khong co uuid')
+
+    if r.status_code != 404:
+        logger.error(f'Embedded dashboard lookup failed: {r.status_code} — {r.text}')
+        raise HTTPException(502, detail=f'Khong doc duoc embedded dashboard: {r.text}')
+
+    try:
+        r = requests.post(
+            embedded_url,
+            headers=headers,
+            json={'allowed_domains': SUPERSET_EMBED_ALLOWED_DOMAINS},
+            timeout=30
+        )
+    except requests.RequestException as e:
+        logger.error(f'Embedded dashboard create error: {e}')
+        raise HTTPException(502, detail=f'Loi tao embedded dashboard Superset: {str(e)}')
+
+    if r.status_code not in (200, 201):
+        logger.error(f'Embedded dashboard create failed: {r.status_code} — {r.text}')
+        raise HTTPException(502, detail=f'Tao embedded dashboard that bai: {r.text}')
+
+    embedded_uuid = r.json().get('result', {}).get('uuid')
+    if not embedded_uuid:
+        raise HTTPException(502, detail='Superset embedded dashboard khong tra ve uuid')
+
+    logger.info(f'Embedded dashboard enabled: dashboard={dashboard_id} | uuid={embedded_uuid}')
+    return embedded_uuid
 
 
 # ============================================================
@@ -453,6 +502,8 @@ def get_dashboard_token(
     except HTTPException:
         raise HTTPException(502, detail='Khong ket noi duoc Superset')
 
+    embedded_uuid = get_or_create_embedded_dashboard_uuid(dashboard_id, admin_token)
+
     # Xác định RLS clause — dùng TenantID (capital) vì MSSQL column name
     if payload.role in ('superadmin', 'admin') and payload.tenant_id is None:
         rls_clause = '1=1'
@@ -473,7 +524,7 @@ def get_dashboard_token(
                     'last_name': payload.tenant_id or 'admin',
                 },
                 'resources': [
-                    {'type': 'dashboard', 'id': str(dashboard_id)},
+                    {'type': 'dashboard', 'id': embedded_uuid},
                 ],
                 'rls': [
                     {'clause': rls_clause}
@@ -490,16 +541,18 @@ def get_dashboard_token(
         raise HTTPException(502, detail=f'Tao guest token that bai: {r.text}')
 
     guest_token = r.json().get('token', '')
-    dashboard_url = f'{SUPERSET_PUBLIC_URL}/superset/dashboard/{dashboard_id}/'
+    dashboard_url = f'{SUPERSET_PUBLIC_URL}/embedded/{embedded_uuid}'
 
     logger.info(
         f'Guest token issued: username={payload.username} | '
-        f'dashboard={dashboard_id} | tenant={payload.tenant_id} | role={payload.role}'
+        f'dashboard={dashboard_id} | embedded={embedded_uuid} | '
+        f'tenant={payload.tenant_id} | role={payload.role}'
     )
 
     return DashboardTokenResponse(
         dashboard_url=dashboard_url,
         dashboard_id=dashboard_id,
+        embedded_dashboard_uuid=embedded_uuid,
         guest_token=guest_token,
         token_type='bearer',
         expires_in=3600
