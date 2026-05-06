@@ -418,11 +418,13 @@ def create_dashboard(title: str, slug: str, description: str,
         return existing.id
 
     try:
-        # Import Dashboard model
+        # Import Dashboard + Slice models
         try:
             from superset.models.dashboard import Dashboard
         except ImportError:
             from superset.models.core import Dashboard
+
+        from superset.models.slice import Slice
 
         # Build position/layout for charts
         position = build_position(charts)
@@ -437,6 +439,16 @@ def create_dashboard(title: str, slug: str, description: str,
         db.session.add(dash)
         db.session.commit()
         db.session.refresh(dash)
+
+        # CRITICAL: Link charts to dashboard via slices relationship.
+        # Without this, dashboard_slices table is empty and Superset shows:
+        # "There is no chart definition associated with this component"
+        for c in charts:
+            chart = db.session.query(Slice).filter_by(id=c['id']).first()
+            if chart and chart not in dash.slices:
+                dash.slices.append(chart)
+                logger.info(f'  [LINK] Chart {c["id"]} "{c["name"]}" -> dashboard {dash.id}')
+        db.session.commit()
 
         logger.info(f'[OK] Created dashboard "{title}" (id={dash.id})')
         return dash.id
