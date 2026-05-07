@@ -184,6 +184,126 @@ def login():
     )
 
 
+@app.route('/settings')
+def settings():
+    if 'access_token' not in session:
+        return redirect(url_for('login'))
+    return render_template(
+        'settings.html',
+        user={
+            'role': session.get('role', 'viewer'),
+            'tenant_id': session.get('tenant_id'),
+            'user_id': session.get('user_id'),
+        },
+        SUPERSET_URL=SUPERSET_URL,
+    )
+
+
+@app.route('/api/me/profile', methods=['GET'])
+def api_me_profile_get():
+    if 'access_token' not in session:
+        return jsonify({'error': 'Chua dang nhap'}), 401
+    try:
+        r = requests.get(
+            f'{API_BASE_URL}/api/me/profile',
+            headers={'Authorization': f'Bearer {session["access_token"]}'},
+            timeout=10
+        )
+        return jsonify(r.json()), r.status_code
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'Khong ket noi duoc Auth Gateway'}), 503
+
+
+@app.route('/api/me/profile', methods=['PUT'])
+def api_me_profile_put():
+    if 'access_token' not in session:
+        return jsonify({'error': 'Chua dang nhap'}), 401
+    data = request.get_json()
+    try:
+        r = requests.put(
+            f'{API_BASE_URL}/api/me/profile',
+            json=data,
+            headers={
+                'Authorization': f'Bearer {session["access_token"]}',
+                'Content-Type': 'application/json',
+            },
+            timeout=10
+        )
+        return jsonify(r.json()), r.status_code
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'Khong ket noi duoc Auth Gateway'}), 503
+
+
+@app.route('/api/me/password', methods=['PUT'])
+def api_me_password():
+    if 'access_token' not in session:
+        return jsonify({'error': 'Chua dang nhap'}), 401
+    data = request.get_json()
+    try:
+        r = requests.put(
+            f'{API_BASE_URL}/api/me/password',
+            json=data,
+            headers={
+                'Authorization': f'Bearer {session["access_token"]}',
+                'Content-Type': 'application/json',
+            },
+            timeout=10
+        )
+        return jsonify(r.json()), r.status_code
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'Khong ket noi duoc Auth Gateway'}), 503
+
+
+@app.route('/api/me/avatar', methods=['POST'])
+def api_me_avatar_post():
+    if 'access_token' not in session:
+        return jsonify({'error': 'Chua dang nhap'}), 401
+    data = request.get_json()
+    try:
+        r = requests.post(
+            f'{API_BASE_URL}/api/me/avatar',
+            json=data,
+            headers={
+                'Authorization': f'Bearer {session["access_token"]}',
+                'Content-Type': 'application/json',
+            },
+            timeout=15
+        )
+        return jsonify(r.json()), r.status_code
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'Khong ket noi duoc Auth Gateway'}), 503
+
+
+@app.route('/api/me/avatar', methods=['DELETE'])
+def api_me_avatar_delete():
+    if 'access_token' not in session:
+        return jsonify({'error': 'Chua dang nhap'}), 401
+    try:
+        r = requests.delete(
+            f'{API_BASE_URL}/api/me/avatar',
+            headers={'Authorization': f'Bearer {session["access_token"]}'},
+            timeout=10
+        )
+        return jsonify(r.json()), r.status_code
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'Khong ket noi duoc Auth Gateway'}), 503
+
+
+@app.route('/api/me/login-history', methods=['GET'])
+def api_me_login_history():
+    if 'access_token' not in session:
+        return jsonify({'error': 'Chua dang nhap'}), 401
+    try:
+        r = requests.get(
+            f'{API_BASE_URL}/api/me/login-history',
+            headers={'Authorization': f'Bearer {session["access_token"]}'},
+            timeout=10
+        )
+        return jsonify(r.json()), r.status_code
+    except requests.exceptions.ConnectionError:
+        return jsonify({'items': []}), 200
+
+
 @app.route('/dashboard')
 def dashboard():
     if 'access_token' not in session:

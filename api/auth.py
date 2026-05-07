@@ -14,7 +14,7 @@ import jwt
 import passlib.context
 import pymssql as mssql
 import requests
-from fastapi import APIRouter, HTTPException, Header, Depends
+from fastapi import APIRouter, HTTPException, Header, Depends, Request
 from pydantic import BaseModel
 
 from api.superset_provision import provision_user as superset_provision_user
@@ -22,6 +22,8 @@ from api.models import (
     LoginRequest, LoginResponse, UserInfo,
     DashboardTokenResponse, TokenPayload,
     RegisterRequest,
+    UserProfile, UpdateProfileRequest, ChangePasswordRequest,
+    AvatarUploadRequest, LoginHistoryItem,
 )
 
 # ---- Configuration ----
@@ -375,8 +377,23 @@ def register(req: RegisterRequest):
         conn.close()
 
 
+def _record_login(user_id: int, ip: Optional[str], ua: Optional[str], status: str = 'success'):
+    """Ghi lịch sử đăng nhập vào LoginHistory — không ném exception nếu lỗi."""
+    try:
+        conn = get_mssql_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            'INSERT INTO LoginHistory (UserID, IPAddress, UserAgent, Status) VALUES (%s, %s, %s, %s)',
+            (user_id, (ip or '')[:45], (ua or '')[:500], status)
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.warning(f'[LOGIN_HISTORY] Could not record login: {e}')
+
+
 @router.post('/login', response_model=LoginResponse)
-def login(req: LoginRequest):
+def login(req: LoginRequest, request: Request = None):
     """Đăng nhập — verify qua AppUsers table (bcrypt)."""
     username = req.username.strip()
     password = req.password
@@ -429,6 +446,10 @@ def login(req: LoginRequest):
         logger.info(f'Login success: {username} | tenant={tenant_id} | role={role}')
     finally:
         conn.close()
+
+    client_ip = request.client.host if request and request.client else None
+    user_agent = request.headers.get('User-Agent') if request else None
+    _record_login(user_id, client_ip, user_agent, 'success')
 
     access_token = create_access_token(user_id, username, tenant_id, role)
     refresh_token = create_refresh_token(user_id, username)
@@ -579,3 +600,180 @@ def get_current_user(authorization: str = Header(...)):
         role=payload.role,
         is_active=True
     )
+
+
+@router.get('/me/profile', response_model=UserProfile)
+def get_profile(authorization: str = Header(...)):
+    """Trả về full hồ sơ người dùng bao gồm display_name, email, phone, avatar."""
+    if not authorization.startswith('Bearer '):
+        raise HTTPException(401, detail='Authorization header khong hop le')
+    payload = decode_token(authorization[7:])
+
+    conn = get_mssql_conn()
+    cursor = conn.cursor(as_dict=True)
+    try:
+        cursor.execute(
+            'SELECT UserID, Username, DisplayName, Email, Phone, AvatarData, '
+            'TenantID, Role, IsActive, CreatedAt FROM AppUsers WHERE UserID = %s',
+            (payload.user_id,)
+        )
+        row = cursor.fetchone()
+    finally:
+        conn.close()
+
+    if not row:
+        raise HTTPException(404, detail='User khong ton tai')
+
+    created_at = row['CreatedAt'].strftime('%d/%m/%Y %H:%M') if row.get('CreatedAt') else None
+    return UserProfile(
+        user_id=row['UserID'],
+        username=row['Username'],
+        display_name=row.get('DisplayName'),
+        email=row.get('Email'),
+        phone=row.get('Phone'),
+        avatar_data=row.get('AvatarData'),
+        tenant_id=row.get('TenantID'),
+        role=row['Role'],
+        is_active=bool(row['IsActive']),
+        created_at=created_at,
+    )
+
+
+@router.put('/me/profile')
+def update_profile(req: UpdateProfileRequest, authorization: str = Header(...)):
+    """Cập nhật display_name, email, phone."""
+    if not authorization.startswith('Bearer '):
+        raise HTTPException(401, detail='Authorization header khong hop le')
+    payload = decode_token(authorization[7:])
+
+    conn = get_mssql_conn()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            'UPDATE AppUsers SET DisplayName = %s, Email = %s, Phone = %s WHERE UserID = %s',
+            (req.display_name, req.email, req.phone, payload.user_id)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    logger.info(f'[PROFILE] Updated profile: user_id={payload.user_id}')
+    return {'success': True, 'message': 'Ho so da duoc cap nhat'}
+
+
+@router.put('/me/password')
+def change_password(req: ChangePasswordRequest, authorization: str = Header(...)):
+    """Đổi mật khẩu — yêu cầu xác minh mật khẩu hiện tại."""
+    if not authorization.startswith('Bearer '):
+        raise HTTPException(401, detail='Authorization header khong hop le')
+    payload = decode_token(authorization[7:])
+
+    conn = get_mssql_conn()
+    cursor = conn.cursor(as_dict=True)
+    try:
+        cursor.execute(
+            'SELECT PasswordHash FROM AppUsers WHERE UserID = %s AND IsActive = 1',
+            (payload.user_id,)
+        )
+        row = cursor.fetchone()
+        if not row:
+            raise HTTPException(404, detail='User khong ton tai')
+
+        if not verify_password(req.current_password, row['PasswordHash']):
+            raise HTTPException(400, detail='Mat khau hien tai khong dung')
+
+        new_hash = hash_password(req.new_password)
+        cursor.execute(
+            'UPDATE AppUsers SET PasswordHash = %s WHERE UserID = %s',
+            (new_hash, payload.user_id)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    logger.info(f'[PASSWORD] Changed password: user_id={payload.user_id}')
+    return {'success': True, 'message': 'Mat khau da duoc doi thanh cong'}
+
+
+@router.post('/me/avatar')
+def update_avatar(req: AvatarUploadRequest, authorization: str = Header(...)):
+    """Upload avatar dưới dạng base64 data URL."""
+    if not authorization.startswith('Bearer '):
+        raise HTTPException(401, detail='Authorization header khong hop le')
+    payload = decode_token(authorization[7:])
+
+    # Validate là data URL hợp lệ
+    data = req.avatar_data.strip()
+    if not data.startswith('data:image/'):
+        raise HTTPException(400, detail='Avatar phai la data URL dang image')
+
+    # Giới hạn kích thước ~5MB sau khi base64
+    if len(data) > 7_000_000:
+        raise HTTPException(400, detail='Anh qua lon — toi da 5MB')
+
+    conn = get_mssql_conn()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            'UPDATE AppUsers SET AvatarData = %s WHERE UserID = %s',
+            (data, payload.user_id)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    logger.info(f'[AVATAR] Updated avatar: user_id={payload.user_id}')
+    return {'success': True, 'message': 'Anh dai dien da duoc cap nhat'}
+
+
+@router.delete('/me/avatar')
+def remove_avatar(authorization: str = Header(...)):
+    """Xóa avatar — quay về initials mặc định."""
+    if not authorization.startswith('Bearer '):
+        raise HTTPException(401, detail='Authorization header khong hop le')
+    payload = decode_token(authorization[7:])
+
+    conn = get_mssql_conn()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            'UPDATE AppUsers SET AvatarData = NULL WHERE UserID = %s',
+            (payload.user_id,)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {'success': True}
+
+
+@router.get('/me/login-history')
+def get_login_history(authorization: str = Header(...)):
+    """Trả về 20 phiên đăng nhập gần nhất."""
+    if not authorization.startswith('Bearer '):
+        raise HTTPException(401, detail='Authorization header khong hop le')
+    payload = decode_token(authorization[7:])
+
+    conn = get_mssql_conn()
+    cursor = conn.cursor(as_dict=True)
+    try:
+        cursor.execute(
+            'SELECT TOP 20 HistoryID, LoginAt, IPAddress, UserAgent, Status '
+            'FROM LoginHistory WHERE UserID = %s ORDER BY LoginAt DESC',
+            (payload.user_id,)
+        )
+        rows = cursor.fetchall()
+    finally:
+        conn.close()
+
+    items = [
+        LoginHistoryItem(
+            history_id=r['HistoryID'],
+            login_at=r['LoginAt'].strftime('%d/%m/%Y %H:%M:%S') if r.get('LoginAt') else '',
+            ip_address=r.get('IPAddress'),
+            user_agent=r.get('UserAgent'),
+            status=r.get('Status', 'success'),
+        )
+        for r in rows
+    ]
+    return {'items': [i.model_dump() for i in items]}

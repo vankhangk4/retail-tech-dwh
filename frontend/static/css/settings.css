@@ -1,0 +1,371 @@
+/* ============================================================
+   settings.css — Trang Cài đặt & Hồ sơ người dùng
+   ============================================================ */
+
+/* ── Page wrapper ── */
+.settings-page {
+    display: grid;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    max-width: 62rem;
+}
+
+/* ── Tab navigation ── */
+.settings-tabs {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.3rem;
+    background: var(--bg-subtle);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-pill);
+    width: fit-content;
+}
+
+.settings-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding: 0 1.1rem;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.settings-tab-btn svg {
+    flex-shrink: 0;
+    opacity: 0.65;
+    transition: opacity 0.18s ease;
+}
+
+.settings-tab-btn:hover {
+    background: var(--bg-panel);
+    color: var(--text-strong);
+}
+
+.settings-tab-btn.is-active {
+    background: linear-gradient(180deg, oklch(99.4% 0.004 210) 0%, var(--bg-panel) 100%);
+    color: var(--accent-strong);
+    box-shadow: var(--shadow-sm);
+}
+
+.settings-tab-btn.is-active svg {
+    opacity: 1;
+}
+
+/* ── Tab panels ── */
+.tab-panel {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.tab-panel.is-hidden {
+    display: none;
+}
+
+/* ── Settings card ── */
+.settings-card {
+    padding: 1.5rem;
+    display: grid;
+    gap: 1.5rem;
+}
+
+.settings-card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.settings-card__title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-strong);
+    margin-bottom: 0.3rem;
+}
+
+.settings-card__desc {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    line-height: 1.55;
+    max-width: 55ch;
+}
+
+/* ── Avatar editor ── */
+.avatar-editor {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.avatar-editor__wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.avatar-xl {
+    position: relative;
+    width: 6rem;
+    height: 6rem;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    overflow: hidden;
+    border: 2px solid var(--line-soft);
+}
+
+.avatar-xl__initials {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--accent-strong);
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    user-select: none;
+}
+
+.avatar-xl__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-xl__img.is-hidden {
+    display: none;
+}
+
+.avatar-upload-btn {
+    position: absolute;
+    bottom: -0.25rem;
+    right: -0.25rem;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    border: 2px solid var(--bg-panel);
+    transition: background-color 0.18s ease, transform 0.18s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.avatar-upload-btn:hover {
+    background: var(--accent-strong);
+    transform: scale(1.08);
+}
+
+.avatar-editor__actions {
+    display: grid;
+    gap: 0.75rem;
+    align-items: start;
+}
+
+.avatar-editor__hint {
+    color: var(--text-faint);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    margin: 0;
+}
+
+/* ── Identity rows (read-only info) ── */
+.settings-identity {
+    display: grid;
+    gap: 0;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: oklch(98.5% 0.005 210);
+}
+
+.identity-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.identity-row:last-child {
+    border-bottom: 0;
+}
+
+.identity-row__label {
+    width: 9rem;
+    flex-shrink: 0;
+    color: var(--text-faint);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.identity-row__value {
+    color: var(--text-strong);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* ── Settings form ── */
+.settings-form {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.settings-form__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.settings-form__footer {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--line-soft);
+}
+
+/* ── Password strength indicator ── */
+.pwd-strength {
+    display: grid;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+}
+
+.pwd-strength__track {
+    height: 0.3rem;
+    background: var(--bg-subtle);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+    border: 1px solid var(--line-soft);
+}
+
+.pwd-strength__fill {
+    height: 100%;
+    width: 0;
+    border-radius: var(--radius-pill);
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.pwd-strength[data-level="1"] .pwd-strength__fill {
+    width: 25%;
+    background: var(--danger);
+}
+
+.pwd-strength[data-level="2"] .pwd-strength__fill {
+    width: 50%;
+    background: var(--warning);
+}
+
+.pwd-strength[data-level="3"] .pwd-strength__fill {
+    width: 75%;
+    background: oklch(60% 0.12 180);
+}
+
+.pwd-strength[data-level="4"] .pwd-strength__fill {
+    width: 100%;
+    background: var(--success);
+}
+
+.pwd-strength__label {
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.pwd-strength[data-level="1"] .pwd-strength__label { color: var(--danger); }
+.pwd-strength[data-level="2"] .pwd-strength__label { color: oklch(45% 0.11 72); }
+.pwd-strength[data-level="3"] .pwd-strength__label { color: oklch(48% 0.11 180); }
+.pwd-strength[data-level="4"] .pwd-strength__label { color: var(--success); }
+
+/* ── Login history table tweaks ── */
+.settings-card .table-shell {
+    margin-top: 0;
+}
+
+#loginHistoryBody td {
+    vertical-align: middle;
+}
+
+.ua-text {
+    max-width: 22rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.login-time {
+    white-space: nowrap;
+    font-size: 0.875rem;
+}
+
+.login-ip {
+    font-family: monospace;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+/* ── Command bar for settings page ── */
+.command-copy p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* ── Sidebar nav-link as <a> tag compatibility ── */
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.85rem;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    cursor: pointer;
+    border: 0;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .settings-form__row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .settings-page {
+        padding: 1rem;
+    }
+
+    .settings-card {
+        padding: 1.1rem;
+    }
+
+    .avatar-editor {
+        gap: 1.25rem;
+    }
+
+    .identity-row__label {
+        width: 7rem;
+    }
+}
