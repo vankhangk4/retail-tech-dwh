@@ -1,11 +1,36 @@
 const APP_CONTEXT = JSON.parse(document.getElementById('app-context').textContent);
 
 const DASHBOARD_MAP = {
-    revenue: { id: 1, label: 'Doanh thu' },
-    products: { id: 2, label: 'Sản phẩm' },
-    inventory: { id: 3, label: 'Tồn kho' },
-    customers: { id: 4, label: 'Khách hàng' },
-    employees: { id: 5, label: 'Nhân viên' },
+    revenue: {
+        id: 1,
+        label: 'Doanh thu',
+        title: 'Phòng phân tích doanh thu',
+        description: 'Dùng khi cần chứng minh toàn cảnh doanh thu, theo thời gian, theo tenant hoặc theo danh mục.',
+    },
+    products: {
+        id: 2,
+        label: 'Sản phẩm',
+        title: 'Phòng phân tích sản phẩm',
+        description: 'Mở khi cần giải thích tăng trưởng đến từ mặt hàng nào, lợi nhuận nằm ở đâu và đâu là danh mục kéo doanh số.',
+    },
+    inventory: {
+        id: 3,
+        label: 'Tồn kho',
+        title: 'Phòng phân tích tồn kho',
+        description: 'Dùng khi hội đồng hỏi về rủi ro vận hành, mức tồn tối thiểu và dòng chảy hàng hóa.',
+    },
+    customers: {
+        id: 4,
+        label: 'Khách hàng',
+        title: 'Phòng phân tích khách hàng',
+        description: 'Phù hợp khi cần trình bày cách warehouse hỗ trợ đọc chân dung khách hàng, cụm RFM và giá trị vòng đời.',
+    },
+    employees: {
+        id: 5,
+        label: 'Nhân viên',
+        title: 'Phòng phân tích nhân viên',
+        description: 'Dùng cho doanh số, hiệu suất và mức đóng góp của nhân sự bán hàng.',
+    },
 };
 
 const appState = {
@@ -14,7 +39,11 @@ const appState = {
     tenants: [],
     users: [],
     etlLogs: [],
+    activePage: 'overview',
+    activeAnalysis: 'revenue',
 };
+
+let confirmResolver = null;
 
 function byId(id) {
     return document.getElementById(id);
@@ -72,23 +101,77 @@ function authFetch(url, options = {}) {
     return fetch(url, { ...options, headers });
 }
 
-function setSidebarState() {
-    if (window.innerWidth <= 1024) {
-        document.body.classList.remove('sidebar-collapsed');
+function showAlert(el, message, tone = 'danger', timeoutMs = 0) {
+    if (!el) return;
+    window.clearTimeout(el._hideTimer);
+    el.textContent = message;
+    const shellClass = el.classList.contains('shell-alert') ? 'shell-alert ' : '';
+    el.className = `${shellClass}alert alert--${tone}`;
+    el.classList.add('is-visible');
+    if (timeoutMs > 0) {
+        el._hideTimer = window.setTimeout(() => hideAlert(el), timeoutMs);
     }
 }
 
-function toggleSidebar() {
-    if (window.innerWidth <= 1024) {
-        document.body.classList.toggle('sidebar-open');
+function hideAlert(el) {
+    if (!el) return;
+    window.clearTimeout(el._hideTimer);
+    el.classList.remove('is-visible');
+    el.classList.add('is-hidden');
+    el.textContent = '';
+}
+
+function showShellAlert(message, tone = 'danger', timeoutMs = 5000) {
+    showAlert(byId('shellAlert'), message, tone, timeoutMs);
+}
+
+function setEmbedFallback({ iframeId, fallbackId, message = '' }) {
+    const iframe = byId(iframeId);
+    const fallback = byId(fallbackId);
+    if (!iframe || !fallback) return;
+
+    if (message) {
+        iframe.classList.add('is-hidden');
+        fallback.textContent = message;
+        fallback.classList.remove('is-hidden');
         return;
     }
-    document.body.classList.toggle('sidebar-collapsed');
+
+    fallback.textContent = '';
+    fallback.classList.add('is-hidden');
+    iframe.classList.remove('is-hidden');
+}
+
+function setSidebarState() {
+    document.body.classList.remove('sidebar-collapsed');
+    if (window.innerWidth > 1024) {
+        document.body.classList.remove('sidebar-open');
+    }
+    syncSidebarChrome();
+}
+
+function toggleSidebar() {
+    if (window.innerWidth > 1024) {
+        syncSidebarChrome();
+        return;
+    }
+    document.body.classList.toggle('sidebar-open');
+    syncSidebarChrome();
 }
 
 function closeSidebarOnMobile() {
     if (window.innerWidth <= 1024) {
         document.body.classList.remove('sidebar-open');
+        syncSidebarChrome();
+    }
+}
+
+function syncSidebarChrome() {
+    const toggleButton = byId('toggleSidebar');
+    const isExpanded = window.innerWidth > 1024 || document.body.classList.contains('sidebar-open');
+
+    if (toggleButton) {
+        toggleButton.setAttribute('aria-expanded', String(isExpanded));
     }
 }
 
@@ -100,8 +183,55 @@ function updatePageChrome(page) {
     byId('pageEyebrow').textContent = target.dataset.pageEyebrow || 'Điều hành';
 }
 
-function navigateTo(page) {
-    document.querySelectorAll('.nav-link').forEach((link) => {
+function setActiveAnalysis(key, { loadIframe = false } = {}) {
+    const dashboardKey = DASHBOARD_MAP[key] ? key : appState.activeAnalysis;
+    const config = DASHBOARD_MAP[dashboardKey];
+    if (!config) return;
+
+    appState.activeAnalysis = dashboardKey;
+
+    document.querySelectorAll('[data-dashboard-key]').forEach((button) => {
+        const active = button.dataset.dashboardKey === dashboardKey;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', String(active));
+    });
+
+    if (byId('analysisTitle')) {
+        byId('analysisTitle').textContent = config.title;
+    }
+    if (byId('analysisDescription')) {
+        byId('analysisDescription').textContent = config.description;
+    }
+    if (byId('analysisContextPill')) {
+        byId('analysisContextPill').textContent = `Trục đang xem: ${config.label}`;
+    }
+
+    const modalButton = byId('analysisOpenModalBtn');
+    if (modalButton) {
+        modalButton.dataset.openDashboard = String(config.id);
+    }
+
+    if (loadIframe) {
+        loadSupersetIframe(dashboardKey, {
+            iframeId: 'iframe-analysis',
+            frameStateId: 'frameState-analysis',
+        });
+    }
+}
+
+function navigateTo(requestedPage) {
+    let page = requestedPage;
+    if (DASHBOARD_MAP[requestedPage]) {
+        appState.activeAnalysis = requestedPage;
+        page = 'analysis';
+    }
+
+    const target = document.querySelector(`.page[data-page="${page}"]`);
+    if (!target) return false;
+
+    appState.activePage = page;
+
+    document.querySelectorAll('.nav-link[data-page]').forEach((link) => {
         link.classList.toggle('is-active', link.dataset.page === page);
     });
     document.querySelectorAll('.page').forEach((section) => {
@@ -110,18 +240,32 @@ function navigateTo(page) {
     updatePageChrome(page);
     closeSidebarOnMobile();
 
-    if (DASHBOARD_MAP[page]) {
-        loadSupersetIframe(page);
+    if (page === 'analysis') {
+        setActiveAnalysis(appState.activeAnalysis, { loadIframe: true });
     }
+
+    return true;
 }
 
 function bindNavigation() {
-    document.querySelectorAll('.nav-link').forEach((link) => {
+    document.querySelectorAll('.nav-link[data-page]').forEach((link) => {
         link.addEventListener('click', () => navigateTo(link.dataset.page));
     });
 
     document.querySelectorAll('[data-open-page]').forEach((button) => {
         button.addEventListener('click', () => navigateTo(button.dataset.openPage));
+    });
+
+    document.querySelectorAll('[data-dashboard-key]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const key = button.dataset.dashboardKey;
+            appState.activeAnalysis = key;
+            if (appState.activePage !== 'analysis') {
+                navigateTo('analysis');
+                return;
+            }
+            setActiveAnalysis(key, { loadIframe: true });
+        });
     });
 
     document.querySelectorAll('[data-open-dashboard]').forEach((button) => {
@@ -152,9 +296,6 @@ function renderEmbeddedDashboard(iframe, data) {
         channel.port1.onmessage = function (event) {
             const message = event.data || {};
             if (message.messageId !== messageId) return;
-            if (message.switchboardAction === 'error') {
-                console.error('Superset embedded token error:', message.error);
-            }
         };
         channel.port1.start();
 
@@ -177,14 +318,14 @@ function renderEmbeddedDashboard(iframe, data) {
     iframe.src = url.toString();
 }
 
-async function loadSupersetIframe(page) {
-    const config = DASHBOARD_MAP[page];
-    const iframe = byId(`iframe-${page}`);
+async function loadSupersetIframe(dashboardKey, { iframeId = 'iframe-analysis', frameStateId = 'frameState-analysis' } = {}) {
+    const config = DASHBOARD_MAP[dashboardKey];
+    const iframe = byId(iframeId);
     if (!config || !iframe) return;
 
     iframe.src = 'about:blank';
-    iframe.removeAttribute('srcdoc');
-    const frameState = byId(`frameState-${page}`);
+    setEmbedFallback({ iframeId, fallbackId: iframeId === 'modalIframe' ? 'modalFallback' : 'frameFallback-analysis' });
+    const frameState = byId(frameStateId);
     if (frameState) frameState.textContent = 'Đang xin dashboard token và dựng phiên nhúng.';
 
     try {
@@ -194,8 +335,11 @@ async function loadSupersetIframe(page) {
         renderEmbeddedDashboard(iframe, data);
         if (frameState) frameState.textContent = 'Đang hiển thị dashboard nhúng qua Superset.';
     } catch (error) {
-        console.error('Dashboard token error:', error);
-        iframe.srcdoc = '<p style="padding:20px;font:16px system-ui;color:#b42318;">Không lấy được dashboard token. Vui lòng đăng nhập lại hoặc kiểm tra dịch vụ Superset.</p>';
+        setEmbedFallback({
+            iframeId,
+            fallbackId: iframeId === 'modalIframe' ? 'modalFallback' : 'frameFallback-analysis',
+            message: 'Không thể tải bảng phân tích nhúng. Vui lòng đăng nhập lại hoặc kiểm tra dịch vụ Superset.',
+        });
         if (frameState) frameState.textContent = 'Không thể dựng dashboard nhúng ở thời điểm này.';
     }
 }
@@ -207,25 +351,37 @@ function toggleModal(id, visible) {
 }
 
 async function openSupersetDashboard(dashboardId) {
-    byId('modalTitle').textContent = 'Phòng phân tích tập trung';
-    const iframe = byId('modalIframe');
-    iframe.onload = null;
-    iframe.src = 'about:blank';
-
-    try {
-        const response = await fetch(`/api/dashboard-token?dashboard_id=${dashboardId}`);
-        if (!response.ok) throw new Error('Token error');
-        const data = await response.json();
-        renderEmbeddedDashboard(iframe, data);
-        toggleModal('modalOverlay', true);
-    } catch (error) {
-        alert('Không lấy được dashboard token. Vui lòng đăng nhập lại.');
-    }
+    const currentConfig = Object.values(DASHBOARD_MAP).find((item) => item.id === dashboardId);
+    byId('modalTitle').textContent = currentConfig ? currentConfig.title : 'Bảng phân tích tập trung';
+    toggleModal('modalOverlay', true);
+    await loadSupersetIframe(
+        Object.keys(DASHBOARD_MAP).find((key) => DASHBOARD_MAP[key].id === dashboardId) || appState.activeAnalysis,
+        { iframeId: 'modalIframe', frameStateId: null }
+    );
 }
 
 function closeModal() {
     toggleModal('modalOverlay', false);
     byId('modalIframe').src = 'about:blank';
+    setEmbedFallback({ iframeId: 'modalIframe', fallbackId: 'modalFallback' });
+}
+
+function closeConfirmModal(confirmed = false) {
+    toggleModal('modalConfirm', false);
+    if (confirmResolver) {
+        confirmResolver(confirmed);
+        confirmResolver = null;
+    }
+}
+
+function requestConfirmation({ title, detail, confirmLabel = 'Xác nhận' }) {
+    byId('confirmTitle').textContent = title;
+    byId('confirmDetail').textContent = detail;
+    byId('confirmActionBtn').textContent = confirmLabel;
+    toggleModal('modalConfirm', true);
+    return new Promise((resolve) => {
+        confirmResolver = resolve;
+    });
 }
 
 async function checkHealth() {
@@ -268,9 +424,7 @@ async function loadKPIs() {
         const data = await response.json();
         appState.kpi = data.kpi || {};
         renderKPIs();
-    } catch (error) {
-        console.warn('KPI load error:', error);
-    }
+    } catch (error) {}
 }
 
 function renderKPIs() {
@@ -407,7 +561,7 @@ function renderGovernanceStats() {
 
 function renderNextAction() {
     const freshness = getFreshnessInfo();
-    let nextAction = 'Mở Dashboard Doanh thu để bắt đầu câu chuyện vận hành.';
+    let nextAction = 'Mở Phòng phân tích và bắt đầu từ trục doanh thu.';
 
     if (appState.health !== 'ok') {
         nextAction = 'Kiểm tra Auth Gateway trước, sau đó mới trình bày phần dashboard.';
@@ -559,9 +713,7 @@ async function loadAdminData() {
             appState.tenants = data.tenants || [];
             renderTenants(appState.tenants);
         }
-    } catch (error) {
-        console.warn('Tenants load error', error);
-    }
+    } catch (error) {}
 
     try {
         const userResponse = await authFetch('/api/users');
@@ -570,9 +722,7 @@ async function loadAdminData() {
             appState.users = data.users || [];
             renderUsers(appState.users);
         }
-    } catch (error) {
-        console.warn('Users load error', error);
-    }
+    } catch (error) {}
 
     try {
         const logResponse = await authFetch('/api/etl/logs');
@@ -581,9 +731,7 @@ async function loadAdminData() {
             appState.etlLogs = data.logs || [];
             renderETLLogs(appState.etlLogs);
         }
-    } catch (error) {
-        console.warn('ETL logs load error', error);
-    }
+    } catch (error) {}
 
     renderOverviewIntel();
 }
@@ -616,9 +764,7 @@ async function populateETLTenantSelect() {
         const data = await response.json();
         const tenants = data.tenants || [];
         select.innerHTML = tenants.map((tenant) => `<option value="${tenant.tenant_id}">${tenant.tenant_id} — ${tenant.tenant_name}</option>`).join('');
-    } catch (error) {
-        console.warn('ETL tenant load error', error);
-    }
+    } catch (error) {}
 }
 
 function showFilePreview() {
@@ -648,7 +794,7 @@ function showFilePreview() {
 async function uploadFile() {
     const input = byId('fileInput');
     if (!input?.files.length) {
-        alert('Vui lòng chọn ít nhất một file để nạp.');
+        showShellAlert('Chọn ít nhất một file trước khi nạp vào staging.');
         return;
     }
 
@@ -703,7 +849,7 @@ async function uploadFile() {
 
 async function triggerETL(tenant) {
     if (!tenant) {
-        alert('Chưa có tenant để chạy ETL.');
+        showShellAlert('Chọn tenant trước khi kích hoạt ETL.');
         return;
     }
 
@@ -798,14 +944,20 @@ async function loadUploadedFiles() {
 async function deleteFile(tenant, filename) {
     const decodedTenant = decodeURIComponent(tenant);
     const decodedFilename = decodeURIComponent(filename);
-    if (!confirm(`Xóa file "${decodedFilename}" khỏi staging?`)) return;
+    const confirmed = await requestConfirmation({
+        title: 'Xóa file khỏi staging',
+        detail: `File "${decodedFilename}" sẽ bị xóa khỏi tenant ${decodedTenant}. Thao tác này không thể hoàn tác.`,
+        confirmLabel: 'Xóa file',
+    });
+    if (!confirmed) return;
     try {
         const response = await fetch(`/api/upload/${decodedTenant}/files/${encodeURIComponent(decodedFilename)}`, { method: 'DELETE' });
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.detail || data.message || 'Không thể xóa file');
         await loadUploadedFiles();
+        showShellAlert(`Đã xóa file ${decodedFilename} khỏi staging.`, 'success', 4000);
     } catch (error) {
-        alert(error.message);
+        showShellAlert(error.message);
     }
 }
 
@@ -819,9 +971,7 @@ async function populateTenantDropdown() {
         const tenants = data.tenants || [];
         select.innerHTML = '<option value="">Toàn hệ thống</option>' +
             tenants.map((tenant) => `<option value="${tenant.tenant_id}">${tenant.tenant_id} — ${tenant.tenant_name}</option>`).join('');
-    } catch (error) {
-        console.warn('Tenant dropdown load error', error);
-    }
+    } catch (error) {}
 }
 
 function autoFillTenantPath() {
@@ -1046,9 +1196,7 @@ async function openEditUser(userId, username, tenantId, role, isActive) {
             select.innerHTML = '<option value="">Toàn hệ thống</option>' +
                 tenants.map((tenant) => `<option value="${tenant.tenant_id}">${tenant.tenant_id} — ${tenant.tenant_name}</option>`).join('');
         }
-    } catch (error) {
-        console.warn('Tenant list for edit user failed', error);
-    }
+    } catch (error) {}
     select.value = tenantId || '';
     toggleModal('modalEditUser', true);
 }
@@ -1099,6 +1247,7 @@ async function submitEditUser(event) {
 
 function bindGlobalEvents() {
     byId('toggleSidebar')?.addEventListener('click', toggleSidebar);
+    byId('shellScrim')?.addEventListener('click', closeSidebarOnMobile);
     byId('logoutBtn')?.addEventListener('click', async () => {
         await fetch('/api/logout', { method: 'POST' });
         window.location.href = '/login';
@@ -1113,6 +1262,11 @@ function bindGlobalEvents() {
     byId('modalEditUser')?.addEventListener('click', (event) => {
         if (event.target.id === 'modalEditUser') closeEditUserModal();
     });
+    byId('modalConfirm')?.addEventListener('click', (event) => {
+        if (event.target.id === 'modalConfirm') closeConfirmModal();
+    });
+    byId('confirmCancelBtn')?.addEventListener('click', () => closeConfirmModal(false));
+    byId('confirmActionBtn')?.addEventListener('click', () => closeConfirmModal(true));
 
     byId('fileInput')?.addEventListener('change', showFilePreview);
     byId('etlTenantSelect')?.addEventListener('change', loadUploadedFiles);
@@ -1135,6 +1289,11 @@ function bindGlobalEvents() {
     }
 
     window.addEventListener('resize', setSidebarState);
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            closeSidebarOnMobile();
+        }
+    });
 }
 
 function bindForms() {
@@ -1152,11 +1311,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     bindForms();
     setSidebarState();
     renderOverviewIntel();
-    navigateTo('overview');
     checkHealth();
     loadKPIs();
     populateETLTenantSelect();
     loadUploadedFiles();
+
+    const requestedPage = sessionStorage.getItem('dashboardPage');
+    if (requestedPage) {
+        sessionStorage.removeItem('dashboardPage');
+    }
+    const hasInitialRoute = requestedPage ? navigateTo(requestedPage) : false;
+    if (!hasInitialRoute) {
+        navigateTo('overview');
+    }
 
     if (APP_CONTEXT.userRole === 'superadmin') {
         await loadAdminData();
@@ -1169,6 +1336,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 window.openEditTenant = openEditTenant;
 window.openEditUser = openEditUser;
 window.closeModal = closeModal;
+window.closeConfirmModal = closeConfirmModal;
 window.closeEditTenantModal = closeEditTenantModal;
 window.closeEditUserModal = closeEditUserModal;
 window.deleteFile = deleteFile;

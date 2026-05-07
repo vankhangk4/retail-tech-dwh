@@ -13,12 +13,14 @@
 /* ── Tab navigation ── */
 .settings-tabs {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.25rem;
     padding: 0.3rem;
     background: var(--bg-subtle);
     border: 1px solid var(--line-soft);
     border-radius: var(--radius-pill);
     width: fit-content;
+    box-shadow: var(--shadow-sm);
 }
 
 .settings-tab-btn {
@@ -145,6 +147,10 @@
     display: none;
 }
 
+.avatar-xl__initials.is-hidden {
+    display: none;
+}
+
 .avatar-upload-btn {
     position: absolute;
     bottom: -0.25rem;
@@ -233,9 +239,14 @@
 .settings-form__footer {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 0.75rem;
     padding-top: 0.5rem;
     border-top: 1px solid var(--line-soft);
+}
+
+.field--compact {
+    max-width: 22rem;
 }
 
 /* ── Password strength indicator ── */
@@ -327,22 +338,9 @@
     margin: 0;
 }
 
-/* ── Sidebar nav-link as <a> tag compatibility ── */
-.nav-link {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.7rem 0.85rem;
-    border-radius: var(--radius-sm);
-    text-decoration: none;
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    cursor: pointer;
-    border: 0;
-    background: transparent;
-    width: 100%;
-    text-align: left;
-    transition: background-color 0.18s ease, color 0.18s ease;
+.login-session-pill {
+    margin-left: 0.5rem;
+    font-size: 0.72rem;
 }
 
 /* ── Responsive ── */
@@ -355,6 +353,10 @@
 @media (max-width: 640px) {
     .settings-page {
         padding: 1rem;
+    }
+
+    .settings-tabs {
+        width: 100%;
     }
 
     .settings-card {

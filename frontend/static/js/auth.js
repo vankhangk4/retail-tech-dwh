@@ -43,6 +43,52 @@ function bindPasswordToggles() {
     });
 }
 
+function applyAuthTrustState(state) {
+    const states = {
+        checking: {
+            healthLabel: 'Đang kiểm tra',
+            trustMessage: 'Đang kiểm tra lớp xác thực trước khi cho phép tiếp tục thao tác.',
+            dotClass: 'is-checking',
+        },
+        ok: {
+            healthLabel: 'Đang phản hồi',
+            trustMessage: 'Lớp xác thực đang phản hồi. Bạn có thể tiếp tục thao tác.',
+            dotClass: 'is-live',
+        },
+        error: {
+            healthLabel: 'Mất phản hồi',
+            trustMessage: 'Lớp xác thực đang mất phản hồi. Kiểm tra dịch vụ trước khi tiếp tục thao tác.',
+            dotClass: 'is-danger',
+        },
+    };
+
+    const nextState = states[state] || states.checking;
+    document.querySelectorAll('[data-auth-health-label]').forEach((element) => {
+        element.textContent = nextState.healthLabel;
+        element.dataset.state = state;
+    });
+    document.querySelectorAll('[data-auth-trust-message]').forEach((element) => {
+        element.textContent = nextState.trustMessage;
+    });
+    document.querySelectorAll('[data-auth-trust-dot]').forEach((element) => {
+        element.classList.remove('is-checking', 'is-live', 'is-danger');
+        element.classList.add(nextState.dotClass);
+    });
+}
+
+async function hydrateAuthTrust() {
+    if (!document.querySelector('[data-auth-health-label]')) return;
+
+    applyAuthTrustState('checking');
+    try {
+        const response = await fetch('/api/health');
+        const data = await response.json();
+        applyAuthTrustState(data.api === 'ok' ? 'ok' : 'error');
+    } catch (error) {
+        applyAuthTrustState('error');
+    }
+}
+
 async function handleLoginSubmit(event) {
     event.preventDefault();
     const usernameInput = document.getElementById('username');
@@ -94,6 +140,7 @@ function updatePasswordStrength(value) {
 
     if (!value) {
         container.classList.remove('is-visible');
+        delete container.dataset.level;
         return;
     }
 
@@ -103,12 +150,8 @@ function updatePasswordStrength(value) {
     if (/[A-Z]/.test(value)) score += 1;
     if (/[0-9]/.test(value) || /[^a-zA-Z0-9]/.test(value)) score += 1;
 
-    const palette = ['var(--danger)', 'var(--warning)', 'var(--warning)', 'var(--success)'];
     const labels = ['Rất yếu', 'Yếu', 'Đủ dùng', 'Mạnh'];
-    const bars = container.querySelectorAll('[data-strength-bar]');
-    bars.forEach((bar, index) => {
-        bar.style.background = index < score ? palette[Math.max(score - 1, 0)] : 'var(--bg-subtle)';
-    });
+    container.dataset.level = String(score);
     container.querySelector('.password-strength__label').textContent = labels[Math.max(score - 1, 0)];
     container.classList.add('is-visible');
 }
@@ -215,6 +258,7 @@ async function handleRegisterSubmit(event) {
 
 document.addEventListener('DOMContentLoaded', () => {
     bindPasswordToggles();
+    hydrateAuthTrust();
 
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {

@@ -179,6 +179,18 @@ body.auth-body {
     text-align: right;
 }
 
+.auth-signal__row strong[data-state="checking"] {
+    color: oklch(86% 0.022 82);
+}
+
+.auth-signal__row strong[data-state="ok"] {
+    color: oklch(88% 0.05 156);
+}
+
+.auth-signal__row strong[data-state="error"] {
+    color: oklch(82% 0.07 28);
+}
+
 .auth-panel {
     position: relative;
     display: grid;
@@ -236,6 +248,10 @@ body.auth-body {
     gap: 1rem;
 }
 
+.auth-form > .button {
+    width: 100%;
+}
+
 .auth-footer {
     display: flex;
     flex-wrap: wrap;
@@ -280,9 +296,35 @@ body.auth-body {
     background: var(--bg-subtle);
 }
 
+.password-strength[data-level="1"] .password-strength__bars span:nth-child(-n+1) {
+    background: var(--danger);
+}
+
+.password-strength[data-level="2"] .password-strength__bars span:nth-child(-n+2),
+.password-strength[data-level="3"] .password-strength__bars span:nth-child(-n+3) {
+    background: var(--warning);
+}
+
+.password-strength[data-level="4"] .password-strength__bars span:nth-child(-n+4) {
+    background: var(--success);
+}
+
 .password-strength__label {
     font-size: 0.78rem;
     color: var(--text-faint);
+}
+
+.password-strength[data-level="1"] .password-strength__label {
+    color: var(--danger);
+}
+
+.password-strength[data-level="2"] .password-strength__label,
+.password-strength[data-level="3"] .password-strength__label {
+    color: oklch(45% 0.11 72);
+}
+
+.password-strength[data-level="4"] .password-strength__label {
+    color: var(--success);
 }
 
 .auth-tenant-fallback {
@@ -350,6 +392,21 @@ body.auth-body {
     border-radius: 50%;
     background: var(--accent);
     box-shadow: 0 0 0 0.3rem oklch(92.8% 0.02 205);
+}
+
+.auth-trust-strip__dot.is-checking {
+    background: var(--warning);
+    box-shadow: 0 0 0 0.3rem oklch(95.2% 0.028 80);
+}
+
+.auth-trust-strip__dot.is-live {
+    background: var(--success);
+    box-shadow: 0 0 0 0.3rem oklch(93.3% 0.03 156);
+}
+
+.auth-trust-strip__dot.is-danger {
+    background: var(--danger);
+    box-shadow: 0 0 0 0.3rem oklch(94.1% 0.03 28);
 }
 
 @media (max-width: 1080px) {

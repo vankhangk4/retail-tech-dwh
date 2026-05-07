@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>DWH Operations Console</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    {% set asset_version = '20260507-fix1' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css', v=asset_version) }}">
 </head>
 <body class="shell-body" data-access-token="{{ session.get('access_token', '') }}">
     <script id="app-context" type="application/json">
@@ -21,168 +22,17 @@
 
     <a href="#mainContent" class="skip-link">Bỏ qua thanh điều hướng, tới nội dung chính</a>
 
+    {% set sidebar_surface = 'dashboard' %}
+    {% set sidebar_active = 'overview' %}
+
     <div class="app-shell">
-        <aside class="app-rail" id="sidebar">
-            <section class="rail-brand">
-                <div class="rail-brand__row">
-                    <div class="rail-brand__mark" aria-hidden="true">
-                        <svg width="26" height="26" viewBox="0 0 48 48" fill="none">
-                            <rect width="48" height="48" rx="12" fill="currentColor"/>
-                            <rect x="10" y="14" width="12" height="12" rx="2" fill="white"/>
-                            <rect x="26" y="14" width="12" height="12" rx="2" fill="white" opacity="0.55"/>
-                            <rect x="10" y="28" width="12" height="12" rx="2" fill="white" opacity="0.55"/>
-                            <rect x="26" y="28" width="12" height="12" rx="2" fill="white"/>
-                        </svg>
-                    </div>
-                    <div class="rail-brand__copy">
-                        <span class="rail-brand__title">DWH Operations Console</span>
-                        <span class="rail-brand__meta">Mission control cho hệ thống Data Warehouse multi-tenant</span>
-                    </div>
-                </div>
-            </section>
-
-            <section class="rail-user">
-                <div class="rail-user__top">
-                    <div class="avatar-stamp">{{ user.role[0].upper() }}</div>
-                    <div class="rail-user__meta">
-                        <strong>
-                            {% if user.role == 'superadmin' %}
-                                Superadmin
-                            {% elif user.role == 'admin' %}
-                                Admin
-                            {% else %}
-                                Viewer
-                            {% endif %}
-                        </strong>
-                        <span>
-                            {% if user.tenant_id %}
-                                Phạm vi: {{ user.tenant_id }}
-                            {% else %}
-                                Phạm vi: toàn hệ thống
-                            {% endif %}
-                        </span>
-                    </div>
-                </div>
-                <div class="rail-user__chips">
-                    <span class="status-pill tone-neutral">ID {{ user.user_id }}</span>
-                    <span class="status-pill tone-live">
-                        {% if user.tenant_id %}
-                            Tenant mode
-                        {% else %}
-                            System mode
-                        {% endif %}
-                    </span>
-                </div>
-            </section>
-
-            <nav class="rail-nav" aria-label="Điều hướng chính">
-                <div class="rail-group">
-                    <span class="rail-group__label">Điều hành</span>
-                    <button class="nav-link is-active" type="button" data-page="overview">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-                        <span class="nav-link__copy">
-                            <span class="nav-link__title">Tổng quan</span>
-                            <span class="nav-link__meta">Tín hiệu vận hành</span>
-                        </span>
-                    </button>
-                    <button class="nav-link" type="button" data-page="etl">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        <span class="nav-link__copy">
-                            <span class="nav-link__title">Vận hành ETL</span>
-                            <span class="nav-link__meta">Upload và pipeline</span>
-                        </span>
-                    </button>
-                </div>
-
-                <div class="rail-group">
-                    <span class="rail-group__label">Phân tích</span>
-                    <button class="nav-link" type="button" data-page="revenue">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                        <span class="nav-link__copy">
-                            <span class="nav-link__title">Doanh thu</span>
-                            <span class="nav-link__meta">Revenue room</span>
-                        </span>
-                    </button>
-                    <button class="nav-link" type="button" data-page="products">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
-                        <span class="nav-link__copy">
-                            <span class="nav-link__title">Sản phẩm</span>
-                            <span class="nav-link__meta">Product room</span>
-                        </span>
-                    </button>
-                    <button class="nav-link" type="button" data-page="inventory">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-                        <span class="nav-link__copy">
-                            <span class="nav-link__title">Tồn kho</span>
-                            <span class="nav-link__meta">Inventory room</span>
-                        </span>
-                    </button>
-                    <button class="nav-link" type="button" data-page="customers">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                        <span class="nav-link__copy">
-                            <span class="nav-link__title">Khách hàng</span>
-                            <span class="nav-link__meta">Customer room</span>
-                        </span>
-                    </button>
-                    <button class="nav-link" type="button" data-page="employees">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-                        <span class="nav-link__copy">
-                            <span class="nav-link__title">Nhân viên</span>
-                            <span class="nav-link__meta">Performance room</span>
-                        </span>
-                    </button>
-                </div>
-
-                {% if user.role == 'admin' or user.role == 'superadmin' %}
-                <div class="rail-group">
-                    <span class="rail-group__label">Quản trị</span>
-                    {% if user.role == 'admin' %}
-                    <button class="nav-link" type="button" data-page="manage">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                        <span class="nav-link__copy">
-                            <span class="nav-link__title">Quản lý tenant</span>
-                            <span class="nav-link__meta">User trong cửa hàng</span>
-                        </span>
-                    </button>
-                    {% endif %}
-                    {% if user.role == 'superadmin' %}
-                    <button class="nav-link" type="button" data-page="admin">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                        <span class="nav-link__copy">
-                            <span class="nav-link__title">Quản trị hệ thống</span>
-                            <span class="nav-link__meta">Tenant, user, giám sát ETL</span>
-                        </span>
-                    </button>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                <div class="rail-group">
-                    <span class="rail-group__label">Tài khoản</span>
-                    <a class="nav-link" href="/settings" style="text-decoration:none;color:inherit;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        <span class="nav-link__copy">
-                            <span class="nav-link__title">Cài đặt</span>
-                            <span class="nav-link__meta">Hồ sơ & bảo mật</span>
-                        </span>
-                    </a>
-                </div>
-            </nav>
-
-            <section class="rail-footer">
-                <div id="healthIndicator">
-                    <span class="status-pill tone-neutral">Đang kiểm tra API</span>
-                </div>
-                <button class="button button--secondary" type="button" id="logoutBtn">
-                    <span>Đăng xuất</span>
-                </button>
-            </section>
-        </aside>
+        {% include 'partials/app_sidebar.html' %}
+        <button class="shell-scrim" type="button" id="shellScrim" aria-label="Đóng thanh điều hướng"></button>
 
         <main class="app-main" id="mainContent">
             <header class="command-bar">
                 <div class="command-bar__start">
-                    <button class="icon-button command-toggle" type="button" id="toggleSidebar" aria-label="Thu gọn hoặc mở thanh điều hướng">
+                    <button class="icon-button command-toggle" type="button" id="toggleSidebar" aria-label="Thu gọn hoặc mở thanh điều hướng" aria-controls="sidebar" aria-expanded="true">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                     </button>
                     <div class="command-copy">
@@ -209,14 +59,16 @@
                 </div>
             </header>
 
-            <section class="page is-active" id="page-overview" data-page="overview" data-page-title="Tổng quan điều hành" data-page-subtitle="Đọc tín hiệu hệ thống trước, sau đó đi sâu vào phân tích hoặc quản trị." data-page-eyebrow="Mission control">
+            <div class="shell-alert alert alert--danger is-hidden" id="shellAlert" aria-live="polite"></div>
+
+            <section class="page is-active" id="page-overview" data-page="overview" data-page-title="Tổng quan điều hành" data-page-subtitle="Đọc tín hiệu hệ thống trước, sau đó đi sâu vào phân tích hoặc quản trị." data-page-eyebrow="Điều hành">
                 <div class="mission-brief">
                     <div class="mission-brief__copy">
-                        <span class="eyebrow">System briefing</span>
+                        <span class="eyebrow">Nhịp điều hành</span>
                         <h2>Hệ thống Phân tích Dữ liệu Bán lẻ.</h2>
                         <p>Nền tảng hỗ trợ theo dõi hiệu năng hệ thống, giám sát luồng dữ liệu (pipeline) và phân tích chỉ số kinh doanh đa chi nhánh (multi-tenant).</p>
                         <div class="inline-actions">
-                            <button class="button button--primary" type="button" data-open-page="revenue">Xem báo cáo</button>
+                            <button class="button button--primary" type="button" data-open-page="analysis">Mở phân tích</button>
                             <button class="button button--secondary" type="button" data-open-page="etl">Giám sát ETL</button>
                             {% if user.role == 'superadmin' %}
                             <button class="button button--secondary" type="button" data-open-page="admin">Quản trị hệ thống</button>
@@ -275,61 +127,71 @@
                 </div>
 
                 <div class="overview-grid">
-                    <section class="panel panel--span-7">
+                    <section class="panel panel--span-8">
                         <div class="panel-head">
                             <div>
-                                <h3>Tenant cần chú ý</h3>
-                                <p>Nơi tổng hợp tenant hết hạn, bị tắt hoặc có log ETL thất bại.</p>
+                                <h3>Cần xử lý ngay</h3>
+                                <p>Chỉ giữ lại các tín hiệu có thể làm yếu buổi demo hoặc ảnh hưởng tính tin cậy của dashboard.</p>
                             </div>
                         </div>
                         <div class="attention-list" id="tenantAttentionList"></div>
                     </section>
 
-                    <section class="panel panel--span-5">
+                    <section class="panel panel--span-4">
                         <div class="panel-head">
                             <div>
-                                <h3>Độ tươi dữ liệu</h3>
-                                <p>Đọc log ETL gần nhất trước khi dùng dashboard làm bằng chứng.</p>
+                                <h3>Lộ trình phiên này</h3>
+                                <p>Đọc nhanh dữ liệu có đủ tin cậy không, rồi chọn đúng bề mặt để kể chuyện.</p>
                             </div>
                         </div>
                         <div class="stack">
                             <span class="status-pill tone-neutral" id="freshnessTone">Đang tính toán độ tươi dữ liệu</span>
                             <p class="section-copy" id="freshnessCaption">Khi log ETL xuất hiện, hệ thống sẽ nhắc thời điểm đồng bộ gần nhất ở đây.</p>
                             <div class="status-box">
-                                <span class="eyebrow">Khuyến nghị tiếp theo</span>
+                                <span class="eyebrow">Bước tiếp theo</span>
                                 <strong id="nextActionText">Đang xây dựng gợi ý cho bước demo tiếp theo.</strong>
                             </div>
-                        </div>
-                    </section>
-
-                    <section class="panel panel--span-4">
-                        <div class="panel-head">
-                            <div>
-                                <h3>Điểm vào phân tích</h3>
-                                <p>Mỗi phòng phân tích giữ một câu chuyện riêng, nhưng cùng một ngôn ngữ điều hành.</p>
+                            <div class="focus-actions">
+                                <button type="button" class="focus-action" data-open-page="analysis">
+                                    <span class="focus-action__copy">
+                                        <strong>Đi vào phân tích</strong>
+                                        <span>Một điểm vào cho toàn bộ dashboard nghiệp vụ.</span>
+                                    </span>
+                                    <span class="focus-action__meta">5 góc nhìn</span>
+                                </button>
+                                <button type="button" class="focus-action" data-open-page="etl">
+                                    <span class="focus-action__copy">
+                                        <strong>Kiểm tra ETL</strong>
+                                        <span>Dùng khi cần chứng minh dữ liệu vừa được nạp và log đang sạch.</span>
+                                    </span>
+                                    <span class="focus-action__meta">Pipeline</span>
+                                </button>
+                                {% if user.role == 'superadmin' %}
+                                <button type="button" class="focus-action" data-open-page="admin">
+                                    <span class="focus-action__copy">
+                                        <strong>Mở quản trị hệ thống</strong>
+                                        <span>Kiểm tra tenant, user và log ETL từ cùng một control surface.</span>
+                                    </span>
+                                    <span class="focus-action__meta">Governance</span>
+                                </button>
+                                {% elif user.role == 'admin' %}
+                                <button type="button" class="focus-action" data-open-page="manage">
+                                    <span class="focus-action__copy">
+                                        <strong>Mở quản trị tenant</strong>
+                                        <span>Đi thẳng vào user trong cửa hàng hiện tại khi cần giải thích phân quyền.</span>
+                                    </span>
+                                    <span class="focus-action__meta">Tenant</span>
+                                </button>
+                                {% endif %}
                             </div>
                         </div>
-                        <div class="analysis-links">
-                            <button type="button" class="analysis-link" data-open-page="revenue">
-                                <strong>Phòng doanh thu</strong>
-                                <p>Mở câu chuyện tổng doanh thu, cùng kỳ và chênh lệch giữa các tenant.</p>
-                            </button>
-                            <button type="button" class="analysis-link" data-open-page="products">
-                                <strong>Phòng sản phẩm</strong>
-                                <p>Đọc top sản phẩm, biên lợi nhuận và những danh mục tạo sức kéo.</p>
-                            </button>
-                            <button type="button" class="analysis-link" data-open-page="inventory">
-                                <strong>Phòng tồn kho</strong>
-                                <p>Đi thẳng vào tín hiệu thiếu hàng, lệch kho và nguy cơ ảnh hưởng doanh thu.</p>
-                            </button>
-                        </div>
                     </section>
 
-                    <section class="panel panel--span-8">
+                    <section class="panel panel--span-12">
                         <div class="panel-head">
                             <div>
-                                <h3>Dấu hiệu quản trị</h3>
-                                <p>Số tenant, user và ETL issue được gom lại để dẫn vào quản trị hoặc giải thích vận hành.</p>
+                                <h3>Tình trạng nền</h3>
+                                <p>Gom tenant, user và lỗi ETL về một hàng để biết hệ thống đang ở trạng thái nào trước khi đi sâu hơn.</p>
                             </div>
                         </div>
                         <div class="mini-stat-grid">
@@ -344,7 +206,7 @@
                                 <p id="userInventoryNote">Đang nạp danh sách user.</p>
                             </article>
                             <article class="mini-stat">
-                                <span class="eyebrow">ETL issue</span>
+                                <span class="eyebrow">Lỗi ETL</span>
                                 <strong class="mini-stat__value metric-number" id="etlIssueCount">0</strong>
                                 <p id="etlIssueNote">Đang kiểm tra log ETL lỗi.</p>
                             </article>
@@ -353,107 +215,64 @@
                 </div>
             </section>
 
-            <section class="page" id="page-revenue" data-page="revenue" data-page-title="Phòng phân tích doanh thu" data-page-subtitle="Bọc dashboard Superset trong một room có ngữ cảnh, thay vì mở iframe trần." data-page-eyebrow="Analysis room">
-                <div class="room-head">
-                    <div>
-                        <h2>Phòng phân tích doanh thu</h2>
-                        <p>Dùng khi cần chứng minh toàn cảnh doanh thu, theo thời gian, theo tenant hoặc theo danh mục.</p>
-                    </div>
-                    <div class="inline-actions">
-                        <span class="status-pill tone-neutral">Superset embedded</span>
-                        <button class="button button--secondary" type="button" data-open-dashboard="1">Mở dạng tập trung</button>
-                    </div>
-                </div>
-                <div class="room-frame">
-                    <div class="room-frame__meta">
-                        <span class="status-pill tone-live">Context: doanh thu</span>
-                        <span class="microcopy" id="frameState-revenue">Sẵn sàng dựng dashboard nhúng.</span>
-                    </div>
-                    <iframe id="iframe-revenue" class="embed-frame" title="Dashboard doanh thu"></iframe>
+            <section class="page" id="page-analysis" data-page="analysis" data-page-title="Phòng phân tích" data-page-subtitle="Chọn đúng câu chuyện trước, rồi mở dashboard tương ứng trong cùng một bề mặt." data-page-eyebrow="Phân tích">
+                <div class="analysis-shell">
+                    <section class="analysis-picker">
+                        <div class="panel-head">
+                            <div>
+                                <h3>Góc nhìn phân tích</h3>
+                                <p>Chỉ chọn một trục kể chuyện tại một thời điểm để tránh mở quá nhiều dashboard song song.</p>
+                            </div>
+                        </div>
+                        <div class="analysis-option-list">
+                            <button type="button" class="analysis-option is-active" data-dashboard-key="revenue">
+                                <strong>Doanh thu</strong>
+                                <p>Toàn cảnh doanh thu, cùng kỳ và chênh lệch giữa các tenant.</p>
+                            </button>
+                            <button type="button" class="analysis-option" data-dashboard-key="products">
+                                <strong>Sản phẩm</strong>
+                                <p>Sản phẩm bán chạy, biên lợi nhuận và danh mục tạo sức kéo.</p>
+                            </button>
+                            <button type="button" class="analysis-option" data-dashboard-key="inventory">
+                                <strong>Tồn kho</strong>
+                                <p>Thiếu hàng, lệch tồn và rủi ro ảnh hưởng doanh thu.</p>
+                            </button>
+                            <button type="button" class="analysis-option" data-dashboard-key="customers">
+                                <strong>Khách hàng</strong>
+                                <p>Phân khúc, hành vi mua và chân dung khách hàng trong DWH.</p>
+                            </button>
+                            <button type="button" class="analysis-option" data-dashboard-key="employees">
+                                <strong>Nhân viên</strong>
+                                <p>Hiệu suất bán hàng và mức đóng góp theo đội ngũ.</p>
+                            </button>
+                        </div>
+                    </section>
+
+                    <section class="analysis-stage">
+                        <div class="analysis-stage__head">
+                            <div class="analysis-stage__copy">
+                                <span class="eyebrow">Trục phân tích</span>
+                                <h2 id="analysisTitle">Phòng phân tích doanh thu</h2>
+                                <p id="analysisDescription">Dùng khi cần chứng minh toàn cảnh doanh thu, theo thời gian, theo tenant hoặc theo danh mục.</p>
+                            </div>
+                            <div class="inline-actions">
+                                <span class="status-pill tone-neutral">Nhúng từ Superset</span>
+                                <button class="button button--secondary" type="button" id="analysisOpenModalBtn" data-open-dashboard="1">Mở dạng tập trung</button>
+                            </div>
+                        </div>
+                        <div class="room-frame">
+                            <div class="room-frame__meta">
+                                <span class="status-pill tone-live" id="analysisContextPill">Trục đang xem: Doanh thu</span>
+                                <span class="microcopy" id="frameState-analysis">Đang chuẩn bị dựng dashboard nhúng.</span>
+                            </div>
+                            <iframe id="iframe-analysis" class="embed-frame" title="Dashboard phân tích"></iframe>
+                            <div class="embed-fallback is-hidden" id="frameFallback-analysis" role="status" aria-live="polite"></div>
+                        </div>
+                    </section>
                 </div>
             </section>
 
-            <section class="page" id="page-products" data-page="products" data-page-title="Phòng phân tích sản phẩm" data-page-subtitle="Tập trung vào sản phẩm bán chạy, đóng góp doanh thu và biên lợi nhuận." data-page-eyebrow="Analysis room">
-                <div class="room-head">
-                    <div>
-                        <h2>Phòng phân tích sản phẩm</h2>
-                        <p>Mở khi cần giải thích tăng trưởng đến từ mặt hàng nào, lợi nhuận nằm ở đâu và đâu là danh mục kéo doanh số.</p>
-                    </div>
-                    <div class="inline-actions">
-                        <span class="status-pill tone-neutral">Superset embedded</span>
-                        <button class="button button--secondary" type="button" data-open-dashboard="2">Mở dạng tập trung</button>
-                    </div>
-                </div>
-                <div class="room-frame">
-                    <div class="room-frame__meta">
-                        <span class="status-pill tone-live">Context: sản phẩm</span>
-                        <span class="microcopy" id="frameState-products">Sẵn sàng dựng dashboard nhúng.</span>
-                    </div>
-                    <iframe id="iframe-products" class="embed-frame" title="Dashboard sản phẩm"></iframe>
-                </div>
-            </section>
-
-            <section class="page" id="page-inventory" data-page="inventory" data-page-title="Phòng phân tích tồn kho" data-page-subtitle="Đọc các tín hiệu thiếu hàng, lệch tồn và nhịp nhập xuất kho." data-page-eyebrow="Analysis room">
-                <div class="room-head">
-                    <div>
-                        <h2>Phòng phân tích tồn kho</h2>
-                        <p>Đây là room nên mở khi hội đồng hỏi về rủi ro vận hành, mức tồn tối thiểu và dòng chảy hàng hóa.</p>
-                    </div>
-                    <div class="inline-actions">
-                        <span class="status-pill tone-neutral">Superset embedded</span>
-                        <button class="button button--secondary" type="button" data-open-dashboard="3">Mở dạng tập trung</button>
-                    </div>
-                </div>
-                <div class="room-frame">
-                    <div class="room-frame__meta">
-                        <span class="status-pill tone-live">Context: tồn kho</span>
-                        <span class="microcopy" id="frameState-inventory">Sẵn sàng dựng dashboard nhúng.</span>
-                    </div>
-                    <iframe id="iframe-inventory" class="embed-frame" title="Dashboard tồn kho"></iframe>
-                </div>
-            </section>
-
-            <section class="page" id="page-customers" data-page="customers" data-page-title="Phòng phân tích khách hàng" data-page-subtitle="Theo dõi phân khúc, hành vi mua và cơ sở khách hàng đang hiện diện trong DWH." data-page-eyebrow="Analysis room">
-                <div class="room-head">
-                    <div>
-                        <h2>Phòng phân tích khách hàng</h2>
-                        <p>Phù hợp khi cần trình bày cách warehouse hỗ trợ đọc chân dung khách hàng, cụm RFM và giá trị vòng đời.</p>
-                    </div>
-                    <div class="inline-actions">
-                        <span class="status-pill tone-neutral">Superset embedded</span>
-                        <button class="button button--secondary" type="button" data-open-dashboard="4">Mở dạng tập trung</button>
-                    </div>
-                </div>
-                <div class="room-frame">
-                    <div class="room-frame__meta">
-                        <span class="status-pill tone-live">Context: khách hàng</span>
-                        <span class="microcopy" id="frameState-customers">Sẵn sàng dựng dashboard nhúng.</span>
-                    </div>
-                    <iframe id="iframe-customers" class="embed-frame" title="Dashboard khách hàng"></iframe>
-                </div>
-            </section>
-
-            <section class="page" id="page-employees" data-page="employees" data-page-title="Phòng phân tích nhân viên" data-page-subtitle="Dùng cho doanh số, hiệu suất và mức đóng góp của nhân sự bán hàng." data-page-eyebrow="Analysis room">
-                <div class="room-head">
-                    <div>
-                        <h2>Phòng phân tích nhân viên</h2>
-                        <p>Room này giúp nối warehouse với góc nhìn hiệu suất bán hàng và năng lực vận hành ở cấp con người.</p>
-                    </div>
-                    <div class="inline-actions">
-                        <span class="status-pill tone-neutral">Superset embedded</span>
-                        <button class="button button--secondary" type="button" data-open-dashboard="5">Mở dạng tập trung</button>
-                    </div>
-                </div>
-                <div class="room-frame">
-                    <div class="room-frame__meta">
-                        <span class="status-pill tone-live">Context: nhân viên</span>
-                        <span class="microcopy" id="frameState-employees">Sẵn sàng dựng dashboard nhúng.</span>
-                    </div>
-                    <iframe id="iframe-employees" class="embed-frame" title="Dashboard nhân viên"></iframe>
-                </div>
-            </section>
-
-            <section class="page" id="page-etl" data-page="etl" data-page-title="Vận hành ETL" data-page-subtitle="Tải file, kích hoạt pipeline và kiểm tra lịch sử upload trong cùng một flow." data-page-eyebrow="Operations">
+            <section class="page" id="page-etl" data-page="etl" data-page-title="Vận hành ETL" data-page-subtitle="Tải file, kích hoạt pipeline và kiểm tra lịch sử upload trong cùng một luồng." data-page-eyebrow="Vận hành">
                 <div class="workspace-grid">
                     <article class="workspace-card workspace-card--span-8">
                         <div class="workspace-card__head">
@@ -475,7 +294,7 @@
                             {% endif %}
 
                             <div class="upload-zone" id="uploadZone">
-                                <span class="eyebrow">Staging intake</span>
+                                <span class="eyebrow">Nạp vào staging</span>
                                 <h3 class="section-title">Kéo thả file nguồn hoặc chọn thủ công</h3>
                                 <p class="section-copy">Các định dạng hỗ trợ gồm `.xlsx`, `.xls` và `.csv`. Sau khi nạp, hệ thống sẽ hiển thị lại danh sách file gần đây để xác minh.</p>
                                 <div class="upload-zone__actions">
@@ -580,7 +399,7 @@
             {% endif %}
 
             {% if user.role == 'superadmin' %}
-            <section class="page" id="page-admin" data-page="admin" data-page-title="Quản trị hệ thống" data-page-subtitle="Quản lý tenant, user và log ETL trong cùng một control surface." data-page-eyebrow="System governance">
+            <section class="page" id="page-admin" data-page="admin" data-page-title="Quản trị hệ thống" data-page-subtitle="Quản lý tenant, user và log ETL trong cùng một bề mặt điều hành." data-page-eyebrow="Quản trị">
                 <div class="workspace-grid">
                     <article class="workspace-card workspace-card--span-6">
                         <div class="workspace-card__head">
@@ -811,20 +630,42 @@
     </div>
 
     <div class="modal-overlay" id="modalOverlay">
-        <div class="modal-card" style="width:min(100%, 72rem);">
+        <div class="modal-card modal-card--wide">
             <div class="modal-head">
                 <div>
-                    <div class="eyebrow">Superset room</div>
-                    <div class="modal-title" id="modalTitle">Phòng phân tích tập trung</div>
+                    <div class="eyebrow">Chế độ tập trung</div>
+                    <div class="modal-title" id="modalTitle">Bảng phân tích tập trung</div>
                 </div>
-                <button class="icon-button" type="button" onclick="closeModal()" aria-label="Đóng modal Superset">
+                <button class="icon-button" type="button" onclick="closeModal()" aria-label="Đóng modal bảng phân tích">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
-            <iframe id="modalIframe" class="modal-iframe" title="Dashboard Superset"></iframe>
+            <iframe id="modalIframe" class="modal-iframe" title="Bảng phân tích Superset"></iframe>
+            <div class="embed-fallback is-hidden" id="modalFallback" role="status" aria-live="polite"></div>
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
+    <div class="modal-overlay" id="modalConfirm">
+        <div class="modal-card">
+            <div class="modal-head">
+                <div>
+                    <div class="eyebrow">Xác nhận</div>
+                    <div class="modal-title" id="confirmTitle">Xác nhận thao tác</div>
+                </div>
+                <button class="icon-button" type="button" onclick="closeConfirmModal()" aria-label="Đóng hộp thoại xác nhận">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="confirm-copy">
+                <p id="confirmDetail">Thao tác này không thể hoàn tác.</p>
+            </div>
+            <div class="inline-actions">
+                <button class="button button--secondary" type="button" id="confirmCancelBtn">Quay lại</button>
+                <button class="button button--danger" type="button" id="confirmActionBtn">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js', v=asset_version) }}" defer></script>
 </body>
 </html>

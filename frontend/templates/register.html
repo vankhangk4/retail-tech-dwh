@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Đăng ký User | DWH Operations Console</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+    {% set asset_version = '20260507-fix1' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css', v=asset_version) }}">
 </head>
 <body class="auth-body">
     <a href="#authMain" class="skip-link">Bỏ qua giới thiệu, tới biểu mẫu đăng ký</a>
@@ -30,7 +31,7 @@
                 </div>
 
                 <div class="auth-hero">
-                    <span class="eyebrow">Tenant Onboarding</span>
+                    <span class="eyebrow">Khởi tạo truy cập</span>
                     <h1>Tạo tài khoản để nhận quyền truy cập dữ liệu.</h1>
                     <p>Self-signup này tạo tài khoản User với quyền xem dashboard và dữ liệu trong tenant được chỉ định.</p>
                 </div>
@@ -39,24 +40,24 @@
                     <section class="auth-signal">
                         <span class="auth-signal__title">Kiểm soát truy cập</span>
                         <div class="auth-signal__row">
-                            <span>Tenant routing</span>
-                            <strong>Đang áp dụng</strong>
+                            <span>Auth Gateway</span>
+                            <strong data-auth-health-label data-state="checking">Đang kiểm tra</strong>
                         </div>
                         <div class="auth-signal__row">
-                            <span>Chính sách role</span>
-                            <strong>User mặc định</strong>
+                            <span>Chính sách vai trò</span>
+                            <strong>User mặc định khi self-signup</strong>
                         </div>
                     </section>
 
                     <section class="auth-signal">
                         <span class="auth-signal__title">Trạng thái dữ liệu</span>
                         <div class="auth-signal__row">
-                            <span>Dashboard scope</span>
-                            <strong>Theo tenant</strong>
+                            <span>Phạm vi dashboard</span>
+                            <strong>Theo tenant đã chọn</strong>
                         </div>
                         <div class="auth-signal__row">
-                            <span>Data access</span>
-                            <strong>Có kiểm soát</strong>
+                            <span>Truy cập dữ liệu</span>
+                            <strong>Kích hoạt sau xác thực</strong>
                         </div>
                     </section>
                 </div>
@@ -146,8 +147,8 @@
                     </button>
 
                     <div class="auth-trust-strip">
-                        <span class="auth-trust-strip__dot" aria-hidden="true"></span>
-                        <span>Tài khoản mới được ràng buộc tenant ngay từ thời điểm tạo.</span>
+                        <span class="auth-trust-strip__dot is-checking" data-auth-trust-dot aria-hidden="true"></span>
+                        <span data-auth-trust-message>Đang kiểm tra lớp xác thực trước khi tạo tài khoản mới.</span>
                     </div>
                 </form>
 
@@ -159,6 +160,6 @@
         </main>
     </div>
 
-    <script src="{{ url_for('static', filename='js/auth.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/auth.js', v=asset_version) }}" defer></script>
 </body>
 </html>

@@ -24,17 +24,47 @@
         const el = document.getElementById('healthIndicator');
         if (!el) return;
         const ok = data.api === 'ok';
-        el.innerHTML = `<span class="status-pill ${ok ? 'tone-live' : 'tone-danger'}">API ${ok ? 'Online' : 'Offline'}</span>`;
+        el.innerHTML = `<span class="status-pill ${ok ? 'tone-success' : 'tone-danger'}">${ok ? 'API ổn định' : 'API cần kiểm tra'}</span>`;
     }).catch(() => {});
 
     // ── Sidebar toggle ────────────────────────────────────────
     const toggleBtn = document.getElementById('toggleSidebar');
-    const sidebar   = document.getElementById('sidebar');
-    if (toggleBtn && sidebar) {
-        toggleBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('is-collapsed');
-        });
+    function setSidebarState() {
+        document.body.classList.remove('sidebar-collapsed');
+        if (window.innerWidth > 1024) {
+            document.body.classList.remove('sidebar-open');
+        }
+        syncSidebarChrome();
     }
+
+    function toggleSidebar() {
+        if (window.innerWidth > 1024) {
+            syncSidebarChrome();
+            return;
+        }
+        document.body.classList.toggle('sidebar-open');
+        syncSidebarChrome();
+    }
+
+    function closeSidebarOnMobile() {
+        if (window.innerWidth <= 1024) {
+            document.body.classList.remove('sidebar-open');
+            syncSidebarChrome();
+        }
+    }
+
+    function syncSidebarChrome() {
+        const expanded = window.innerWidth > 1024 || document.body.classList.contains('sidebar-open');
+        toggleBtn?.setAttribute('aria-expanded', String(expanded));
+    }
+
+    if (toggleBtn) toggleBtn.addEventListener('click', toggleSidebar);
+    document.getElementById('shellScrim')?.addEventListener('click', closeSidebarOnMobile);
+    window.addEventListener('resize', setSidebarState);
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') closeSidebarOnMobile();
+    });
+    setSidebarState();
 
     // ── Tab switching ─────────────────────────────────────────
     const tabBtns   = document.querySelectorAll('.settings-tab-btn');
@@ -46,6 +76,7 @@
             tabBtns.forEach(b => {
                 b.classList.toggle('is-active', b.dataset.tab === target);
                 b.setAttribute('aria-selected', b.dataset.tab === target ? 'true' : 'false');
+                b.tabIndex = b.dataset.tab === target ? 0 : -1;
             });
             tabPanels.forEach(panel => {
                 panel.classList.toggle('is-hidden', panel.id !== `tab-${target}`);
@@ -54,6 +85,22 @@
             if (target === 'security' && !historyLoaded) {
                 loadLoginHistory();
             }
+        });
+
+        btn.addEventListener('keydown', event => {
+            const buttons = Array.from(tabBtns);
+            const currentIndex = buttons.indexOf(btn);
+            let nextIndex = currentIndex;
+
+            if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % buttons.length;
+            if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+            if (event.key === 'Home') nextIndex = 0;
+            if (event.key === 'End') nextIndex = buttons.length - 1;
+            if (nextIndex === currentIndex) return;
+
+            event.preventDefault();
+            buttons[nextIndex].focus();
+            buttons[nextIndex].click();
         });
     });
 
@@ -70,17 +117,25 @@
     });
 
     // ── Alert helpers ─────────────────────────────────────────
-    function showAlert(el, msg, type = 'danger') {
+    function showAlert(el, msg, type = 'danger', timeoutMs = 0) {
         if (!el) return;
+        window.clearTimeout(el._hideTimer);
         el.textContent = msg;
         el.className = `alert alert--${type}`;
         el.classList.remove('is-hidden');
-        setTimeout(() => { el.classList.add('is-hidden'); }, 5000);
+        el.classList.add('is-visible');
+        if (timeoutMs > 0) {
+            el._hideTimer = window.setTimeout(() => {
+                hideAlert(el);
+            }, timeoutMs);
+        }
     }
 
     function hideAlert(el) {
         if (!el) return;
+        window.clearTimeout(el._hideTimer);
         el.classList.add('is-hidden');
+        el.classList.remove('is-visible');
         el.textContent = '';
     }
 
@@ -104,8 +159,8 @@
             const data = await r.json();
             profileCache = data;
             populateProfile(data);
-        } catch (e) {
-            console.error('Profile load error:', e);
+        } catch (error) {
+            showAlert(profileErrorAlert, 'Không tải được hồ sơ tài khoản. Vui lòng thử tải lại trang.');
         }
     }
 
@@ -136,10 +191,9 @@
         }
 
         // Update sidebar avatar initials with display_name if available
-        const sidebarAvatar = document.getElementById('sidebarAvatar');
-        if (sidebarAvatar && (data.display_name || data.username)) {
+        if (sidebarAvatarInitial && (data.display_name || data.username)) {
             const name = data.display_name || data.username;
-            sidebarAvatar.textContent = name[0].toUpperCase();
+            sidebarAvatarInitial.textContent = name[0].toUpperCase();
         }
     }
 
@@ -152,21 +206,22 @@
     const avatarRemoveBtn = document.getElementById('avatarRemoveBtn');
     const avatarSuccessMsg = document.getElementById('avatarSuccessMsg');
     const avatarErrorMsg   = document.getElementById('avatarErrorMsg');
+    const sidebarAvatarInitial = document.getElementById('sidebarAvatarInitial');
+    const sidebarAvatarImg = document.getElementById('sidebarAvatarImg');
 
     function setAvatarImage(dataUrl, username) {
         if (avatarImg) {
             avatarImg.src = dataUrl;
             avatarImg.classList.remove('is-hidden');
         }
-        if (avatarInitials) avatarInitials.style.display = 'none';
+        avatarInitials?.classList.add('is-hidden');
         if (avatarRemoveBtn) avatarRemoveBtn.hidden = false;
 
-        const sidebarAvatar = document.getElementById('sidebarAvatar');
-        if (sidebarAvatar) {
-            sidebarAvatar.style.backgroundImage = `url(${dataUrl})`;
-            sidebarAvatar.style.backgroundSize = 'cover';
-            sidebarAvatar.textContent = '';
+        if (sidebarAvatarImg) {
+            sidebarAvatarImg.src = dataUrl;
+            sidebarAvatarImg.classList.remove('is-hidden');
         }
+        sidebarAvatarInitial?.classList.add('is-hidden');
     }
 
     function clearAvatarImage(username) {
@@ -177,14 +232,17 @@
         const initial = (username || '?')[0].toUpperCase();
         if (avatarInitials) {
             avatarInitials.textContent = initial;
-            avatarInitials.style.display = '';
+            avatarInitials.classList.remove('is-hidden');
         }
         if (avatarRemoveBtn) avatarRemoveBtn.hidden = true;
 
-        const sidebarAvatar = document.getElementById('sidebarAvatar');
-        if (sidebarAvatar) {
-            sidebarAvatar.style.backgroundImage = '';
-            sidebarAvatar.textContent = initial;
+        if (sidebarAvatarImg) {
+            sidebarAvatarImg.src = '';
+            sidebarAvatarImg.classList.add('is-hidden');
+        }
+        if (sidebarAvatarInitial) {
+            sidebarAvatarInitial.textContent = initial;
+            sidebarAvatarInitial.classList.remove('is-hidden');
         }
     }
 
@@ -236,8 +294,7 @@
                 const username = profileCache?.username || '?';
                 setAvatarImage(dataUrl, username);
 
-                avatarSuccessMsg.classList.remove('is-hidden');
-                setTimeout(() => avatarSuccessMsg.classList.add('is-hidden'), 4000);
+                showAlert(avatarSuccessMsg, 'Ảnh đại diện đã được cập nhật.', 'success', 4000);
             } catch (err) {
                 showAlert(avatarErrorMsg, err.message || 'Lỗi tải ảnh lên');
             } finally {
@@ -254,9 +311,7 @@
                 if (!r.ok) throw new Error('Lỗi xóa ảnh');
                 const username = profileCache?.username || '?';
                 clearAvatarImage(username);
-                avatarSuccessMsg.textContent = 'Đã xóa ảnh đại diện.';
-                avatarSuccessMsg.classList.remove('is-hidden');
-                setTimeout(() => avatarSuccessMsg.classList.add('is-hidden'), 3000);
+                showAlert(avatarSuccessMsg, 'Đã xóa ảnh đại diện.', 'success', 3000);
             } catch (err) {
                 showAlert(avatarErrorMsg, 'Không xóa được ảnh đại diện');
             }
@@ -302,11 +357,10 @@
 
                 // Update sidebar initial if display_name changed
                 const name = body.display_name || profileCache?.username || '?';
-                const sidebarAvatar = document.getElementById('sidebarAvatar');
-                if (sidebarAvatar && !sidebarAvatar.style.backgroundImage) {
-                    sidebarAvatar.textContent = name[0].toUpperCase();
+                if (sidebarAvatarInitial && sidebarAvatarImg?.classList.contains('is-hidden')) {
+                    sidebarAvatarInitial.textContent = name[0].toUpperCase();
                 }
-                if (avatarInitials && !avatarImg?.src) {
+                if (avatarInitials && avatarImg?.classList.contains('is-hidden')) {
                     avatarInitials.textContent = name[0].toUpperCase();
                 }
 
@@ -468,7 +522,7 @@
                 const isSuccess = item.status === 'success';
                 const pillClass = isSuccess ? 'tone-live' : 'tone-danger';
                 const pillLabel = isSuccess ? 'Thành công' : 'Thất bại';
-                const isCurrent = idx === 0 ? '<span class="status-pill tone-neutral" style="margin-left:.5rem;font-size:.72rem;">Phiên này</span>' : '';
+                const isCurrent = idx === 0 ? '<span class="status-pill tone-neutral login-session-pill">Phiên này</span>' : '';
                 return `
                     <tr>
                         <td data-label="Thời gian">
