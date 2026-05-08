@@ -1,4 +1,12 @@
-const APP_CONTEXT = JSON.parse(document.getElementById('app-context').textContent);
+const APP_DATASET = document.body.dataset;
+const APP_CONTEXT = {
+    userRole: APP_DATASET.userRole || '',
+    userTenant: APP_DATASET.userTenant || '',
+    userId: APP_DATASET.userId || '',
+    dashboardToken: APP_DATASET.dashboardToken || '',
+    supersetUrl: APP_DATASET.supersetUrl || '',
+    accessToken: APP_DATASET.accessToken || '',
+};
 
 const DASHBOARD_MAP = {
     revenue: {
@@ -635,7 +643,7 @@ function renderTenants(tenants) {
                     </span>
                 </td>
                 <td data-label="Thao tác">
-                    <button class="button button--secondary button--compact" type="button" onclick="openEditTenant('${escapeHtml(tenant.tenant_id)}')">Chỉnh tenant</button>
+                    <button class="button button--secondary button--compact" type="button" data-edit-tenant="${escapeHtml(tenant.tenant_id)}">Chỉnh tenant</button>
                 </td>
             </tr>
         `;
@@ -650,9 +658,6 @@ function renderUsers(users) {
         return;
     }
     container.innerHTML = users.map((user) => {
-        const safeUsername = encodeURIComponent(user.username || '');
-        const safeTenant = encodeURIComponent(user.tenant_id || '');
-        const safeRole = encodeURIComponent(user.role || 'viewer');
         return `
         <tr>
             <td data-label="Username"><strong>${escapeHtml(user.username)}</strong></td>
@@ -660,7 +665,7 @@ function renderUsers(users) {
             <td data-label="Vai trò"><span class="status-pill ${user.role === 'admin' ? 'tone-warning' : 'tone-neutral'}">${user.role === 'admin' ? 'Admin' : 'Viewer'}</span></td>
             <td data-label="Trạng thái"><span class="status-pill ${statusToneByBool(user.is_active)}">${user.is_active ? 'Hoạt động' : 'Tắt'}</span></td>
             <td data-label="Thao tác">
-                <button class="button button--secondary button--compact" type="button" onclick="openEditUser(${Number(user.user_id)}, decodeURIComponent('${safeUsername}'), decodeURIComponent('${safeTenant}'), decodeURIComponent('${safeRole}'), ${Boolean(user.is_active)})">Chỉnh user</button>
+                <button class="button button--secondary button--compact" type="button" data-edit-user data-user-id="${Number(user.user_id)}" data-username="${escapeHtml(user.username || '')}" data-tenant="${escapeHtml(user.tenant_id || '')}" data-role="${escapeHtml(user.role || 'viewer')}" data-active="${Boolean(user.is_active)}">Chỉnh user</button>
             </td>
         </tr>
     `;
@@ -928,7 +933,7 @@ async function loadUploadedFiles() {
                                 <td data-label="Kích thước">${file.size_bytes > 1024 * 1024 ? `${(file.size_bytes / 1024 / 1024).toFixed(1)} MB` : `${(file.size_bytes / 1024).toFixed(1)} KB`}</td>
                                 <td data-label="Thời điểm">${formatDateTime(file.uploaded_at)}</td>
                                 ${['admin', 'superadmin'].includes(APP_CONTEXT.userRole)
-                                    ? `<td data-label="Thao tác"><button class="button button--danger button--compact" type="button" onclick="deleteFile('${encodeURIComponent(tenant)}', '${encodeURIComponent(file.filename)}')">Xóa file</button></td>`
+                                    ? `<td data-label="Thao tác"><button class="button button--danger button--compact" type="button" data-delete-file data-tenant="${escapeHtml(tenant)}" data-filename="${escapeHtml(file.filename)}">Xóa file</button></td>`
                                     : ''}
                             </tr>
                         `).join('')}
@@ -942,8 +947,8 @@ async function loadUploadedFiles() {
 }
 
 async function deleteFile(tenant, filename) {
-    const decodedTenant = decodeURIComponent(tenant);
-    const decodedFilename = decodeURIComponent(filename);
+    const decodedTenant = tenant;
+    const decodedFilename = filename;
     const confirmed = await requestConfirmation({
         title: 'Xóa file khỏi staging',
         detail: `File "${decodedFilename}" sẽ bị xóa khỏi tenant ${decodedTenant}. Thao tác này không thể hoàn tác.`,
@@ -951,7 +956,7 @@ async function deleteFile(tenant, filename) {
     });
     if (!confirmed) return;
     try {
-        const response = await fetch(`/api/upload/${decodedTenant}/files/${encodeURIComponent(decodedFilename)}`, { method: 'DELETE' });
+        const response = await fetch(`/api/upload/${encodeURIComponent(decodedTenant)}/files/${encodeURIComponent(decodedFilename)}`, { method: 'DELETE' });
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.detail || data.message || 'Không thể xóa file');
         await loadUploadedFiles();
@@ -1079,16 +1084,13 @@ function renderTenantUsers(users) {
         return;
     }
     container.innerHTML = users.map((user) => {
-        const safeUsername = encodeURIComponent(user.username || '');
-        const safeTenant = encodeURIComponent(APP_CONTEXT.userTenant || '');
-        const safeRole = encodeURIComponent(user.role || 'viewer');
         return `
         <tr>
             <td data-label="Username"><strong>${escapeHtml(user.username)}</strong></td>
             <td data-label="Vai trò"><span class="status-pill tone-neutral">${escapeHtml(user.role === 'viewer' ? 'Viewer' : user.role)}</span></td>
             <td data-label="Trạng thái"><span class="status-pill ${statusToneByBool(user.is_active)}">${user.is_active ? 'Hoạt động' : 'Tắt'}</span></td>
             <td data-label="Ngày tạo">${formatDateTime(user.created_at)}</td>
-            <td data-label="Thao tác"><button class="button button--secondary button--compact" type="button" onclick="openEditUser(${Number(user.user_id)}, decodeURIComponent('${safeUsername}'), decodeURIComponent('${safeTenant}'), decodeURIComponent('${safeRole}'), ${Boolean(user.is_active)})">Chỉnh user</button></td>
+            <td data-label="Thao tác"><button class="button button--secondary button--compact" type="button" data-edit-user data-user-id="${Number(user.user_id)}" data-username="${escapeHtml(user.username || '')}" data-tenant="${escapeHtml(APP_CONTEXT.userTenant || '')}" data-role="${escapeHtml(user.role || 'viewer')}" data-active="${Boolean(user.is_active)}">Chỉnh user</button></td>
         </tr>
     `;
     }).join('');
@@ -1267,6 +1269,47 @@ function bindGlobalEvents() {
     });
     byId('confirmCancelBtn')?.addEventListener('click', () => closeConfirmModal(false));
     byId('confirmActionBtn')?.addEventListener('click', () => closeConfirmModal(true));
+
+    document.addEventListener('click', (event) => {
+        const runEtlButton = event.target.closest('[data-run-etl-current]');
+        if (runEtlButton) {
+            triggerETL(currentTenant());
+            return;
+        }
+
+        const closeButton = event.target.closest('[data-close-modal]');
+        if (closeButton) {
+            const modal = closeButton.dataset.closeModal;
+            if (modal === 'edit-tenant') closeEditTenantModal();
+            if (modal === 'edit-user') closeEditUserModal();
+            if (modal === 'dashboard') closeModal();
+            if (modal === 'confirm') closeConfirmModal();
+            return;
+        }
+
+        const editTenantButton = event.target.closest('[data-edit-tenant]');
+        if (editTenantButton) {
+            openEditTenant(editTenantButton.dataset.editTenant || '');
+            return;
+        }
+
+        const editUserButton = event.target.closest('[data-edit-user]');
+        if (editUserButton) {
+            openEditUser(
+                Number(editUserButton.dataset.userId),
+                editUserButton.dataset.username || '',
+                editUserButton.dataset.tenant || '',
+                editUserButton.dataset.role || 'viewer',
+                editUserButton.dataset.active === 'true'
+            );
+            return;
+        }
+
+        const deleteFileButton = event.target.closest('[data-delete-file]');
+        if (deleteFileButton) {
+            deleteFile(deleteFileButton.dataset.tenant || '', deleteFileButton.dataset.filename || '');
+        }
+    });
 
     byId('fileInput')?.addEventListener('change', showFilePreview);
     byId('etlTenantSelect')?.addEventListener('change', loadUploadedFiles);

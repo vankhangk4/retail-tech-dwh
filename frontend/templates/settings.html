@@ -9,16 +9,11 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css', v=asset_version) }}">
 </head>
-<body class="shell-body" data-access-token="{{ session.get('access_token', '') }}">
-    <script id="app-context" type="application/json">
-        {{ {
-            'userRole': user.role,
-            'userTenant': user.tenant_id,
-            'userId': user.user_id,
-            'accessToken': session.get('access_token', '')
-        } | tojson }}
-    </script>
-
+<body class="shell-body"
+      data-user-role="{{ user.role }}"
+      data-user-tenant="{{ user.tenant_id or '' }}"
+      data-user-id="{{ user.user_id or '' }}"
+      data-access-token="{{ session.get('access_token', '') }}">
     <a href="#mainContent" class="skip-link">Bỏ qua thanh điều hướng, tới nội dung chính</a>
 
     {% set sidebar_surface = 'settings' %}

@@ -5,9 +5,6 @@
 (function () {
     'use strict';
 
-    // ── App context (injected by Flask) ──────────────────────
-    const ctx = JSON.parse(document.getElementById('app-context')?.textContent || '{}');
-
     // ── Health check / logout (shared with dashboard) ────────
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {

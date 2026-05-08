@@ -5,9 +5,10 @@
 
 import os
 import requests
+from urllib.parse import urlsplit
 from flask import (
     Flask, render_template, request, redirect,
-    url_for, session, flash, jsonify
+    url_for, session, flash, jsonify, Response
 )
 from flask import Blueprint
 
@@ -21,6 +22,69 @@ app.config['SESSION_COOKIE_NAME'] = os.environ.get(
 # ---- Configuration ----
 API_BASE_URL = os.environ.get('API_BASE_URL', 'http://localhost:8000')
 SUPERSET_URL = os.environ.get('SUPERSET_URL', 'http://localhost:8088')
+SUPERSET_PUBLIC_URL = os.environ.get('SUPERSET_PUBLIC_URL', SUPERSET_URL)
+
+
+def _origin_from_url(value):
+    """Return scheme://host[:port] for CSP source lists."""
+    parsed = urlsplit((value or '').strip())
+    if not parsed.scheme or not parsed.netloc:
+        return None
+    return f'{parsed.scheme}://{parsed.netloc}'
+
+
+def _build_csp():
+    """Build a CSP that protects the app without breaking current embeds."""
+    frame_sources = ["'self'"]
+    connect_sources = ["'self'"]
+
+    for superset_url in (SUPERSET_URL, SUPERSET_PUBLIC_URL):
+        superset_origin = _origin_from_url(superset_url)
+        if superset_origin and superset_origin not in frame_sources:
+            frame_sources.append(superset_origin)
+        if superset_origin and superset_origin not in connect_sources:
+            connect_sources.append(superset_origin)
+
+    directives = {
+        'default-src': ["'self'"],
+        'base-uri': ["'self'"],
+        'connect-src': connect_sources,
+        'font-src': ["'self'", 'data:'],
+        'form-action': ["'self'"],
+        'frame-ancestors': ["'self'"],
+        'frame-src': frame_sources,
+        'img-src': ["'self'", 'data:'],
+        'object-src': ["'none'"],
+        'script-src': ["'self'"],
+        'script-src-attr': ["'none'"],
+        'style-src': ["'self'"],
+        'style-src-attr': ["'none'"],
+    }
+    return '; '.join(
+        f"{directive} {' '.join(sources)}"
+        for directive, sources in directives.items()
+    )
+
+
+SECURITY_HEADERS = {
+    'Content-Security-Policy': _build_csp(),
+    'X-Frame-Options': 'SAMEORIGIN',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+}
+
+
+@app.after_request
+def apply_security_headers(response):
+    """Apply baseline security headers to every frontend response."""
+    for header, value in SECURITY_HEADERS.items():
+        response.headers.setdefault(header, value)
+    return response
+
+
+@app.route('/robots.txt')
+def robots_txt():
+    return Response('User-agent: *\nDisallow:\n', mimetype='text/plain')
 
 # ---- Proxy API calls to Auth Gateway ----
 
@@ -129,7 +193,7 @@ def register():
     if 'access_token' in session:
         return redirect(url_for('dashboard'))
     return render_template('register.html',
-        SUPERSET_URL=SUPERSET_URL,
+        SUPERSET_URL=SUPERSET_PUBLIC_URL,
     )
 
 
@@ -180,7 +244,7 @@ def login():
     if 'access_token' in session:
         return redirect(url_for('dashboard'))
     return render_template('login.html',
-        SUPERSET_URL=SUPERSET_URL,
+        SUPERSET_URL=SUPERSET_PUBLIC_URL,
     )
 
 
@@ -195,7 +259,7 @@ def settings():
             'tenant_id': session.get('tenant_id'),
             'user_id': session.get('user_id'),
         },
-        SUPERSET_URL=SUPERSET_URL,
+        SUPERSET_URL=SUPERSET_PUBLIC_URL,
     )
 
 
@@ -330,7 +394,7 @@ def dashboard():
             'user_id': session.get('user_id'),
         },
         dashboard_token=dashboard_token,
-        SUPERSET_URL=SUPERSET_URL,
+        SUPERSET_URL=SUPERSET_PUBLIC_URL,
     )
 
 

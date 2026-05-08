@@ -8,18 +8,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css', v=asset_version) }}">
 </head>
-<body class="shell-body" data-access-token="{{ session.get('access_token', '') }}">
-    <script id="app-context" type="application/json">
-        {{ {
-            'userRole': user.role,
-            'userTenant': user.tenant_id,
-            'userId': user.user_id,
-            'dashboardToken': dashboard_token or '',
-            'supersetUrl': SUPERSET_URL,
-            'accessToken': session.get('access_token', '')
-        } | tojson }}
-    </script>
-
+<body class="shell-body"
+      data-user-role="{{ user.role }}"
+      data-user-tenant="{{ user.tenant_id or '' }}"
+      data-user-id="{{ user.user_id or '' }}"
+      data-dashboard-token="{{ dashboard_token or '' }}"
+      data-superset-url="{{ SUPERSET_URL }}"
+      data-access-token="{{ session.get('access_token', '') }}">
     <a href="#mainContent" class="skip-link">Bỏ qua thanh điều hướng, tới nội dung chính</a>
 
     {% set sidebar_surface = 'dashboard' %}
@@ -299,7 +294,7 @@
                                 <p class="section-copy">Các định dạng hỗ trợ gồm `.xlsx`, `.xls` và `.csv`. Sau khi nạp, hệ thống sẽ hiển thị lại danh sách file gần đây để xác minh.</p>
                                 <div class="upload-zone__actions">
                                     <label class="button button--primary" for="fileInput">Chọn file nguồn</label>
-                                    <button class="button button--secondary" type="button" onclick="triggerETL(currentTenant())">Chạy ETL ngay</button>
+                                    <button class="button button--secondary" type="button" data-run-etl-current>Chạy ETL ngay</button>
                                 </div>
                                 <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" multiple hidden>
                             </div>
@@ -545,7 +540,7 @@
                     <div class="eyebrow">Chỉnh tenant</div>
                     <div class="modal-title" id="editTenantTitle">Chỉnh tenant</div>
                 </div>
-                <button class="icon-button" type="button" onclick="closeEditTenantModal()" aria-label="Đóng modal chỉnh tenant">
+                <button class="icon-button" type="button" data-close-modal="edit-tenant" aria-label="Đóng modal chỉnh tenant">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
@@ -571,7 +566,7 @@
                     </select>
                 </div>
                 <div class="inline-actions">
-                    <button class="button button--secondary" type="button" onclick="closeEditTenantModal()">Giữ nguyên</button>
+                    <button class="button button--secondary" type="button" data-close-modal="edit-tenant">Giữ nguyên</button>
                     <button class="button button--primary" type="submit">Lưu thay đổi tenant</button>
                 </div>
                 <span class="microcopy form-msg" id="editTenantMsg"></span>
@@ -586,7 +581,7 @@
                     <div class="eyebrow">Chỉnh user</div>
                     <div class="modal-title" id="editUserTitle">Chỉnh user</div>
                 </div>
-                <button class="icon-button" type="button" onclick="closeEditUserModal()" aria-label="Đóng modal chỉnh user">
+                <button class="icon-button" type="button" data-close-modal="edit-user" aria-label="Đóng modal chỉnh user">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
@@ -621,7 +616,7 @@
                     </select>
                 </div>
                 <div class="inline-actions">
-                    <button class="button button--secondary" type="button" onclick="closeEditUserModal()">Giữ nguyên</button>
+                    <button class="button button--secondary" type="button" data-close-modal="edit-user">Giữ nguyên</button>
                     <button class="button button--primary" type="submit">Lưu thay đổi user</button>
                 </div>
                 <span class="microcopy form-msg" id="editUserMsg"></span>
@@ -636,7 +631,7 @@
                     <div class="eyebrow">Chế độ tập trung</div>
                     <div class="modal-title" id="modalTitle">Bảng phân tích tập trung</div>
                 </div>
-                <button class="icon-button" type="button" onclick="closeModal()" aria-label="Đóng modal bảng phân tích">
+                <button class="icon-button" type="button" data-close-modal="dashboard" aria-label="Đóng modal bảng phân tích">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
@@ -652,7 +647,7 @@
                     <div class="eyebrow">Xác nhận</div>
                     <div class="modal-title" id="confirmTitle">Xác nhận thao tác</div>
                 </div>
-                <button class="icon-button" type="button" onclick="closeConfirmModal()" aria-label="Đóng hộp thoại xác nhận">
+                <button class="icon-button" type="button" data-close-modal="confirm" aria-label="Đóng hộp thoại xác nhận">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>

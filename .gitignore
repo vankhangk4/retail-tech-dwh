@@ -1,51 +1,74 @@
-# Environment variables — KHÔNG commit .env
+# ============================================================
+# .gitignore — DWH Multi-Tenant Project
+# ============================================================
+
+# ── Secrets & Environment ───────────────────────────────────
 .env
 .env.local
 .env.*.local
+# .env.example được track để làm template
+
+# ── Python ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.Python
+.hypothesis/
+.ipynb_checkpoints/
+
+# Virtual environments
 .venv/
 venv/
 env/
 .env/
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-*.egg-info/
-dist/
-build/
+# ── Testing & Coverage ──────────────────────────────────────
 .pytest_cache/
 .mypy_cache/
 .coverage
+coverage.xml
 htmlcov/
 nosetests.xml
-coverage.xml
 *.cover
-.hypothesis/
-.ipynb_checkpoints/
 
-# Logs
+# ── Logs ────────────────────────────────────────────────────
 *.log
+logs/
+data/store_*/logs/
 etl_orchestrator.log
 pip-log.txt
-pip-delete-this-directory.txt
 
-# Data & Database
+# ── Data files (runtime) ────────────────────────────────────
+# File gốc trong data/data/ được track (sample data cho demo)
+# File runtime trong store_* bị ignore (do ETL sinh ra)
+data/store_*/*.xlsx
+data/store_*/*.xls
+data/store_*/*.csv
+data/store_*/*.json
+
+# ── Database & Backup ───────────────────────────────────────
 *.sqlite
 *.db
-data/**/*.xlsx
-data/**/*.xls
-data/**/*.csv
-data/**/*.json
-!data/**/README.md
-!data/**/.gitkeep
+sql/backups/
+*.bak
+*.bak.*
+
+# ── Upload directory (runtime) ──────────────────────────────
+uploads/
+tmp/
+temp/
+
+# ── Docker runtime ──────────────────────────────────────────
+.docker/
+*.tar
 superset_home/
 
-# IDE & Editor
+# ── IDE & Editor ────────────────────────────────────────────
 .vscode/
-.claude/
 .idea/
 *.swp
 *.swo
@@ -54,7 +77,7 @@ superset_home/
 .pydevproject
 .settings/
 
-# OS
+# ── OS ──────────────────────────────────────────────────────
 .DS_Store
 .DS_Store?
 ._*
@@ -63,15 +86,17 @@ superset_home/
 ehthumbs.db
 Thumbs.db
 
-# Docker
-.docker/
-*.tar
+# ── Claude / AI tools ───────────────────────────────────────
+.agents/
+.claude/
 
-# Others
+# ── Node (nếu có frontend build) ────────────────────────────
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Agents
-.agents/
+# ── Báo cáo / file tạm sinh ra ──────────────────────────────
+DOCKER_TEST_REPORT.md
+zap_report.html
+zap_full_report.html

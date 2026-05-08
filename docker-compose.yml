@@ -153,6 +153,7 @@ services:
       - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-change-me-in-prod}
       - API_BASE_URL=http://api:8000
       - SUPERSET_URL=http://superset:8088
+      - SUPERSET_PUBLIC_URL=${SUPERSET_PUBLIC_URL:-http://localhost:8088}
       - FLASK_DEBUG=False
       - FRONTEND_PORT=3000
       - FRONTEND_SESSION_COOKIE_NAME=dwh_frontend_session
