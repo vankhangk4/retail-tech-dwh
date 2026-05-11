@@ -4,21 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>DWH Operations Console</title>
-    {% set asset_version = '20260507-fix1' %}
+    {% set asset_version = '20260511-polish1' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shell.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css', v=asset_version) }}">
 </head>
+{% if user.role == 'viewer' %}
+    {% set default_dashboard_page = 'analysis' %}
+    {% set default_dashboard_eyebrow = 'Phân tích' %}
+    {% set default_dashboard_title = 'Phòng phân tích' %}
+    {% set default_dashboard_subtitle = 'Đi thẳng vào dashboard nhúng để xem chart trong đúng phạm vi tenant của bạn.' %}
+{% elif user.role == 'admin' %}
+    {% set default_dashboard_page = 'etl' %}
+    {% set default_dashboard_eyebrow = 'Vận hành' %}
+    {% set default_dashboard_title = 'Vận hành ETL' %}
+    {% set default_dashboard_subtitle = 'Mở đúng tenant, nạp file nguồn và kích hoạt pipeline trước khi đi sâu vào phân tích.' %}
+{% else %}
+    {% set default_dashboard_page = 'overview' %}
+    {% set default_dashboard_eyebrow = 'Điều hành' %}
+    {% set default_dashboard_title = 'Tổng quan điều hành' %}
+    {% set default_dashboard_subtitle = 'Đọc sức khỏe hệ thống, độ tươi dữ liệu và lộ trình đi tiếp trước khi mở dashboard phân tích.' %}
+{% endif %}
 <body class="shell-body"
       data-user-role="{{ user.role }}"
       data-user-tenant="{{ user.tenant_id or '' }}"
       data-user-id="{{ user.user_id or '' }}"
+      data-default-page="{{ default_dashboard_page }}"
+      data-default-analysis="revenue"
       data-dashboard-token="{{ dashboard_token or '' }}"
       data-superset-url="{{ SUPERSET_URL }}"
       data-access-token="{{ session.get('access_token', '') }}">
     <a href="#mainContent" class="skip-link">Bỏ qua thanh điều hướng, tới nội dung chính</a>
 
     {% set sidebar_surface = 'dashboard' %}
-    {% set sidebar_active = 'overview' %}
+    {% set sidebar_active = default_dashboard_page %}
 
     <div class="app-shell">
         {% include 'partials/app_sidebar.html' %}
@@ -31,9 +50,9 @@
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                     </button>
                     <div class="command-copy">
-                        <span class="eyebrow" id="pageEyebrow">Điều hành</span>
-                        <h1 id="pageTitle">Tổng quan điều hành</h1>
-                        <p id="pageSubtitle">Đọc sức khỏe hệ thống, độ tươi dữ liệu và lộ trình đi tiếp trước khi mở dashboard phân tích.</p>
+                        <span class="eyebrow" id="pageEyebrow">{{ default_dashboard_eyebrow }}</span>
+                        <h1 id="pageTitle">{{ default_dashboard_title }}</h1>
+                        <p id="pageSubtitle">{{ default_dashboard_subtitle }}</p>
                     </div>
                 </div>
                 <div class="command-bar__meta">
@@ -56,7 +75,7 @@
 
             <div class="shell-alert alert alert--danger is-hidden" id="shellAlert" aria-live="polite"></div>
 
-            <section class="page is-active" id="page-overview" data-page="overview" data-page-title="Tổng quan điều hành" data-page-subtitle="Đọc tín hiệu hệ thống trước, sau đó đi sâu vào phân tích hoặc quản trị." data-page-eyebrow="Điều hành">
+            <section class="page{% if default_dashboard_page == 'overview' %} is-active{% endif %}" id="page-overview" data-page="overview" data-page-title="Tổng quan điều hành" data-page-subtitle="Đọc tín hiệu hệ thống trước, sau đó đi sâu vào phân tích hoặc quản trị." data-page-eyebrow="Điều hành">
                 <div class="mission-brief">
                     <div class="mission-brief__copy">
                         <span class="eyebrow">Nhịp điều hành</span>
@@ -210,7 +229,7 @@
                 </div>
             </section>
 
-            <section class="page" id="page-analysis" data-page="analysis" data-page-title="Phòng phân tích" data-page-subtitle="Chọn đúng câu chuyện trước, rồi mở dashboard tương ứng trong cùng một bề mặt." data-page-eyebrow="Phân tích">
+            <section class="page{% if default_dashboard_page == 'analysis' %} is-active{% endif %}" id="page-analysis" data-page="analysis" data-page-title="Phòng phân tích" data-page-subtitle="Chọn đúng câu chuyện trước, rồi mở dashboard tương ứng trong cùng một bề mặt." data-page-eyebrow="Phân tích">
                 <div class="analysis-shell">
                     <section class="analysis-picker">
                         <div class="panel-head">
@@ -221,24 +240,39 @@
                         </div>
                         <div class="analysis-option-list">
                             <button type="button" class="analysis-option is-active" data-dashboard-key="revenue">
-                                <strong>Doanh thu</strong>
-                                <p>Toàn cảnh doanh thu, cùng kỳ và chênh lệch giữa các tenant.</p>
+                                <span class="analysis-option__index">01</span>
+                                <span class="analysis-option__body">
+                                    <strong>Doanh thu</strong>
+                                    <p>Toàn cảnh doanh thu, cùng kỳ và chênh lệch giữa các tenant.</p>
+                                </span>
                             </button>
                             <button type="button" class="analysis-option" data-dashboard-key="products">
-                                <strong>Sản phẩm</strong>
-                                <p>Sản phẩm bán chạy, biên lợi nhuận và danh mục tạo sức kéo.</p>
+                                <span class="analysis-option__index">02</span>
+                                <span class="analysis-option__body">
+                                    <strong>Sản phẩm</strong>
+                                    <p>Sản phẩm bán chạy, biên lợi nhuận và danh mục tạo sức kéo.</p>
+                                </span>
                             </button>
                             <button type="button" class="analysis-option" data-dashboard-key="inventory">
-                                <strong>Tồn kho</strong>
-                                <p>Thiếu hàng, lệch tồn và rủi ro ảnh hưởng doanh thu.</p>
+                                <span class="analysis-option__index">03</span>
+                                <span class="analysis-option__body">
+                                    <strong>Tồn kho</strong>
+                                    <p>Thiếu hàng, lệch tồn và rủi ro ảnh hưởng doanh thu.</p>
+                                </span>
                             </button>
                             <button type="button" class="analysis-option" data-dashboard-key="customers">
-                                <strong>Khách hàng</strong>
-                                <p>Phân khúc, hành vi mua và chân dung khách hàng trong DWH.</p>
+                                <span class="analysis-option__index">04</span>
+                                <span class="analysis-option__body">
+                                    <strong>Khách hàng</strong>
+                                    <p>Phân khúc, hành vi mua và chân dung khách hàng trong DWH.</p>
+                                </span>
                             </button>
                             <button type="button" class="analysis-option" data-dashboard-key="employees">
-                                <strong>Nhân viên</strong>
-                                <p>Hiệu suất bán hàng và mức đóng góp theo đội ngũ.</p>
+                                <span class="analysis-option__index">05</span>
+                                <span class="analysis-option__body">
+                                    <strong>Nhân viên</strong>
+                                    <p>Hiệu suất bán hàng và mức đóng góp theo đội ngũ.</p>
+                                </span>
                             </button>
                         </div>
                     </section>
@@ -267,31 +301,34 @@
                 </div>
             </section>
 
-            <section class="page" id="page-etl" data-page="etl" data-page-title="Vận hành ETL" data-page-subtitle="Tải file, kích hoạt pipeline và kiểm tra lịch sử upload trong cùng một luồng." data-page-eyebrow="Vận hành">
-                <div class="workspace-grid">
-                    <article class="workspace-card workspace-card--span-8">
-                        <div class="workspace-card__head">
+            <section class="page{% if default_dashboard_page == 'etl' %} is-active{% endif %}" id="page-etl" data-page="etl" data-page-title="Vận hành ETL" data-page-subtitle="Tải file, kích hoạt pipeline và kiểm tra lịch sử upload trong cùng một luồng." data-page-eyebrow="Vận hành">
+                <div class="etl-stage">
+                    <article class="etl-hero">
+                        <div class="etl-hero__head">
                             <div>
-                                <h3>Nạp dữ liệu vào staging</h3>
-                                <p>Upload file nguồn, sau đó kích hoạt ETL để đẩy dữ liệu vào warehouse và tạo log giám sát.</p>
+                                <span class="eyebrow">Nạp vào staging</span>
+                                <h2>Kéo file nguồn vào đúng tenant rồi kích hoạt pipeline.</h2>
+                                <p>ETL screen này ưu tiên thao tác vận hành trước. Chọn phạm vi, nạp file, rồi xác minh ngay staging đang chứa đúng dữ liệu cho lần chạy kế tiếp.</p>
                             </div>
                         </div>
-                        <div class="workflow-stack">
+                        <div class="etl-scope">
                             {% if not user.tenant_id %}
-                            <div class="field">
+                            <div class="field etl-scope__field">
                                 <label for="etlTenantSelect">Tenant đang vận hành</label>
                                 <select class="select" id="etlTenantSelect">
                                     <option value="">Đang tải tenant...</option>
                                 </select>
                             </div>
                             {% else %}
-                            <span class="status-pill tone-neutral">Tenant hiện tại: {{ user.tenant_id }}</span>
+                            <span class="status-pill status-pill--plain tone-neutral etl-scope__pill">Tenant hiện tại: {{ user.tenant_id }}</span>
                             {% endif %}
+                        </div>
 
+                        <div class="workflow-stack">
                             <div class="upload-zone" id="uploadZone">
-                                <span class="eyebrow">Nạp vào staging</span>
-                                <h3 class="section-title">Kéo thả file nguồn hoặc chọn thủ công</h3>
-                                <p class="section-copy">Các định dạng hỗ trợ gồm `.xlsx`, `.xls` và `.csv`. Sau khi nạp, hệ thống sẽ hiển thị lại danh sách file gần đây để xác minh.</p>
+                                <span class="eyebrow">Upload source</span>
+                                <h3 class="section-title">Kéo thả file nguồn hoặc chọn thủ công.</h3>
+                                <p class="section-copy">Chấp nhận `.xlsx`, `.xls` và `.csv`. Sau khi nạp, lịch sử file gần đây sẽ được cập nhật ngay ở phía dưới để bạn xác minh lại staging.</p>
                                 <div class="upload-zone__actions">
                                     <label class="button button--primary" for="fileInput">Chọn file nguồn</label>
                                     <button class="button button--secondary" type="button" data-run-etl-current>Chạy ETL ngay</button>
@@ -303,19 +340,19 @@
                         </div>
                     </article>
 
-                    <article class="workspace-card workspace-card--span-4">
-                        <div class="workspace-card__head">
+                    <aside class="etl-guide">
+                        <div class="etl-guide__head">
                             <div>
                                 <h3>Hướng dẫn file nguồn</h3>
-                                <p>Giữ một nhịp đặt tên ổn định để ETL phân loại và giải thích dữ liệu dễ hơn khi demo.</p>
+                                <p>Giữ nhịp đặt tên ổn định để ETL phân loại nhanh và để lúc demo bạn giải thích nguồn dữ liệu không bị khựng.</p>
                             </div>
                         </div>
-                        <ul class="workflow-guide">
+                        <ol class="workflow-guide">
                             <li><strong>Doanh thu</strong><p class="microcopy">Ví dụ: `BaoCaoDoanhThu_HN_20260101.xlsx`</p></li>
                             <li><strong>Tồn kho</strong><p class="microcopy">Ví dụ: `QuanLyKho_HCM_20260101.xlsx`</p></li>
                             <li><strong>Danh mục</strong><p class="microcopy">Dùng `DanhMucSanPham.csv`, `DanhMucKhachHang.csv`, `DanhMucNhaCungCap.csv`.</p></li>
                             <li><strong>Nhập hàng</strong><p class="microcopy">Dùng `PhieuNhapHang.csv` cho luồng nhập kho và nhà cung cấp.</p></li>
-                        </ul>
+                        </ol>
                         <div class="workflow-status" id="uploadStatus" hidden>
                             <div class="workflow-status__header">
                                 <svg id="statusIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor"></svg>
@@ -323,22 +360,22 @@
                             </div>
                             <div id="statusDetail"></div>
                         </div>
-                    </article>
-
-                    <article class="workspace-card workspace-card--span-12">
-                        <div class="workspace-card__head">
-                            <div>
-                                <h3>File đã nạp gần đây</h3>
-                                <p>Dùng để xác minh nhanh staging đang chứa đúng nguồn dữ liệu cho tenant đang vận hành.</p>
-                            </div>
-                        </div>
-                        <div class="files-shell" id="uploadedFilesList">
-                            <div class="empty-state">
-                                <strong>Đang tải lịch sử upload.</strong>
-                            </div>
-                        </div>
-                    </article>
+                    </aside>
                 </div>
+
+                <article class="etl-library">
+                    <div class="workspace-card__head">
+                        <div>
+                            <h3>File đã nạp gần đây</h3>
+                            <p>Dùng để xác minh nhanh staging đang chứa đúng nguồn dữ liệu cho tenant đang vận hành.</p>
+                        </div>
+                    </div>
+                    <div class="files-shell" id="uploadedFilesList">
+                        <div class="empty-state">
+                            <strong>Đang tải lịch sử upload.</strong>
+                        </div>
+                    </div>
+                </article>
             </section>
 
             {% if user.role == 'admin' %}

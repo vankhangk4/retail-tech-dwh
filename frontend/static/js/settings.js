@@ -21,8 +21,12 @@
         const el = document.getElementById('healthIndicator');
         if (!el) return;
         const ok = data.api === 'ok';
-        el.innerHTML = `<span class="status-pill ${ok ? 'tone-success' : 'tone-danger'}">${ok ? 'API ổn định' : 'API cần kiểm tra'}</span>`;
-    }).catch(() => {});
+        el.innerHTML = `<span class="status-pill status-pill--plain ${ok ? 'tone-success' : 'tone-danger'}"><span class="health-dot ${ok ? 'is-live' : 'is-danger'}"></span>${ok ? 'API ổn định' : 'API cần kiểm tra'}</span>`;
+    }).catch(() => {
+        const el = document.getElementById('healthIndicator');
+        if (!el) return;
+        el.innerHTML = `<span class="status-pill status-pill--plain tone-danger"><span class="health-dot is-danger"></span>API cần kiểm tra</span>`;
+    });
 
     // ── Sidebar toggle ────────────────────────────────────────
     const toggleBtn = document.getElementById('toggleSidebar');

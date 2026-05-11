@@ -1,0 +1,322 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-11T04:36:54Z",
+  "title": "Design System: DWH Operations Console",
+  "extensions": {
+    "colorMeta": {
+      "signal-blue": {
+        "role": "primary",
+        "displayName": "Signal Blue",
+        "canonical": "oklch(43% 0.092 210)",
+        "tonalRamp": [
+          "oklch(18% 0.04 210)",
+          "oklch(26% 0.055 210)",
+          "oklch(34% 0.075 210)",
+          "oklch(43% 0.092 210)",
+          "oklch(56% 0.082 210)",
+          "oklch(70% 0.055 210)",
+          "oklch(84% 0.035 210)",
+          "oklch(94% 0.018 210)"
+        ]
+      },
+      "signal-blue-soft": {
+        "role": "primary",
+        "displayName": "Signal Blue Soft",
+        "canonical": "oklch(92.6% 0.03 210)",
+        "tonalRamp": [
+          "oklch(22% 0.03 210)",
+          "oklch(32% 0.03 210)",
+          "oklch(42% 0.03 210)",
+          "oklch(52% 0.03 210)",
+          "oklch(62% 0.03 210)",
+          "oklch(72% 0.03 210)",
+          "oklch(82% 0.03 210)",
+          "oklch(92.6% 0.03 210)"
+        ]
+      },
+      "cool-canvas": {
+        "role": "neutral",
+        "displayName": "Cool Canvas",
+        "canonical": "oklch(97.1% 0.006 210)",
+        "tonalRamp": [
+          "oklch(16% 0.006 210)",
+          "oklch(28% 0.006 210)",
+          "oklch(40% 0.006 210)",
+          "oklch(52% 0.006 210)",
+          "oklch(64% 0.006 210)",
+          "oklch(76% 0.006 210)",
+          "oklch(88% 0.006 210)",
+          "oklch(97.1% 0.006 210)"
+        ]
+      },
+      "panel-white": {
+        "role": "neutral",
+        "displayName": "Panel White",
+        "canonical": "oklch(99.1% 0.004 210)",
+        "tonalRamp": [
+          "oklch(18% 0.004 210)",
+          "oklch(30% 0.004 210)",
+          "oklch(42% 0.004 210)",
+          "oklch(54% 0.004 210)",
+          "oklch(66% 0.004 210)",
+          "oklch(78% 0.004 210)",
+          "oklch(90% 0.004 210)",
+          "oklch(99.1% 0.004 210)"
+        ]
+      },
+      "ink-strong": {
+        "role": "neutral",
+        "displayName": "Ink Strong",
+        "canonical": "oklch(24.5% 0.017 222)",
+        "tonalRamp": [
+          "oklch(14% 0.017 222)",
+          "oklch(24.5% 0.017 222)",
+          "oklch(34% 0.017 222)",
+          "oklch(44% 0.017 222)",
+          "oklch(54% 0.017 222)",
+          "oklch(64% 0.017 222)",
+          "oklch(74% 0.017 222)",
+          "oklch(84% 0.017 222)"
+        ]
+      },
+      "success-green": {
+        "role": "semantic",
+        "displayName": "Success Green",
+        "canonical": "oklch(56% 0.108 156)",
+        "tonalRamp": [
+          "oklch(18% 0.05 156)",
+          "oklch(28% 0.07 156)",
+          "oklch(40% 0.09 156)",
+          "oklch(56% 0.108 156)",
+          "oklch(68% 0.09 156)",
+          "oklch(80% 0.06 156)",
+          "oklch(90% 0.04 156)",
+          "oklch(96% 0.02 156)"
+        ]
+      },
+      "warning-amber": {
+        "role": "semantic",
+        "displayName": "Monitor Amber",
+        "canonical": "oklch(71% 0.14 77)",
+        "tonalRamp": [
+          "oklch(20% 0.05 77)",
+          "oklch(32% 0.08 77)",
+          "oklch(46% 0.11 77)",
+          "oklch(60% 0.13 77)",
+          "oklch(71% 0.14 77)",
+          "oklch(80% 0.1 77)",
+          "oklch(89% 0.05 77)",
+          "oklch(96% 0.02 77)"
+        ]
+      },
+      "danger-red": {
+        "role": "semantic",
+        "displayName": "Incident Red",
+        "canonical": "oklch(57% 0.15 27)",
+        "tonalRamp": [
+          "oklch(18% 0.06 27)",
+          "oklch(30% 0.09 27)",
+          "oklch(42% 0.12 27)",
+          "oklch(57% 0.15 27)",
+          "oklch(68% 0.11 27)",
+          "oklch(80% 0.07 27)",
+          "oklch(90% 0.04 27)",
+          "oklch(96% 0.02 27)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Auth hero headlines and the rare moments where the product needs emotional lift."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Command bar titles, auth card titles, and page-level section leads."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Panel heads, modal titles, and section headings inside the application shell."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "General UI copy, descriptions, helper text, and explanatory operational notes."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Eyebrows, metadata, table headers, chips, and compact annotations."
+      }
+    },
+    "shadows": [
+      {
+        "name": "ambient-low",
+        "value": "0 14px 28px -24px oklch(22% 0.02 220 / 0.28)",
+        "purpose": "Default lift for panels, buttons, and shared surfaced controls."
+      },
+      {
+        "name": "ambient-medium",
+        "value": "0 24px 50px -30px oklch(22% 0.02 220 / 0.24)",
+        "purpose": "Modal overlays and heavier surfaced moments."
+      },
+      {
+        "name": "auth-shell-lift",
+        "value": "0 36px 80px -46px oklch(20% 0.02 220 / 0.3)",
+        "purpose": "Framing shadow for the auth shell."
+      },
+      {
+        "name": "auth-card-lift",
+        "value": "0 30px 68px -40px oklch(22% 0.02 220 / 0.28)",
+        "purpose": "Inner auth card separation."
+      }
+    ],
+    "motion": [
+      {
+        "name": "standard-short",
+        "value": "0.18s ease",
+        "purpose": "Tabs, icon opacity, and small surface hover states."
+      },
+      {
+        "name": "standard",
+        "value": "0.2s ease",
+        "purpose": "Buttons, links, inputs, chips, and most state transitions."
+      },
+      {
+        "name": "panel-slide",
+        "value": "0.24s ease",
+        "purpose": "Sidebar and scrim transitions on smaller breakpoints."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "xl",
+        "value": "1280px"
+      },
+      {
+        "name": "lg",
+        "value": "1100px"
+      },
+      {
+        "name": "rail-collapse",
+        "value": "1024px"
+      },
+      {
+        "name": "auth-collapse",
+        "value": "920px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "sm",
+        "value": "640px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The main action control for login, ETL execution, and primary page transitions.",
+      "html": "<button class='ds-btn-primary'>Run ETL now</button>",
+      "css": ".ds-btn-primary{min-height:2.875rem;padding:0 1rem;border:1px solid transparent;border-radius:var(--radius-pill);background:var(--accent);color:var(--bg-panel);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:0.9375rem;font-weight:700;box-shadow:var(--shadow-sm);transition:background-color 0.2s ease,transform 0.2s ease,color 0.2s ease;}.ds-btn-primary:hover{background:var(--accent-strong);transform:translateY(-1px);}.ds-btn-primary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}.ds-btn-primary:active{transform:translateY(0);}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Neutral action button for alternate routes, modal dismissals, and non-destructive operational actions.",
+      "html": "<button class='ds-btn-secondary'>Open analysis</button>",
+      "css": ".ds-btn-secondary{min-height:2.875rem;padding:0 1rem;border:1px solid var(--line-soft);border-radius:var(--radius-pill);background:var(--bg-panel);color:var(--text-strong);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:0.9375rem;font-weight:700;transition:background-color 0.2s ease,border-color 0.2s ease,transform 0.2s ease;}.ds-btn-secondary:hover{background:var(--bg-subtle);border-color:var(--line-strong);transform:translateY(-1px);}.ds-btn-secondary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}.ds-btn-secondary:active{transform:translateY(0);}"
+    },
+    {
+      "name": "Status Pill",
+      "kind": "chip",
+      "refersTo": "status-pill-neutral",
+      "description": "Compact state container for health, permissions, freshness, and semantic table metadata.",
+      "html": "<span class='ds-status-pill ds-status-pill--success'><span class='ds-status-dot'></span>API stable</span>",
+      "css": ".ds-status-pill{display:inline-flex;align-items:center;gap:0.45rem;min-height:1.85rem;padding:0 0.8rem;border-radius:var(--radius-pill);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:0.76rem;font-weight:700;letter-spacing:0.04em;white-space:nowrap;}.ds-status-dot{width:0.5rem;height:0.5rem;border-radius:50%;display:inline-block;}.ds-status-pill--success{background:var(--success-soft);color:var(--success);}.ds-status-pill--success .ds-status-dot{background:var(--success);}.ds-status-pill--neutral{background:var(--bg-subtle);color:var(--text-muted);}.ds-status-pill:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Default field shell used across auth, settings, ETL selection, and governance forms.",
+      "html": "<label class='ds-field'><span>Tenant ID</span><input class='ds-input' type='text' placeholder='STORE_HN' /></label>",
+      "css": ".ds-field{display:grid;gap:0.45rem;max-width:22rem;}.ds-field span{color:var(--text-main);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:0.875rem;font-weight:700;}.ds-input{width:100%;min-height:3rem;padding:0.75rem 0.95rem;border:1px solid var(--line-soft);border-radius:var(--radius-sm);background:oklch(99.4% 0.003 210);color:var(--text-strong);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:0.95rem;transition:border-color 0.2s ease,background-color 0.2s ease,box-shadow 0.2s ease;}.ds-input::placeholder{color:var(--text-faint);}.ds-input:hover{border-color:var(--line-strong);}.ds-input:focus-visible{background:var(--bg-panel);outline:2px solid var(--accent);outline-offset:2px;}"
+    },
+    {
+      "name": "Context Chip",
+      "kind": "custom",
+      "refersTo": "context-chip",
+      "description": "Two-line metadata chip used in the command bar to show scope, role, and timing.",
+      "html": "<div class='ds-context-chip'><span>Scope</span><strong>STORE_HN</strong></div>",
+      "css": ".ds-context-chip{min-height:2.8rem;padding:0.55rem 0.85rem;border:1px solid var(--line-soft);border-radius:var(--radius-pill);background:var(--bg-panel);display:grid;gap:0.1rem;}.ds-context-chip span{color:var(--text-faint);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;}.ds-context-chip strong{color:var(--text-strong);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:0.86rem;font-weight:700;}"
+    },
+    {
+      "name": "Active Rail Link",
+      "kind": "nav",
+      "refersTo": "nav-link-active",
+      "description": "The canonical active navigation item in the application rail.",
+      "html": "<a class='ds-nav-link is-active' href='#'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><rect x='3' y='3' width='7' height='7' rx='1'></rect><rect x='14' y='3' width='7' height='7' rx='1'></rect><rect x='3' y='14' width='7' height='7' rx='1'></rect><rect x='14' y='14' width='7' height='7' rx='1'></rect></svg><span class='ds-nav-copy'><span class='ds-nav-title'>Overview</span><span class='ds-nav-meta'>Operational signals</span></span></a>",
+      "css": ".ds-nav-link{width:100%;display:grid;grid-template-columns:1.2rem minmax(0,1fr);gap:0.8rem;align-items:center;min-height:3.2rem;padding:0.85rem 0.9rem;border:1px solid transparent;border-radius:var(--radius-sm);background:transparent;color:var(--text-muted);text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;transition:background-color 0.2s ease,border-color 0.2s ease,color 0.2s ease,transform 0.2s ease,box-shadow 0.2s ease;}.ds-nav-copy{display:grid;gap:0.1rem;min-width:0;}.ds-nav-title{font-size:0.92rem;font-weight:700;color:inherit;}.ds-nav-meta{font-size:0.76rem;color:var(--text-faint);}.ds-nav-link:hover{background:var(--accent-soft);border-color:oklch(88.5% 0.022 208);color:var(--accent-strong);transform:translateX(2px);}.ds-nav-link:hover .ds-nav-meta,.ds-nav-link.is-active .ds-nav-meta{color:inherit;}.ds-nav-link.is-active{background:linear-gradient(180deg,oklch(95.6% 0.02 210) 0%,oklch(92.7% 0.028 210) 100%);border-color:oklch(85.8% 0.03 208);color:var(--accent-strong);box-shadow:inset 0 1px 0 oklch(100% 0 0 / 0.45);}.ds-nav-link:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}"
+    },
+    {
+      "name": "Surface Card",
+      "kind": "card",
+      "refersTo": "surface-card",
+      "description": "Default surfaced container for overview modules, workspace cards, and panel blocks.",
+      "html": "<section class='ds-surface-card'><span class='ds-eyebrow'>Operations</span><h3>System health</h3><p>Auth gateway, ETL freshness, and next-step guidance belong here.</p></section>",
+      "css": ".ds-surface-card{display:grid;gap:0.65rem;padding:1.15rem;border:1px solid var(--line-soft);border-radius:var(--radius-md);background:linear-gradient(180deg,oklch(99.4% 0.004 210) 0%,var(--bg-panel) 100%);box-shadow:var(--shadow-sm);max-width:24rem;}.ds-eyebrow{display:inline-flex;align-items:center;gap:0.5rem;color:var(--text-faint);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:0.75rem;font-weight:700;letter-spacing:0.11em;text-transform:uppercase;}.ds-surface-card h3{margin:0;color:var(--text-strong);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:1.1rem;font-weight:800;line-height:1.15;}.ds-surface-card p{margin:0;color:var(--text-muted);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:0.9rem;line-height:1.55;max-width:40ch;}"
+    },
+    {
+      "name": "Auth Signal",
+      "kind": "custom",
+      "refersTo": "auth-signal",
+      "description": "Signature auth-side signal panel combining dark atmospheric framing with operational copy.",
+      "html": "<section class='ds-auth-signal'><span class='ds-auth-signal-title'>Security posture</span><div class='ds-auth-signal-row'><span>Auth Gateway</span><strong>Responding</strong></div><div class='ds-auth-signal-row'><span>Session policy</span><strong>Applied after login</strong></div></section>",
+      "css": ".ds-auth-signal{display:grid;gap:0.3rem;padding:1rem 1.05rem;border:1px solid oklch(43% 0.02 220);border-radius:1.2rem;background:linear-gradient(180deg,oklch(30% 0.017 220 / 0.9) 0%,oklch(28% 0.016 220 / 0.92) 100%);box-shadow:inset 0 1px 0 oklch(90% 0.008 210 / 0.03);max-width:24rem;}.ds-auth-signal-title{color:oklch(73% 0.016 208);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:0.73rem;font-weight:700;letter-spacing:0.11em;text-transform:uppercase;}.ds-auth-signal-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1rem;align-items:center;padding:0.55rem 0;border-top:1px solid oklch(95% 0.01 210 / 0.08);}.ds-auth-signal-row span{color:oklch(84% 0.011 210);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:0.9rem;}.ds-auth-signal-row strong{color:oklch(97% 0.006 210);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:0.88rem;font-weight:760;text-align:right;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Signal Room",
+    "overview": "The current interface behaves like a light operations room rather than a marketing surface. It is dense enough for ETL control, tenant administration, and dashboard access, but it softens the experience with rounded geometry, pale layered neutrals, and diffuse lift.\n\nThe active system is restrained, product-native, and blue-tinted. Because PRODUCT.md explicitly rejects generic admin-template drift, accent color has to stay functional and sparse: admin sees upload, ETL, scope, and health first, while viewer flows reduce noise and move toward charts quickly.",
+    "keyCharacteristics": [
+      "Restrained action color over cool blue-tinted neutrals",
+      "One-family sans hierarchy with compact metadata labels",
+      "Rounded panels and soft ambient lift instead of hard enterprise framing",
+      "Standard app-shell patterns: rail, command bar, chips, tables, inline forms",
+      "Operational signal stacks that explain status, not just show color"
+    ],
+    "rules": [
+      {
+        "name": "The Restraint Rule",
+        "body": "Signal Blue is the action voice, not the wallpaper. Keep saturated accent on primary actions, active navigation, focus, and meaningful live-state emphasis.",
+        "section": "colors"
+      },
+      {
+        "name": "The One-Family Rule",
+        "body": "Hierarchy comes from weight, scale, and tracking, not from introducing a decorative second font.",
+        "section": "typography"
+      },
+      {
+        "name": "The Soft Lift Rule",
+        "body": "Use tonal layering plus low-contrast ambient shadow. If a surface starts to feel glossy or glassy, the lift is too strong.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep Signal Blue for primary actions, active navigation, focus, and live emphasis.",
+      "Do preserve the shared radius scale of 14px, 20px, 28px, and pill geometry.",
+      "Do use uppercase metadata labels around 0.72rem to 0.76rem for operational annotations.",
+      "Do extend the active system from system.css, auth.css, dashboard.css, and settings.css."
+    ],
+    "donts": [
+      "Don't let the interface slide into the blue SaaS admin template reflex by flooding inactive surfaces with accent color.",
+      "Don't default to the hero-metric template of big number, small label, and repeated identical KPI cards.",
+      "Don't reduce every state to the same pill or rely on color alone to express severity or permission.",
+      "Don't revive the legacy login.css hex palette as the source of truth for new work."
+    ]
+  }
+}

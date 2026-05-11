@@ -3,6 +3,8 @@ const APP_CONTEXT = {
     userRole: APP_DATASET.userRole || '',
     userTenant: APP_DATASET.userTenant || '',
     userId: APP_DATASET.userId || '',
+    defaultPage: APP_DATASET.defaultPage || 'overview',
+    defaultAnalysis: APP_DATASET.defaultAnalysis || 'revenue',
     dashboardToken: APP_DATASET.dashboardToken || '',
     supersetUrl: APP_DATASET.supersetUrl || '',
     accessToken: APP_DATASET.accessToken || '',
@@ -47,8 +49,8 @@ const appState = {
     tenants: [],
     users: [],
     etlLogs: [],
-    activePage: 'overview',
-    activeAnalysis: 'revenue',
+    activePage: APP_CONTEXT.defaultPage,
+    activeAnalysis: DASHBOARD_MAP[APP_CONTEXT.defaultAnalysis] ? APP_CONTEXT.defaultAnalysis : 'revenue',
 };
 
 let confirmResolver = null;
@@ -99,6 +101,10 @@ function isSuccessStatus(status) {
 
 function statusToneByBool(condition) {
     return condition ? 'tone-success' : 'tone-danger';
+}
+
+function toneVariant(toneClass) {
+    return String(toneClass || 'tone-neutral').replace(/^tone-/, '');
 }
 
 function authFetch(url, options = {}) {
@@ -411,7 +417,7 @@ function renderHealthState() {
     const liveStatus = appState.health === 'ok';
 
     indicator.innerHTML = `
-        <span class="status-pill ${liveStatus ? 'tone-success' : 'tone-danger'}">
+        <span class="status-pill status-pill--plain ${liveStatus ? 'tone-success' : 'tone-danger'}">
             <span class="health-dot ${liveStatus ? 'is-live' : 'is-danger'}"></span>
             ${liveStatus ? 'API ổn định' : 'API cần kiểm tra'}
         </span>
@@ -530,9 +536,9 @@ function renderAttentionList() {
     }
 
     container.innerHTML = items.slice(0, 4).map((item) => `
-        <article class="attention-item">
+        <article class="attention-item attention-item--${toneVariant(item.tone)}">
             <div class="attention-item__head">
-                <span class="status-pill ${item.tone}">${item.title}</span>
+                <span class="status-pill status-pill--plain ${item.tone}">${item.title}</span>
             </div>
             <p>${escapeHtml(item.detail)}</p>
         </article>
@@ -1365,7 +1371,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     const hasInitialRoute = requestedPage ? navigateTo(requestedPage) : false;
     if (!hasInitialRoute) {
-        navigateTo('overview');
+        navigateTo(APP_CONTEXT.defaultPage);
     }
 
     if (APP_CONTEXT.userRole === 'superadmin') {

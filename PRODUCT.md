@@ -6,38 +6,46 @@ product
 
 ## Users
 
-Người dùng chính là admin toàn hệ thống của nền tảng Data Warehouse multi-tenant cho chuỗi bán lẻ thiết bị công nghệ. Họ dùng giao diện này để kiểm tra sức khỏe hệ thống, theo dõi hiệu quả từng tenant, xác nhận ETL đang vận hành đúng, và dẫn dắt phần trình bày khi demo trên laptop hoặc màn hình chiếu.
+Superadmin và admin là nhóm vận hành hệ thống. Khi mở sản phẩm, họ cần thấy ngay nơi upload file nguồn, chạy ETL, kiểm tra sức khỏe hệ thống, độ tươi dữ liệu và phạm vi tenant đang tác động.
 
-Người dùng phụ là giảng viên và hội đồng, những người đánh giá mức độ hoàn thiện, tính tin cậy, và khả năng điều hành của hệ thống qua những gì giao diện thể hiện trong vài phút đầu tiên.
+Viewer là nhóm xem dữ liệu hằng ngày. Họ cần vào đúng tenant, mở đúng dashboard và thấy chart nhanh, rõ, đáng tin mà không bị nhiễu bởi các thao tác vận hành.
 
 ## Product Purpose
 
-Frontend này là lớp điều hành và thuyết minh cho toàn bộ hệ thống DWH multi-tenant: xác thực người dùng, cung cấp điểm nhìn tổng quan, cho phép truy cập các dashboard BI, theo dõi tenant, và quản lý những tác vụ quản trị liên quan đến dữ liệu và ETL.
+Sản phẩm này là một operations console cho hệ thống Data Warehouse multi-tenant của chuỗi bán lẻ thiết bị công nghệ. Nó gom xác thực, vận hành ETL, quản trị tenant và truy cập dashboard phân tích vào cùng một bề mặt để hệ thống có thể được vận hành, giải thích và tin cậy từ một điểm vào.
 
-Thành công của sản phẩm là: trong vài giây đầu, người dùng có thể hiểu hệ thống hiện có ổn định không, tenant nào đáng chú ý, dữ liệu có đang tươi và đáng tin cậy không, và nên đi tiếp vào dashboard hoặc tác vụ nào để giải thích hệ thống một cách mạch lạc.
+Thành công của sản phẩm là hai việc xảy ra nhanh và rõ: người vận hành có thể nạp dữ liệu và chạy ETL với sự tự tin, còn người xem có thể đi thẳng tới chart đúng phạm vi dữ liệu mà không phải nghi ngờ tenant, quyền hay độ mới của dữ liệu.
 
 ## Brand Personality
 
-Người điều hành, cao cấp, tin cậy, sắc bén, trực quan.
+Hiện đại, cá tính, hệ thống.
 
-Giọng điệu của giao diện phải dứt khoát, bình tĩnh, có thẩm quyền, tránh khoa trương. Nó phải tạo cảm giác đây là một bàn điều khiển vận hành thật, không phải một mẫu admin dựng sẵn hay một bài trình diễn nặng hiệu ứng.
+Giọng điệu của giao diện phải cho cảm giác kiểm soát, rõ ràng và có năng lực kỹ thuật. Sản phẩm không được phô trương như landing page, nhưng cũng không được vô danh hoặc vô hồn như một admin template mặc định.
 
 ## Anti-references
 
-- Superset mặc định hoặc bất kỳ bề mặt nào trông như lớp nhúng nguyên bản không qua thiết kế lại.
-- Dashboard SaaS xanh dương kiểu template với sidebar quen tay, lưới KPI giống nhau, và các thẻ thông tin lặp lại vô hồn.
-- Giao diện đồ án sinh viên quá nhiều gradient, hiệu ứng phô, hoặc trang trí không phục vụ việc đọc và ra quyết định.
+- Dashboard SaaS xanh dương kiểu template, nơi toàn bộ bảng màu và cảm giác thị giác đều đi theo một phản xạ quen thuộc, an toàn và nhạt.
+- Hero metrics theo công thức số lớn, nhãn nhỏ, card giống nhau lặp đi lặp lại.
+- Auth split-screen mặc định chỉ để trang trí, không truyền tải được tín hiệu hệ thống hay giá trị vận hành thực.
+- Giao diện mà mọi trạng thái đều bị nén thành cùng một kiểu pill, hoặc chỉ dùng màu để truyền tải cảnh báo, lỗi, thành công.
+- Bề mặt enterprise chung chung, nhiều card nhưng không có nhịp điều hướng rõ, không bộc lộ ưu tiên vận hành và không giúp người dùng biết nên làm gì tiếp theo.
 
 ## Design Principles
 
-- Ưu tiên tín hiệu điều hành trước số lượng thông tin: trạng thái hệ thống, độ tươi dữ liệu, và tenant cần chú ý phải hiện ra trước khi người dùng đi sâu vào dashboard.
-- Mỗi màn hình phải hỗ trợ kể chuyện khi demo: nhìn tổng quan, phát hiện điểm đáng nói, rồi drill-down vào bằng chứng.
-- Tạo sự tin cậy bằng cấu trúc rõ, timestamp, trạng thái, nhãn chính xác, và phân cấp thông tin chặt chẽ thay vì trang trí.
-- Một ngôn ngữ thiết kế thống nhất phải bao phủ toàn bộ frontend: đăng nhập, đăng ký, shell dashboard, quản lý tenant, ETL, và các trạng thái lỗi/rỗng/tải.
-- Mọi lựa chọn thị giác phải phục vụ khả năng đọc nhanh trên laptop và màn hình chiếu: tương phản chắc, nhịp khoảng trắng tốt, và phân biệt trạng thái không chỉ dựa vào màu.
+- Ưu tiên vận hành trước. Admin phải thấy ngay upload, ETL, health và bước tiếp theo mà không cần đi tìm.
+- Hiện phạm vi trước khi hiện insight. Tenant, vai trò, độ tươi dữ liệu và trạng thái hệ thống phải rõ ràng trước khi người dùng tin vào chart hoặc thao tác.
+- Viewer phải vào chart nhanh. Luồng cho người xem cần giảm nhiễu vận hành và đưa họ tới bề mặt phân tích sớm nhất có thể.
+- Trạng thái phải đọc được, không chỉ nhìn màu. Lỗi, cảnh báo, tiến trình và quyền hạn phải có tín hiệu rõ ràng bằng cấu trúc, nhãn và hình thái.
+- Hệ thống phải có cá tính nhưng không lạ lẫm. Giao diện nên quen thuộc với người dùng tool, nhưng không được rơi về cảm giác template có sẵn.
 
 ## Accessibility & Inclusion
 
-Chuẩn cơ sở là WCAG AA, với tương phản đủ mạnh để trình chiếu trong phòng học hoặc phòng họp. Giao diện cần có focus state rõ ràng, hỗ trợ reduced motion, và tránh dùng màu là tín hiệu duy nhất cho trạng thái hệ thống.
+WCAG AA là ngưỡng mặc định cho toàn bộ sản phẩm.
 
-Thiết kế ưu tiên desktop và laptop vì đây là bối cảnh trình bày chính, nhưng vẫn cần responsive hợp lý để không vỡ bố cục trên màn hình hẹp.
+Ưu tiên keyboard-first navigation, focus-visible rõ ràng, HTML semantic và nhãn thân thiện với screen reader.
+
+Tôn trọng reduced motion cho mọi chuyển động không thiết yếu.
+
+Không dùng màu là tín hiệu duy nhất cho trạng thái, mức độ nghiêm trọng hay kết quả thao tác.
+
+Chart, bảng và control phải vẫn hiểu được với người dùng có khác biệt về nhận biết màu sắc.

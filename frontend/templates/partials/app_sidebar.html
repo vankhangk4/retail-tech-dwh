@@ -46,8 +46,8 @@
             </div>
         </div>
         <div class="rail-user__chips">
-            <span class="status-pill tone-neutral">ID {{ user.user_id }}</span>
-            <span class="status-pill {% if user.tenant_id %}tone-live{% else %}tone-neutral{% endif %}">
+            <span class="status-pill status-pill--plain tone-neutral">ID {{ user.user_id }}</span>
+            <span class="status-pill status-pill--plain {% if user.tenant_id %}tone-live{% else %}tone-neutral{% endif %}">
                 {% if user.tenant_id %}
                     Chế độ tenant
                 {% else %}
@@ -167,7 +167,7 @@
 
     <section class="rail-footer">
         <div id="healthIndicator">
-            <span class="status-pill tone-neutral">Đang kiểm tra API</span>
+            <span class="status-pill status-pill--plain tone-neutral">Đang kiểm tra API</span>
         </div>
         <button class="button button--secondary" type="button" id="logoutBtn">
             <span>Đăng xuất</span>

@@ -172,6 +172,9 @@ body.auth-body {
 
 .auth-signal__row strong {
     min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
     justify-self: end;
     color: oklch(97% 0.006 210);
     font-size: 0.88rem;
@@ -179,16 +182,41 @@ body.auth-body {
     text-align: right;
 }
 
+.auth-signal__row strong::before {
+    content: "";
+    width: 0.58rem;
+    height: 0.58rem;
+    flex: 0 0 auto;
+    border: 1.5px solid currentColor;
+    border-radius: 999px;
+    background: transparent;
+}
+
 .auth-signal__row strong[data-state="checking"] {
     color: oklch(86% 0.022 82);
+}
+
+.auth-signal__row strong[data-state="checking"]::before {
+    border-radius: 0.14rem;
+    background: currentColor;
+    transform: rotate(45deg);
 }
 
 .auth-signal__row strong[data-state="ok"] {
     color: oklch(88% 0.05 156);
 }
 
+.auth-signal__row strong[data-state="ok"]::before {
+    background: currentColor;
+}
+
 .auth-signal__row strong[data-state="error"] {
     color: oklch(82% 0.07 28);
+}
+
+.auth-signal__row strong[data-state="error"]::before {
+    border-radius: 0.14rem;
+    background: currentColor;
 }
 
 .auth-panel {
