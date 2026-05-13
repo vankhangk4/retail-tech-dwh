@@ -2491,7 +2491,25 @@ function renderTenantUsers(users) {
             <td data-label="${escapeHtml(t('runtime.tables.roleLabel'))}"><span class="status-pill tone-neutral">${escapeHtml(i18n.roleLabel(user.role === 'admin' ? 'admin' : 'viewer'))}</span></td>
             <td data-label="${escapeHtml(t('runtime.tables.statusLabel'))}"><span class="status-pill ${statusToneByBool(user.is_active)}">${user.is_active ? t('common.active') : t('common.inactive')}</span></td>
             <td data-label="${escapeHtml(t('runtime.tables.createdAtLabel'))}">${formatDateTime(user.created_at)}</td>
-            <td data-label="${escapeHtml(t('runtime.tables.actionsLabel'))}"><button class="button button--secondary button--compact" type="button" data-edit-user data-user-id="${Number(user.user_id)}" data-username="${escapeHtml(user.username || '')}" data-tenant="${escapeHtml(APP_CONTEXT.userTenant || '')}" data-role="${escapeHtml(user.role || 'viewer')}" data-active="${Boolean(user.is_active)}">${escapeHtml(t('runtime.tables.editUser'))}</button></td>
+            <td data-label="${escapeHtml(t('runtime.tables.actionsLabel'))}">
+                <div class="table-actions">
+                    <button
+                        class="icon-button table-action-icon"
+                        type="button"
+                        data-edit-user
+                        data-user-id="${Number(user.user_id)}"
+                        data-username="${escapeHtml(user.username || '')}"
+                        data-tenant="${escapeHtml(APP_CONTEXT.userTenant || '')}"
+                        data-role="${escapeHtml(user.role || 'viewer')}"
+                        data-active="${Boolean(user.is_active)}"
+                        title="${escapeHtml(t('runtime.tables.editUser'))}"
+                        aria-label="${escapeHtml(t('runtime.tables.editUser'))}"
+                    >
+                        ${actionIcon('edit')}
+                        <span class="visually-hidden">${escapeHtml(t('runtime.tables.editUser'))}</span>
+                    </button>
+                </div>
+            </td>
         </tr>
     `;
     }).join('');

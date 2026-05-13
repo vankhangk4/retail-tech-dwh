@@ -439,6 +439,11 @@ ol {
     max-height: 19rem;
 }
 
+.table-shell--manage-users {
+    height: 24rem;
+    max-height: 24rem;
+}
+
 .table-shell--tall {
     max-height: 36rem;
 }
@@ -572,6 +577,7 @@ ol {
 @media (max-width: 768px) {
     .table-shell--compact,
     .table-shell--paired,
+    .table-shell--manage-users,
     .table-shell--tall {
         max-height: none;
         height: auto;

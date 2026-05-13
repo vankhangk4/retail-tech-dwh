@@ -226,6 +226,8 @@ body.shell-body {
     min-width: 0;
     padding: 1.25rem;
     display: grid;
+    align-content: start;
+    grid-auto-rows: max-content;
     gap: 1rem;
 }
 
@@ -496,6 +498,29 @@ body.shell-body {
 .workspace-grid > .workspace-card {
     align-self: start;
     height: fit-content;
+}
+
+.manage-grid {
+    grid-template-columns: minmax(20rem, 0.42fr) minmax(0, 1fr);
+    gap: 1.1rem;
+}
+
+.manage-grid > .workspace-card {
+    grid-column: auto;
+}
+
+.manage-users-table {
+    table-layout: fixed;
+}
+
+.manage-users-table th:last-child,
+.manage-users-table td:last-child {
+    width: 6.5rem;
+}
+
+.manage-users-table td:nth-child(2),
+.manage-users-table td:nth-child(3) {
+    white-space: nowrap;
 }
 
 .panel--span-7 {
@@ -1398,6 +1423,14 @@ body.shell-body {
 }
 
 @media (max-width: 1100px) {
+    .manage-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .manage-grid > .workspace-card {
+        grid-column: auto;
+    }
+
     .panel--span-7,
     .panel--span-5,
     .panel--span-4,

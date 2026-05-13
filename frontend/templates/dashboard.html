@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>DWH Operations Console</title>
-    {% set asset_version = '20260513-equal-list-height1' %}
+    {% set asset_version = '20260513-manage-layout1' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/shell.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css', v=asset_version) }}">
@@ -395,7 +395,7 @@
 
             {% if user.role == 'admin' %}
             <section class="page" id="page-manage" data-page="manage" data-page-title-key="pages.manage.title" data-page-subtitle-key="pages.manage.subtitle" data-page-eyebrow-key="pages.manage.eyebrow">
-                <div class="workspace-grid">
+                <div class="workspace-grid manage-grid">
                     <article class="workspace-card workspace-card--span-4">
                         <div class="workspace-card__head">
                             <div>
@@ -403,7 +403,7 @@
                                 <p id="tenantCreateUserDescription">Dùng cho manager hoặc viewer mới trong tenant {{ user.tenant_id }}.</p>
                             </div>
                         </div>
-                        <form id="formCreateTenantUser" class="stack">
+                        <form id="formCreateTenantUser" class="stack admin-form manage-form">
                             <div class="field">
                                 <label for="tenantNewUserUsername" data-i18n="manage.form.usernameLabel">Tên đăng nhập</label>
                                 <input class="input" type="text" id="tenantNewUserUsername" maxlength="100" data-i18n-placeholder="manage.form.usernamePlaceholder" placeholder="ví dụ: manager_cn1" required>
@@ -412,8 +412,10 @@
                                 <label for="tenantNewUserPassword" data-i18n="manage.form.passwordLabel">Mật khẩu</label>
                                 <input class="input" type="password" id="tenantNewUserPassword" minlength="6" data-i18n-placeholder="manage.form.passwordPlaceholder" placeholder="Ít nhất 6 ký tự" required>
                             </div>
-                            <button class="button button--primary" type="submit" data-i18n="manage.form.submit">Tạo user tenant</button>
                             <span class="microcopy form-msg" id="tenantUserCreateMsg"></span>
+                            <div class="form-actions">
+                                <button class="button button--primary" type="submit" data-i18n="manage.form.submit">Tạo user tenant</button>
+                            </div>
                         </form>
                     </article>
 
@@ -424,8 +426,8 @@
                                 <p data-i18n="manage.users.description">Danh sách này giúp kiểm soát trạng thái truy cập trong phạm vi cửa hàng hiện tại.</p>
                             </div>
                         </div>
-                        <div class="table-shell table-shell--scroll table-shell--compact table-shell--paired">
-                            <table class="data-table">
+                        <div class="table-shell table-shell--scroll table-shell--manage-users">
+                            <table class="data-table manage-users-table">
                                 <thead>
                                     <tr>
                                         <th>Username</th>

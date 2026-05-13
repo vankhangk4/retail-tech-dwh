@@ -235,6 +235,8 @@ body.shell-body {
     min-width: 0;
     padding: 1.25rem;
     display: grid;
+    align-content: start;
+    grid-auto-rows: max-content;
     gap: 1rem;
 }
 
