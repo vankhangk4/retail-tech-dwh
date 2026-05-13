@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>DWH Operations Console</title>
-    {% set asset_version = '20260513-admin-search1' %}
+    {% set asset_version = '20260513-admin-polish1' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/shell.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css', v=asset_version) }}">
@@ -455,8 +455,8 @@
                                 <p data-i18n="admin.createTenant.description">Thiết lập tenant, đường dẫn dữ liệu và thời hạn hiệu lực cho hệ thống multi-tenant.</p>
                             </div>
                         </div>
-                        <form id="formCreateTenant" class="stack">
-                            <div class="form-grid">
+                        <form id="formCreateTenant" class="stack admin-form">
+                            <div class="form-grid form-grid--admin">
                                 <div class="field">
                                     <label for="newTenantId" data-i18n="admin.createTenant.idLabel">Mã tenant</label>
                                     <input class="input" type="text" id="newTenantId" maxlength="20" data-i18n-placeholder="admin.createTenant.idPlaceholder" placeholder="ví dụ: STORE_DN" required>
@@ -465,16 +465,18 @@
                                     <label for="newTenantName" data-i18n="admin.createTenant.nameLabel">Tên tenant</label>
                                     <input class="input" type="text" id="newTenantName" maxlength="200" data-i18n-placeholder="admin.createTenant.namePlaceholder" placeholder="ví dụ: Cửa hàng Đà Nẵng" required>
                                 </div>
+                                <div class="field">
+                                    <label for="newTenantFilePath" data-i18n="admin.createTenant.pathLabel">Đường dẫn dữ liệu</label>
+                                    <input class="input" type="text" id="newTenantFilePath" readonly>
+                                </div>
+                                <div class="field">
+                                    <label for="newTenantExpiresAt" data-i18n="admin.createTenant.expiresAtLabel">Ngày hết hạn</label>
+                                    <input class="input" type="datetime-local" id="newTenantExpiresAt">
+                                </div>
                             </div>
-                            <div class="field">
-                                <label for="newTenantFilePath" data-i18n="admin.createTenant.pathLabel">Đường dẫn dữ liệu</label>
-                                <input class="input" type="text" id="newTenantFilePath" readonly>
+                            <div class="form-actions">
+                                <button class="button button--primary" type="submit" data-i18n="admin.createTenant.submit">Tạo tenant</button>
                             </div>
-                            <div class="field">
-                                <label for="newTenantExpiresAt" data-i18n="admin.createTenant.expiresAtLabel">Ngày hết hạn</label>
-                                <input class="input" type="datetime-local" id="newTenantExpiresAt">
-                            </div>
-                            <button class="button button--primary" type="submit" data-i18n="admin.createTenant.submit">Tạo tenant</button>
                             <span class="microcopy form-msg" id="tenantCreateMsg"></span>
                         </form>
                     </article>
@@ -486,8 +488,8 @@
                                 <p data-i18n="admin.createUser.description">Gắn user với tenant cụ thể hoặc để trống khi cần cấp quyền rộng hơn trong hệ thống.</p>
                             </div>
                         </div>
-                        <form id="formCreateAdminUser" class="stack">
-                            <div class="form-grid">
+                        <form id="formCreateAdminUser" class="stack admin-form">
+                            <div class="form-grid form-grid--admin">
                                 <div class="field">
                                     <label for="adminNewUserUsername" data-i18n="admin.createUser.usernameLabel">Tên đăng nhập</label>
                                     <input class="input" type="text" id="adminNewUserUsername" maxlength="100" data-i18n-placeholder="admin.createUser.usernamePlaceholder" placeholder="ví dụ: manager_dn" required>
@@ -496,8 +498,6 @@
                                     <label for="adminNewUserPassword" data-i18n="admin.createUser.passwordLabel">Mật khẩu</label>
                                     <input class="input" type="password" id="adminNewUserPassword" minlength="6" data-i18n-placeholder="admin.createUser.passwordPlaceholder" placeholder="Nhập mật khẩu" required>
                                 </div>
-                            </div>
-                            <div class="form-grid">
                                 <div class="field">
                                     <label for="adminNewUserTenant" data-i18n="admin.createUser.tenantLabel">Tenant</label>
                                     <select class="select" id="adminNewUserTenant">
@@ -512,7 +512,9 @@
                                     </select>
                                 </div>
                             </div>
-                            <button class="button button--primary" type="submit" data-i18n="admin.createUser.submit">Tạo user</button>
+                            <div class="form-actions">
+                                <button class="button button--primary" type="submit" data-i18n="admin.createUser.submit">Tạo user</button>
+                            </div>
                             <span class="microcopy form-msg" id="adminUserCreateMsg"></span>
                         </form>
                     </article>
@@ -531,7 +533,7 @@
                             </div>
                         </div>
                         <div class="table-shell">
-                            <table class="data-table">
+                            <table class="data-table branch-table">
                                 <thead>
                                     <tr>
                                         <th data-i18n="admin.tenants.idHeader">Mã</th>
@@ -563,7 +565,7 @@
                             </div>
                         </div>
                         <div class="table-shell">
-                            <table class="data-table">
+                            <table class="data-table user-table">
                                 <thead>
                                     <tr>
                                         <th>Username</th>

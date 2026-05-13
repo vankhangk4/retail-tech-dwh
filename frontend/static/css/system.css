@@ -320,6 +320,25 @@ ol {
     box-shadow: 0 0 0 3px oklch(94% 0.015 183 / 0.95);
 }
 
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.textarea:-webkit-autofill,
+.textarea:-webkit-autofill:hover {
+    -webkit-text-fill-color: var(--text-strong);
+    caret-color: var(--text-strong);
+    -webkit-box-shadow: 0 0 0 1000px var(--bg-panel) inset;
+    box-shadow: 0 0 0 1000px var(--bg-panel) inset;
+    transition: background-color 9999s ease-in-out 0s;
+}
+
+.input:-webkit-autofill:focus,
+.textarea:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--text-strong);
+    caret-color: var(--text-strong);
+    -webkit-box-shadow: 0 0 0 1000px var(--bg-panel) inset, 0 0 0 3px oklch(94% 0.015 183 / 0.95);
+    box-shadow: 0 0 0 1000px var(--bg-panel) inset, 0 0 0 3px oklch(94% 0.015 183 / 0.95);
+}
+
 .field {
     display: grid;
     gap: 0.45rem;

@@ -589,10 +589,85 @@ body.shell-body {
     min-height: 2.75rem;
 }
 
+.admin-form {
+    gap: 1.1rem;
+}
+
+.form-grid--admin {
+    gap: 1rem 0.9rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.form-actions .button {
+    min-width: 10.75rem;
+}
+
 .table-actions {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.45rem;
+    flex-wrap: nowrap;
+}
+
+.table-action-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    min-height: 2.25rem;
+    border-radius: 0.85rem;
+}
+
+.table-action-icon:hover {
+    border-color: var(--line-strong);
+    color: var(--accent-strong);
+}
+
+.branch-table,
+.user-table {
+    table-layout: fixed;
+}
+
+.branch-table th:nth-child(1),
+.branch-table td:nth-child(1) {
+    width: 15%;
+}
+
+.branch-table th:nth-child(2),
+.branch-table td:nth-child(2) {
+    width: 24%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.branch-table th:nth-child(3),
+.branch-table td:nth-child(3) {
+    width: 24%;
+}
+
+.branch-table td:nth-child(3) {
+    overflow-wrap: anywhere;
+}
+
+.branch-table th:last-child,
+.branch-table td:last-child,
+.user-table th:last-child,
+.user-table td:last-child {
+    width: 6.25rem;
+}
+
+.user-table th:nth-child(2),
+.user-table td:nth-child(2) {
+    width: 20%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .detail-grid {
@@ -1339,6 +1414,18 @@ body.shell-body {
     .table-search-field {
         width: 100%;
         min-width: 0;
+    }
+
+    .form-actions {
+        justify-content: flex-start;
+    }
+
+    .form-actions .button {
+        width: 100%;
+    }
+
+    .table-actions {
+        justify-content: flex-start;
     }
 
     .detail-grid {

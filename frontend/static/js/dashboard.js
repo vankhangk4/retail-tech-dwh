@@ -1901,6 +1901,24 @@ function tableEmpty(message, colspan) {
     return `<tr><td colspan="${colspan}"><div class="empty-state"><strong>${escapeHtml(message)}</strong></div></td></tr>`;
 }
 
+function actionIcon(icon) {
+    if (icon === 'view') {
+        return `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z"/>
+                <circle cx="12" cy="12" r="3"/>
+            </svg>
+        `;
+    }
+
+    return `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
+        </svg>
+    `;
+}
+
 function renderTenants(tenants) {
     const container = byId('tenant-list');
     if (!container) return;
@@ -1932,7 +1950,16 @@ function renderTenants(tenants) {
                 </td>
                 <td data-label="${escapeHtml(t('runtime.tables.actionsLabel'))}">
                     <div class="table-actions">
-                        <button class="button button--secondary button--compact" type="button" data-edit-tenant="${escapeHtml(tenant.tenant_id)}">${escapeHtml(t('runtime.tables.editTenant'))}</button>
+                        <button
+                            class="icon-button table-action-icon"
+                            type="button"
+                            data-edit-tenant="${escapeHtml(tenant.tenant_id)}"
+                            title="${escapeHtml(t('runtime.tables.editTenant'))}"
+                            aria-label="${escapeHtml(t('runtime.tables.editTenant'))}"
+                        >
+                            ${actionIcon('edit')}
+                            <span class="visually-hidden">${escapeHtml(t('runtime.tables.editTenant'))}</span>
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -1964,8 +1991,33 @@ function renderUsers(users) {
             <td data-label="${escapeHtml(t('runtime.tables.statusLabel'))}"><span class="status-pill ${statusToneByBool(user.is_active)}">${user.is_active ? t('common.active') : t('common.inactive')}</span></td>
             <td data-label="${escapeHtml(t('runtime.tables.actionsLabel'))}">
                 <div class="table-actions">
-                    <button class="button button--quiet button--compact" type="button" data-view-user data-user-id="${Number(user.user_id)}" data-username="${escapeHtml(user.username || '')}">${escapeHtml(t('runtime.tables.viewUser'))}</button>
-                    <button class="button button--secondary button--compact" type="button" data-edit-user data-user-id="${Number(user.user_id)}" data-username="${escapeHtml(user.username || '')}" data-tenant="${escapeHtml(user.tenant_id || '')}" data-role="${escapeHtml(user.role || 'viewer')}" data-active="${Boolean(user.is_active)}">${escapeHtml(t('runtime.tables.editUser'))}</button>
+                    <button
+                        class="icon-button table-action-icon"
+                        type="button"
+                        data-view-user
+                        data-user-id="${Number(user.user_id)}"
+                        data-username="${escapeHtml(user.username || '')}"
+                        title="${escapeHtml(t('runtime.tables.viewUser'))}"
+                        aria-label="${escapeHtml(t('runtime.tables.viewUser'))}"
+                    >
+                        ${actionIcon('view')}
+                        <span class="visually-hidden">${escapeHtml(t('runtime.tables.viewUser'))}</span>
+                    </button>
+                    <button
+                        class="icon-button table-action-icon"
+                        type="button"
+                        data-edit-user
+                        data-user-id="${Number(user.user_id)}"
+                        data-username="${escapeHtml(user.username || '')}"
+                        data-tenant="${escapeHtml(user.tenant_id || '')}"
+                        data-role="${escapeHtml(user.role || 'viewer')}"
+                        data-active="${Boolean(user.is_active)}"
+                        title="${escapeHtml(t('runtime.tables.editUser'))}"
+                        aria-label="${escapeHtml(t('runtime.tables.editUser'))}"
+                    >
+                        ${actionIcon('edit')}
+                        <span class="visually-hidden">${escapeHtml(t('runtime.tables.editUser'))}</span>
+                    </button>
                 </div>
             </td>
         </tr>
