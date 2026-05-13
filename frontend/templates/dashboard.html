@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>DWH Operations Console</title>
-    {% set asset_version = '20260513-admin-polish1' %}
+    {% set asset_version = '20260513-equal-list-height1' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/shell.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css', v=asset_version) }}">
@@ -424,7 +424,7 @@
                                 <p data-i18n="manage.users.description">Danh sách này giúp kiểm soát trạng thái truy cập trong phạm vi cửa hàng hiện tại.</p>
                             </div>
                         </div>
-                        <div class="table-shell">
+                        <div class="table-shell table-shell--scroll table-shell--compact table-shell--paired">
                             <table class="data-table">
                                 <thead>
                                     <tr>
@@ -474,10 +474,10 @@
                                     <input class="input" type="datetime-local" id="newTenantExpiresAt">
                                 </div>
                             </div>
+                            <span class="microcopy form-msg" id="tenantCreateMsg"></span>
                             <div class="form-actions">
                                 <button class="button button--primary" type="submit" data-i18n="admin.createTenant.submit">Tạo tenant</button>
                             </div>
-                            <span class="microcopy form-msg" id="tenantCreateMsg"></span>
                         </form>
                     </article>
 
@@ -512,10 +512,10 @@
                                     </select>
                                 </div>
                             </div>
+                            <span class="microcopy form-msg" id="adminUserCreateMsg"></span>
                             <div class="form-actions">
                                 <button class="button button--primary" type="submit" data-i18n="admin.createUser.submit">Tạo user</button>
                             </div>
-                            <span class="microcopy form-msg" id="adminUserCreateMsg"></span>
                         </form>
                     </article>
 
@@ -532,7 +532,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="table-shell">
+                        <div class="table-shell table-shell--scroll table-shell--compact table-shell--paired">
                             <table class="data-table branch-table">
                                 <thead>
                                     <tr>
@@ -564,7 +564,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="table-shell">
+                        <div class="table-shell table-shell--scroll table-shell--compact table-shell--paired">
                             <table class="data-table user-table">
                                 <thead>
                                     <tr>

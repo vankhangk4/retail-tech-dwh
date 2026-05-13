@@ -2034,7 +2034,7 @@ function renderETLLogs(logs) {
     }
 
     container.innerHTML = `
-        <div class="table-shell">
+        <div class="table-shell table-shell--scroll table-shell--tall">
             <table class="data-table">
                 <thead>
                     <tr>
@@ -2289,7 +2289,7 @@ function renderUploadedFiles() {
     }
 
     container.innerHTML = `
-            <div class="table-shell">
+            <div class="table-shell table-shell--scroll table-shell--compact">
                 <table class="data-table">
                     <thead>
                         <tr>

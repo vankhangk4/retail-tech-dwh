@@ -478,6 +478,10 @@ body.shell-body {
     grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
+.workspace-grid {
+    align-items: start;
+}
+
 .panel,
 .workspace-card,
 .room-frame {
@@ -487,6 +491,11 @@ body.shell-body {
     box-shadow: none;
     background: var(--bg-panel);
     min-width: 0;
+}
+
+.workspace-grid > .workspace-card {
+    align-self: start;
+    height: fit-content;
 }
 
 .panel--span-7 {
@@ -591,6 +600,14 @@ body.shell-body {
 
 .admin-form {
     gap: 1.1rem;
+}
+
+.admin-form .form-msg {
+    min-height: 0;
+}
+
+.admin-form .form-msg:empty {
+    display: none;
 }
 
 .form-grid--admin {
