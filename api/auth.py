@@ -7,6 +7,7 @@
 
 import os
 import logging
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -47,6 +48,7 @@ LEGACY_DASHBOARD_ID_MAP = {
     14: 4,
     15: 5,
 }
+TENANT_ID_RE = re.compile(r'^[A-Za-z0-9_]{1,20}$')
 
 # ---- Password hashing ----
 pwd_ctx = passlib.context.CryptContext(schemes=['bcrypt'], deprecated='auto')
@@ -188,6 +190,56 @@ def get_or_create_embedded_dashboard_uuid(dashboard_id: int, admin_token: str) -
 
     logger.info(f'Embedded dashboard enabled: dashboard={dashboard_id} | uuid={embedded_uuid}')
     return embedded_uuid
+
+
+def resolve_dashboard_scope(payload: TokenPayload, requested_tenant_id: Optional[str]) -> dict:
+    """Resolve dashboard scope for Superset guest token generation."""
+    tenant_id = (requested_tenant_id or '').strip()
+    is_system_superadmin = payload.role == 'superadmin' and payload.tenant_id is None
+
+    if tenant_id and not is_system_superadmin:
+        raise HTTPException(403, detail='Chi superadmin moi co quyen doi pham vi dashboard')
+
+    if is_system_superadmin:
+        if not tenant_id:
+            return {
+                'scope_tenant_id': None,
+                'rls_clause': '1=1',
+                'username_for_token': f'admin_{payload.user_id}',
+            }
+
+        if not TENANT_ID_RE.match(tenant_id):
+            raise HTTPException(400, detail='TenantID khong hop le')
+
+        conn = get_mssql_conn()
+        cursor = conn.cursor(as_dict=True)
+        try:
+            cursor.execute(
+                'SELECT TenantID FROM Tenants WHERE TenantID = %s',
+                (tenant_id,)
+            )
+            tenant_row = cursor.fetchone()
+        finally:
+            conn.close()
+
+        if not tenant_row:
+            raise HTTPException(404, detail='Tenant khong ton tai')
+
+        safe_tenant_id = tenant_row['TenantID']
+        return {
+            'scope_tenant_id': safe_tenant_id,
+            'rls_clause': f"TenantID = '{safe_tenant_id}'",
+            'username_for_token': f'tenant_{safe_tenant_id}',
+        }
+
+    if not payload.tenant_id:
+        raise HTTPException(403, detail='Tai khoan nay chua duoc gan pham vi dashboard')
+
+    return {
+        'scope_tenant_id': payload.tenant_id,
+        'rls_clause': f"TenantID = '{payload.tenant_id}'",
+        'username_for_token': f'tenant_{payload.tenant_id}',
+    }
 
 
 # ============================================================
@@ -501,6 +553,7 @@ def refresh_token_endpoint(refresh_token: str):
 def get_dashboard_token(
     authorization: str = Header(...),
     dashboard_id: int = 1,
+    tenant_id: Optional[str] = None,
 ):
     """
     Nhận JWT từ Auth Gateway → tạo Superset Guest Token.
@@ -528,13 +581,7 @@ def get_dashboard_token(
 
     embedded_uuid = get_or_create_embedded_dashboard_uuid(dashboard_id, admin_token)
 
-    # Xác định RLS clause — dùng TenantID (capital) vì MSSQL column name
-    if payload.role in ('superadmin', 'admin') and payload.tenant_id is None:
-        rls_clause = '1=1'
-        username_for_token = f'admin_{payload.user_id}'
-    else:
-        rls_clause = f"TenantID = '{payload.tenant_id}'"
-        username_for_token = f'tenant_{payload.tenant_id}'
+    scope = resolve_dashboard_scope(payload, tenant_id)
 
     # Tạo guest token cho dashboard cụ thể + RLS filter
     try:
@@ -543,15 +590,15 @@ def get_dashboard_token(
             headers={'Authorization': f'Bearer {admin_token}'},
             json={
                 'user': {
-                    'username': username_for_token,
+                    'username': scope['username_for_token'],
                     'first_name': payload.role,
-                    'last_name': payload.tenant_id or 'admin',
+                    'last_name': scope['scope_tenant_id'] or 'admin',
                 },
                 'resources': [
                     {'type': 'dashboard', 'id': embedded_uuid},
                 ],
                 'rls': [
-                    {'clause': rls_clause}
+                    {'clause': scope['rls_clause']}
                 ]
             },
             timeout=30
@@ -570,7 +617,7 @@ def get_dashboard_token(
     logger.info(
         f'Guest token issued: username={payload.username} | '
         f'dashboard={dashboard_id} | embedded={embedded_uuid} | '
-        f'tenant={payload.tenant_id} | role={payload.role}'
+        f'scope_tenant={scope["scope_tenant_id"] or "system-wide"} | role={payload.role}'
     )
 
     return DashboardTokenResponse(

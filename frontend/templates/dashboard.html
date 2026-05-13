@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>DWH Operations Console</title>
-    {% set asset_version = '20260513-i18n1' %}
+    {% set asset_version = '20260513-analytics-scope1' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/shell.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css', v=asset_version) }}">
@@ -291,7 +291,15 @@
                                 <span class="eyebrow" data-i18n="analysis.stage.eyebrow">Trục phân tích</span>
                                 <h2 id="analysisTitle" data-i18n="analysis.dashboard.revenue.title">Phòng phân tích doanh thu</h2>
                             </div>
-                            <div class="inline-actions">
+                            <div class="inline-actions analysis-stage__tools">
+                                {% if user.role == 'superadmin' %}
+                                <div class="field analysis-scope-control">
+                                    <label for="analysisTenantSelect" data-i18n="analysis.scope.label">Phạm vi báo cáo</label>
+                                    <select class="select analysis-scope-select" id="analysisTenantSelect">
+                                        <option value="" data-i18n="analysis.scope.loading">Đang tải danh sách chi nhánh...</option>
+                                    </select>
+                                </div>
+                                {% endif %}
                                 <span class="status-pill tone-neutral" data-i18n="analysis.stage.embedPill">Nhúng từ Superset</span>
                                 <button class="button button--secondary" type="button" id="analysisOpenModalBtn" data-open-dashboard="1" data-i18n="analysis.stage.openModal">Mở dạng tập trung</button>
                             </div>
@@ -299,6 +307,7 @@
                         <div class="room-frame">
                             <div class="room-frame__meta">
                                 <span class="status-pill tone-live" id="analysisContextPill" data-i18n="analysis.stage.contextLoading">Trục đang xem: Doanh thu</span>
+                                <span class="status-pill tone-neutral" id="analysisScopePill">Phạm vi báo cáo: {% if user.tenant_id %}{{ user.tenant_id }}{% else %}Toàn hệ thống{% endif %}</span>
                                 <span class="microcopy" id="frameState-analysis" data-i18n="analysis.stage.frameLoading">Đang chuẩn bị dựng dashboard nhúng.</span>
                             </div>
                             <iframe id="iframe-analysis" class="embed-frame" data-i18n-title="analysis.stage.iframeTitle" title="Dashboard phân tích"></iframe>

@@ -191,6 +191,10 @@ const COPY = {
                 frameLoading: 'Đang chuẩn bị dựng dashboard nhúng.',
                 iframeTitle: 'Dashboard phân tích',
             },
+            scope: {
+                label: 'Phạm vi báo cáo',
+                loading: 'Đang tải danh sách chi nhánh...',
+            },
         },
         etl: {
             hero: {
@@ -340,6 +344,7 @@ const COPY = {
         runtime: {
             analysis: {
                 context: 'Trục đang xem: {label}',
+                scope: 'Phạm vi báo cáo: {scope}',
                 tokenLoading: 'Đang xin dashboard token và dựng phiên nhúng.',
                 frameReady: 'Đang hiển thị dashboard nhúng qua Superset.',
                 frameError: 'Không thể dựng dashboard nhúng ở thời điểm này.',
@@ -671,6 +676,10 @@ const COPY = {
                 frameLoading: 'Preparing the embedded dashboard.',
                 iframeTitle: 'Analytical dashboard',
             },
+            scope: {
+                label: 'Reporting scope',
+                loading: 'Loading branch list...',
+            },
         },
         etl: {
             hero: {
@@ -820,6 +829,7 @@ const COPY = {
         runtime: {
             analysis: {
                 context: 'Viewing axis: {label}',
+                scope: 'Reporting scope: {scope}',
                 tokenLoading: 'Requesting the dashboard token and building the embedded session.',
                 frameReady: 'Displaying the embedded dashboard through Superset.',
                 frameError: 'Unable to build the embedded dashboard at this time.',
@@ -1013,6 +1023,10 @@ const i18n = window.DWHI18n.createPageI18n({
     languageSelect,
 });
 
+const initialAnalysisTenantId = APP_CONTEXT.userRole === 'superadmin'
+    ? (window.sessionStorage.getItem('dashboardAnalysisTenant') || '')
+    : (APP_CONTEXT.userTenant || '');
+
 const appState = {
     health: 'checking',
     kpi: {},
@@ -1020,6 +1034,7 @@ const appState = {
     users: [],
     etlLogs: [],
     tenantUsers: [],
+    analysisTenantId: initialAnalysisTenantId,
     uploadedFiles: [],
     uploadedFilesTenant: APP_CONTEXT.userTenant || '',
     uploadedFilesError: '',
@@ -1057,6 +1072,33 @@ function getDashboardConfig(key) {
         title: t(config.titleKey),
         description: t(config.descriptionKey),
     };
+}
+
+function canSwitchAnalysisTenant() {
+    return APP_CONTEXT.userRole === 'superadmin' && !APP_CONTEXT.userTenant;
+}
+
+function getAnalysisTenantRecord(tenantId) {
+    return appState.tenants.find((tenant) => tenant.tenant_id === tenantId) || null;
+}
+
+function getActiveAnalysisTenantId() {
+    if (canSwitchAnalysisTenant()) {
+        return appState.analysisTenantId || '';
+    }
+    return APP_CONTEXT.userTenant || '';
+}
+
+function getAnalysisScopeLabel() {
+    const tenantId = getActiveAnalysisTenantId();
+    if (!tenantId) {
+        return t('common.systemWide');
+    }
+    const tenant = getAnalysisTenantRecord(tenantId);
+    if (tenant?.tenant_name) {
+        return `${tenant.tenant_id} — ${tenant.tenant_name}`;
+    }
+    return tenantId;
 }
 
 function formatCurrency(value) {
@@ -1192,6 +1234,32 @@ function renderShellContext() {
     }
 }
 
+function renderAnalysisScope() {
+    const scopePill = byId('analysisScopePill');
+    if (scopePill) {
+        scopePill.textContent = t('runtime.analysis.scope', { scope: getAnalysisScopeLabel() });
+    }
+
+    const scopeSelect = byId('analysisTenantSelect');
+    if (!scopeSelect) return;
+
+    const availableTenantIds = new Set(appState.tenants.map((tenant) => tenant.tenant_id));
+    if (appState.analysisTenantId && !availableTenantIds.has(appState.analysisTenantId)) {
+        appState.analysisTenantId = '';
+        window.sessionStorage.setItem('dashboardAnalysisTenant', '');
+    }
+
+    const options = [
+        `<option value="">${escapeHtml(t('common.systemWide'))}</option>`,
+        ...appState.tenants.map((tenant) => (
+            `<option value="${escapeHtml(tenant.tenant_id)}">${escapeHtml(`${tenant.tenant_id} — ${tenant.tenant_name || tenant.tenant_id}`)}</option>`
+        )),
+    ];
+
+    scopeSelect.innerHTML = options.join('');
+    scopeSelect.value = appState.analysisTenantId || '';
+}
+
 function setSidebarState() {
     document.body.classList.remove('sidebar-collapsed');
     if (window.innerWidth > 1024) {
@@ -1255,6 +1323,7 @@ function setActiveAnalysis(key, { loadIframe = false } = {}) {
     if (byId('analysisContextPill')) {
         byId('analysisContextPill').textContent = t('runtime.analysis.context', { label: config.label });
     }
+    renderAnalysisScope();
 
     const modalButton = byId('analysisOpenModalBtn');
     if (modalButton) {
@@ -1379,7 +1448,13 @@ async function loadSupersetIframe(dashboardKey, { iframeId = 'iframe-analysis', 
     if (frameState) frameState.textContent = t('runtime.analysis.tokenLoading');
 
     try {
-        const response = await fetch(`/api/dashboard-token?dashboard_id=${config.id}`);
+        const params = new URLSearchParams({ dashboard_id: String(config.id) });
+        const analysisTenantId = getActiveAnalysisTenantId();
+        if (canSwitchAnalysisTenant() && analysisTenantId) {
+            params.set('tenant_id', analysisTenantId);
+        }
+
+        const response = await fetch(`/api/dashboard-token?${params.toString()}`);
         if (!response.ok) throw new Error('Token error');
         const data = await response.json();
         renderEmbeddedDashboard(iframe, data);
@@ -1774,6 +1849,7 @@ async function loadAdminData() {
             const data = await tenantResponse.json();
             appState.tenants = data.tenants || [];
             renderTenants(appState.tenants);
+            renderAnalysisScope();
         }
     } catch (error) {}
 
@@ -1796,6 +1872,7 @@ async function loadAdminData() {
     } catch (error) {}
 
     renderOverviewIntel();
+    renderAnalysisScope();
 }
 
 function renderUploadStatus() {
@@ -2447,6 +2524,18 @@ function bindGlobalEvents() {
 
     byId('fileInput')?.addEventListener('change', showFilePreview);
     byId('etlTenantSelect')?.addEventListener('change', loadUploadedFiles);
+    byId('analysisTenantSelect')?.addEventListener('change', async (event) => {
+        appState.analysisTenantId = event.target.value || '';
+        window.sessionStorage.setItem('dashboardAnalysisTenant', appState.analysisTenantId);
+        renderAnalysisScope();
+
+        if (appState.activePage === 'analysis') {
+            await loadSupersetIframe(appState.activeAnalysis, {
+                iframeId: 'iframe-analysis',
+                frameStateId: 'frameState-analysis',
+            });
+        }
+    });
 
     const uploadZone = byId('uploadZone');
     if (uploadZone) {
@@ -2484,6 +2573,7 @@ function bindForms() {
 
 function renderLocaleState() {
     renderShellContext();
+    renderAnalysisScope();
     updatePageChrome(appState.activePage || APP_CONTEXT.defaultPage);
     setActiveAnalysis(appState.activeAnalysis);
     renderHealthState();

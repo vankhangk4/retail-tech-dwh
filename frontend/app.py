@@ -125,14 +125,19 @@ def api_dashboard_token():
         return jsonify({'error': 'Chua dang nhap'}), 401
 
     dashboard_id = request.args.get('dashboard_id', '1')
+    tenant_id = request.args.get('tenant_id', '').strip() or None
     try:
         dashboard_id = int(dashboard_id)
     except ValueError:
         dashboard_id = 1
 
     try:
+        params = {'dashboard_id': dashboard_id}
+        if tenant_id:
+            params['tenant_id'] = tenant_id
         r = requests.get(
-            f'{API_BASE_URL}/api/dashboard-token?dashboard_id={dashboard_id}',
+            f'{API_BASE_URL}/api/dashboard-token',
+            params=params,
             headers={'Authorization': f'Bearer {session["access_token"]}'},
             timeout=10
         )
