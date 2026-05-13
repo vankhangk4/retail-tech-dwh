@@ -6,6 +6,10 @@
 .env
 .env.local
 .env.*.local
+client_secret*.json
+**/client_secret*.json
+frontend/instance/
+api/instance/
 # .env.example được track để làm template
 
 # ── Python ──────────────────────────────────────────────────
@@ -100,3 +104,10 @@ yarn-error.log*
 DOCKER_TEST_REPORT.md
 zap_report.html
 zap_full_report.html
+
+
+
+#google json
+frontend/instance/google_drive_connections.json
+google_drive_connections.json
+frontend/instance/

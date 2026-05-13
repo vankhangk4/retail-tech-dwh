@@ -326,6 +326,114 @@
     line-height: 1.65;
 }
 
+.drive-file-picker {
+    display: grid;
+    gap: 0.85rem;
+    padding: 1rem;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    background: linear-gradient(180deg, var(--bg-panel), oklch(98.2% 0.005 210));
+}
+
+.drive-file-picker__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.drive-file-picker__head h3 {
+    margin: 0;
+    color: var(--text-strong);
+    font-size: 1rem;
+    line-height: 1.2;
+}
+
+.drive-file-picker__head p {
+    max-width: 58ch;
+    margin: 0.3rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.86rem;
+    line-height: 1.55;
+}
+
+.drive-file-picker__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+}
+
+.drive-file-search {
+    width: min(22rem, 100%);
+    min-height: 2.65rem;
+    height: 2.65rem;
+}
+
+.drive-file-list {
+    max-height: 20rem;
+    overflow-y: auto;
+    display: grid;
+    gap: 0.55rem;
+    padding: 0.25rem;
+    border-radius: var(--radius-sm);
+    scrollbar-gutter: stable;
+}
+
+.drive-file-option {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    background: var(--bg-panel);
+    cursor: pointer;
+    transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+}
+
+.drive-file-option:hover {
+    border-color: var(--line-strong);
+    background: var(--bg-subtle);
+    transform: translateY(-1px);
+}
+
+.drive-file-option:has(input:checked) {
+    border-color: oklch(75% 0.042 156);
+    background: var(--success-soft);
+}
+
+.drive-file-option input {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--accent);
+}
+
+.drive-file-option__body {
+    min-width: 0;
+    display: grid;
+    gap: 0.18rem;
+}
+
+.drive-file-option__body strong {
+    overflow: hidden;
+    color: var(--text-strong);
+    font-size: 0.92rem;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.drive-file-option__body span {
+    overflow: hidden;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* ── Password strength indicator ── */
 .pwd-strength {
     display: grid;
@@ -452,6 +560,14 @@
 
     .drive-layout {
         grid-template-columns: 1fr;
+    }
+
+    .drive-file-picker__head {
+        display: grid;
+    }
+
+    .drive-file-picker__actions {
+        justify-content: flex-start;
     }
 }
 

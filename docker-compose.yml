@@ -157,8 +157,14 @@ services:
       - FLASK_DEBUG=False
       - FRONTEND_PORT=3000
       - FRONTEND_SESSION_COOKIE_NAME=dwh_frontend_session
+      - GOOGLE_DRIVE_CLIENT_ID=${GOOGLE_DRIVE_CLIENT_ID:-}
+      - GOOGLE_DRIVE_CLIENT_SECRET=${GOOGLE_DRIVE_CLIENT_SECRET:-}
+      - GOOGLE_DRIVE_REDIRECT_URI=${GOOGLE_DRIVE_REDIRECT_URI:-http://localhost:3000/api/google-drive/callback}
+      - GOOGLE_DRIVE_STORE_PATH=/app/instance/google_drive_connections.json
     ports:
       - '3000:3000'
+    volumes:
+      - ./frontend/instance:/app/instance
     depends_on:
       mssql-bootstrap:
         condition: service_completed_successfully

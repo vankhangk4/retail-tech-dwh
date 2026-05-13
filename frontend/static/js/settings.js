@@ -126,10 +126,25 @@
                 title: 'Kết nối Google Drive',
                 desc: 'Liên kết thư mục Google Drive chứa file Excel nguồn để chuẩn bị nạp dữ liệu và chạy ETL theo lịch vận hành.',
                 statusDisconnected: 'Chưa kết nối',
+                statusConnected: 'Đã kết nối',
+                statusNotReady: 'Chưa cấu hình',
                 providerTitle: 'Google Drive Workspace',
                 providerDesc: 'Dùng OAuth để cấp quyền đọc thư mục nguồn, không lưu mật khẩu Google trong hệ thống.',
                 connect: 'Kết nối Google Drive',
                 disconnect: 'Ngắt kết nối',
+                syncRun: 'Đồng bộ và chạy ETL',
+                filePickerTitle: 'File nguồn Google Drive',
+                filePickerDesc: 'Chọn đúng file Excel hoặc Google Sheets cần nạp vào staging cho kỳ ETL hiện tại.',
+                searchPlaceholder: 'Tìm theo tên file',
+                refreshFiles: 'Tải danh sách file',
+                loadingFiles: 'Đang tải danh sách file nguồn...',
+                fileListConnectHint: 'Kết nối Google Drive để tải danh sách file nguồn.',
+                fileListEmpty: 'Không tìm thấy file Excel hoặc Google Sheets trong Google Drive.',
+                fileListError: 'Không thể tải danh sách file Google Drive.',
+                noFileSelected: 'Chưa chọn file',
+                selectedCount: 'Đã chọn {count} file',
+                sheetType: 'Google Sheets',
+                fileType: 'File Excel',
                 folderLabel: 'ID thư mục nguồn',
                 folderPlaceholder: 'Ví dụ: 1AbC...',
                 folderHint: 'Thư mục chứa file Excel theo từng chi nhánh hoặc kỳ dữ liệu.',
@@ -144,8 +159,15 @@
                 policySync: 'Hệ thống đồng bộ file nguồn vào staging theo chi nhánh.',
                 policyEtl: 'ETL tự động chạy cuối ngày và ghi log để đối soát.',
                 save: 'Lưu cấu hình kết nối',
-                oauthUnavailable: 'Chưa có endpoint OAuth Google Drive. Cần cấu hình Google Cloud Client ID, Client Secret và callback URL trước khi kết nối.',
-                configSaved: 'Đã lưu cấu hình giao diện. Kết nối thật sẽ hoạt động sau khi backend Google Drive được cấu hình.',
+                oauthUnavailable: 'Chưa cấu hình Google Drive OAuth. Cần khai báo Client ID, Client Secret và callback URL trước khi kết nối.',
+                configSaved: 'Đã lưu cấu hình Google Drive.',
+                configLoadError: 'Không thể tải trạng thái kết nối Google Drive.',
+                connectError: 'Không thể khởi tạo phiên kết nối Google Drive.',
+                disconnectSuccess: 'Đã ngắt kết nối Google Drive.',
+                disconnectError: 'Không thể ngắt kết nối Google Drive.',
+                syncSuccess: 'Đã đồng bộ file nguồn và kích hoạt ETL.',
+                syncError: 'Không thể đồng bộ dữ liệu từ Google Drive.',
+                folderRequired: 'Vui lòng chọn tối thiểu một file nguồn trước khi đồng bộ.',
             },
             sidebar: {
                 brandMeta: 'Trung tâm vận hành cho hệ thống Data Warehouse đa chi nhánh',
@@ -286,10 +308,25 @@
                 title: 'Google Drive Connection',
                 desc: 'Link the Google Drive folder that stores source Excel files for data loading and scheduled ETL operations.',
                 statusDisconnected: 'Not Connected',
+                statusConnected: 'Connected',
+                statusNotReady: 'Not Configured',
                 providerTitle: 'Google Drive Workspace',
                 providerDesc: 'Use OAuth to grant read access to the source folder. Google passwords are not stored in the system.',
                 connect: 'Connect Google Drive',
                 disconnect: 'Disconnect',
+                syncRun: 'Sync and Run ETL',
+                filePickerTitle: 'Google Drive Source Files',
+                filePickerDesc: 'Select the Excel files or Google Sheets to load into staging for the current ETL run.',
+                searchPlaceholder: 'Search by file name',
+                refreshFiles: 'Load File List',
+                loadingFiles: 'Loading source files...',
+                fileListConnectHint: 'Connect Google Drive to load source files.',
+                fileListEmpty: 'No Excel files or Google Sheets were found in Google Drive.',
+                fileListError: 'Unable to load Google Drive files.',
+                noFileSelected: 'No file selected',
+                selectedCount: '{count} files selected',
+                sheetType: 'Google Sheets',
+                fileType: 'Excel File',
                 folderLabel: 'Source Folder ID',
                 folderPlaceholder: 'Example: 1AbC...',
                 folderHint: 'Folder containing Excel files by branch or data period.',
@@ -304,8 +341,15 @@
                 policySync: 'The system syncs source files into branch-level staging.',
                 policyEtl: 'ETL runs automatically at the end of day and records logs for reconciliation.',
                 save: 'Save Connection Settings',
-                oauthUnavailable: 'Google Drive OAuth endpoints are not configured yet. Configure Google Cloud Client ID, Client Secret, and callback URL before connecting.',
-                configSaved: 'Interface settings saved. The live connection will work after the Google Drive backend is configured.',
+                oauthUnavailable: 'Google Drive OAuth is not configured. Set Client ID, Client Secret, and callback URL before connecting.',
+                configSaved: 'Google Drive settings saved.',
+                configLoadError: 'Unable to load the Google Drive connection status.',
+                connectError: 'Unable to start the Google Drive connection session.',
+                disconnectSuccess: 'Google Drive disconnected.',
+                disconnectError: 'Unable to disconnect Google Drive.',
+                syncSuccess: 'Source files synced and ETL triggered.',
+                syncError: 'Unable to sync data from Google Drive.',
+                folderRequired: 'Select at least one source file before syncing.',
             },
             sidebar: {
                 brandMeta: 'Operations hub for the multi-branch Data Warehouse platform',
@@ -508,6 +552,9 @@
         }
         updatePasswordStrength();
         renderLoginHistory();
+        if (typeof renderDriveFileList === 'function') {
+            renderDriveFileList();
+        }
         reapplyRuntimeTranslations();
     }
 
@@ -625,6 +672,9 @@
             if (target === 'security' && loginHistoryState === 'idle') {
                 loadLoginHistory();
             }
+            if (target === 'drive') {
+                loadDriveStatus();
+            }
         });
 
         btn.addEventListener('keydown', event => {
@@ -644,22 +694,331 @@
         });
     });
 
-    // Google Drive tab is UI-ready; backend OAuth endpoints will be wired separately.
+    // Google Drive connection
     const driveConnectBtn = document.getElementById('driveConnectBtn');
+    const driveDisconnectBtn = document.getElementById('driveDisconnectBtn');
+    const driveSyncBtn = document.getElementById('driveSyncBtn');
+    const driveSaveBtn = document.getElementById('driveSaveBtn');
+    const driveRefreshFilesBtn = document.getElementById('driveRefreshFilesBtn');
     const driveConfigForm = document.getElementById('driveConfigForm');
     const driveErrorAlert = document.getElementById('driveErrorAlert');
     const driveSuccessAlert = document.getElementById('driveSuccessAlert');
+    const driveConnectionStatus = document.getElementById('driveConnectionStatus');
+    const driveFileList = document.getElementById('driveFileList');
+    const driveFileSearch = document.getElementById('driveFileSearch');
+    const driveSelectedCount = document.getElementById('driveSelectedCount');
+    const driveFolderId = document.getElementById('driveFolderId');
+    const driveTenantScope = document.getElementById('driveTenantScope');
+    const driveFilePattern = document.getElementById('driveFilePattern');
+    const driveScheduleTime = document.getElementById('driveScheduleTime');
+    let driveStatusLoaded = false;
+    let driveIsConnected = false;
+    let driveFilesLoaded = false;
+    let driveAvailableFiles = [];
+    let driveSelectedFiles = [];
+    let driveSearchTimer = 0;
 
-    driveConnectBtn?.addEventListener('click', () => {
-        hideAlert(driveSuccessAlert);
-        showAlert(driveErrorAlert, '', 'danger', 0, 'drive.oauthUnavailable');
-    });
+    function interpolateCopy(key, values = {}) {
+        return Object.entries(values).reduce(
+            (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
+            t(key),
+        );
+    }
 
-    driveConfigForm?.addEventListener('submit', event => {
-        event.preventDefault();
+    function formatDriveFileSize(size) {
+        if (!Number.isFinite(size)) return '';
+        if (size < 1024) return `${size} B`;
+        if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+        return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function formatDriveModifiedTime(value) {
+        if (!value) return '';
+        try {
+            return new Intl.DateTimeFormat(currentLanguage === 'vi' ? 'vi-VN' : 'en-US', {
+                dateStyle: 'short',
+                timeStyle: 'short',
+            }).format(new Date(value));
+        } catch (error) {
+            return '';
+        }
+    }
+
+    function getDriveSelectedIds() {
+        return new Set(driveSelectedFiles.map(file => file.id));
+    }
+
+    function normalizeDriveFile(file) {
+        return {
+            id: file.id,
+            name: file.name || t('common.notAvailable'),
+            mimeType: file.mimeType || '',
+            modifiedTime: file.modifiedTime || '',
+            size: Number.isFinite(file.size) ? file.size : null,
+            isGoogleSheet: Boolean(file.isGoogleSheet) || file.mimeType === 'application/vnd.google-apps.spreadsheet',
+        };
+    }
+
+    function updateDriveSelectedCount() {
+        if (!driveSelectedCount) return;
+        const count = driveSelectedFiles.length;
+        driveSelectedCount.textContent = count
+            ? interpolateCopy('drive.selectedCount', { count })
+            : t('drive.noFileSelected');
+        driveSelectedCount.className = `status-pill ${count ? 'tone-success' : 'tone-neutral'}`;
+        setRuntimeTranslation(driveSelectedCount, '');
+        if (driveSyncBtn) driveSyncBtn.disabled = !driveIsConnected || count === 0;
+    }
+
+    function renderDriveFileList(state = 'ready') {
+        if (!driveFileList) return;
+        updateDriveSelectedCount();
+
+        if (!driveIsConnected) {
+            driveFileList.innerHTML = `<div class="empty-state"><span class="text-faint">${escHtml(t('drive.fileListConnectHint'))}</span></div>`;
+            return;
+        }
+        if (state === 'loading') {
+            driveFileList.innerHTML = `<div class="empty-state"><span class="text-faint">${escHtml(t('drive.loadingFiles'))}</span></div>`;
+            return;
+        }
+        if (!driveAvailableFiles.length) {
+            driveFileList.innerHTML = `<div class="empty-state"><span class="text-faint">${escHtml(t('drive.fileListEmpty'))}</span></div>`;
+            return;
+        }
+
+        const selectedIds = getDriveSelectedIds();
+        driveFileList.innerHTML = driveAvailableFiles.map(file => {
+            const checked = selectedIds.has(file.id) ? 'checked' : '';
+            const typeLabel = file.isGoogleSheet ? t('drive.sheetType') : t('drive.fileType');
+            const meta = [typeLabel, formatDriveFileSize(file.size), formatDriveModifiedTime(file.modifiedTime)].filter(Boolean).join(' • ');
+            return `
+                <label class="drive-file-option">
+                    <input type="checkbox" value="${escHtml(file.id)}" ${checked}>
+                    <span class="drive-file-option__body">
+                        <strong>${escHtml(file.name)}</strong>
+                        <span>${escHtml(meta)}</span>
+                    </span>
+                </label>
+            `;
+        }).join('');
+
+        driveFileList.querySelectorAll('input[type="checkbox"]').forEach(input => {
+            input.addEventListener('change', () => {
+                const file = driveAvailableFiles.find(item => item.id === input.value);
+                if (!file) return;
+                if (input.checked) {
+                    if (!driveSelectedFiles.some(item => item.id === file.id)) {
+                        driveSelectedFiles.push(file);
+                    }
+                } else {
+                    driveSelectedFiles = driveSelectedFiles.filter(item => item.id !== file.id);
+                }
+                updateDriveSelectedCount();
+            });
+        });
+    }
+
+    async function loadDriveFiles({ force = false } = {}) {
+        if (!driveIsConnected || (driveFilesLoaded && !force)) {
+            renderDriveFileList();
+            return;
+        }
         hideAlert(driveErrorAlert);
-        showAlert(driveSuccessAlert, '', 'success', 4000, 'drive.configSaved');
+        setBtnLoading(driveRefreshFilesBtn, true, 'drive.refreshFiles');
+        renderDriveFileList('loading');
+        try {
+            const params = new URLSearchParams();
+            const searchText = driveFileSearch?.value.trim() || '';
+            if (searchText) params.set('q', searchText);
+            const r = await fetch(`/api/google-drive/files${params.toString() ? `?${params.toString()}` : ''}`);
+            const data = await r.json();
+            if (!r.ok) throw new Error(data.error || t('drive.fileListError'));
+            driveAvailableFiles = (data.files || []).map(normalizeDriveFile);
+            if (!driveSelectedFiles.length && Array.isArray(data.selected_files)) {
+                driveSelectedFiles = data.selected_files.map(normalizeDriveFile);
+            }
+            driveFilesLoaded = true;
+            renderDriveFileList();
+        } catch (err) {
+            driveFileList.innerHTML = `<div class="empty-state"><span class="text-faint">${escHtml(t('drive.fileListError'))}</span></div>`;
+            showAlert(driveErrorAlert, err.message || t('drive.fileListError'));
+        } finally {
+            setBtnLoading(driveRefreshFilesBtn, false, 'drive.refreshFiles');
+            if (driveRefreshFilesBtn) driveRefreshFilesBtn.disabled = !driveIsConnected;
+        }
+    }
+
+    function renderDriveStatus({ connected = false, runtime_ready = true, runtime_error = '', config = null } = {}) {
+        driveIsConnected = Boolean(connected);
+        if (config) {
+            if (driveFolderId) driveFolderId.value = config.folder_id || '';
+            if (driveTenantScope) driveTenantScope.value = config.tenant_scope || 'current';
+            if (driveFilePattern) driveFilePattern.value = config.file_pattern || '*.xlsx;*.xls;*.csv';
+            if (driveScheduleTime) driveScheduleTime.value = config.schedule_time || '23:30';
+            driveSelectedFiles = Array.isArray(config.selected_files)
+                ? config.selected_files.map(normalizeDriveFile)
+                : [];
+        }
+
+        if (driveConnectionStatus) {
+            const statusKey = !runtime_ready ? 'drive.statusNotReady' : (driveIsConnected ? 'drive.statusConnected' : 'drive.statusDisconnected');
+            driveConnectionStatus.textContent = t(statusKey);
+            driveConnectionStatus.className = `status-pill ${driveIsConnected ? 'tone-success' : 'tone-neutral'}`;
+            setRuntimeTranslation(driveConnectionStatus, statusKey);
+        }
+        if (driveDisconnectBtn) driveDisconnectBtn.disabled = !driveIsConnected;
+        if (driveRefreshFilesBtn) driveRefreshFilesBtn.disabled = !driveIsConnected || !runtime_ready;
+        if (driveSyncBtn) driveSyncBtn.disabled = !driveIsConnected || !runtime_ready || driveSelectedFiles.length === 0;
+        renderDriveFileList();
+        if (!runtime_ready && runtime_error) {
+            showAlert(driveErrorAlert, runtime_error, 'danger');
+        }
+    }
+
+    async function loadDriveStatus({ force = false } = {}) {
+        if (driveStatusLoaded && !force) return;
+        try {
+            const r = await fetch('/api/google-drive/status');
+            const data = await r.json();
+            if (!r.ok) throw new Error(data.error || t('drive.configLoadError'));
+            driveStatusLoaded = true;
+            renderDriveStatus(data);
+            if (data.connected) loadDriveFiles();
+        } catch (err) {
+            showAlert(driveErrorAlert, err.message || t('drive.configLoadError'));
+        }
+    }
+
+    async function saveDriveConfig() {
+        hideAlert(driveSuccessAlert);
+        hideAlert(driveErrorAlert);
+        const body = {
+            folder_id: driveFolderId?.value.trim() || '',
+            tenant_scope: driveTenantScope?.value || 'current',
+            file_pattern: driveFilePattern?.value.trim() || '*.xlsx;*.xls;*.csv',
+            selected_files: driveSelectedFiles.map(file => ({
+                id: file.id,
+                name: file.name,
+                mimeType: file.mimeType,
+            })),
+            schedule_time: driveScheduleTime?.value || '23:30',
+        };
+        setBtnLoading(driveSaveBtn, true, 'drive.save');
+        try {
+            const r = await fetch('/api/google-drive/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            const data = await r.json();
+            if (!r.ok) throw new Error(data.error || t('drive.configLoadError'));
+            renderDriveStatus({ connected: driveIsConnected, runtime_ready: true, config: data.config });
+            showAlert(driveSuccessAlert, '', 'success', 4000, 'drive.configSaved');
+            return true;
+        } catch (err) {
+            showAlert(driveErrorAlert, err.message || t('drive.configLoadError'));
+            return false;
+        } finally {
+            setBtnLoading(driveSaveBtn, false, 'drive.save');
+        }
+    }
+
+    driveConnectBtn?.addEventListener('click', async () => {
+        hideAlert(driveSuccessAlert);
+        hideAlert(driveErrorAlert);
+        setBtnLoading(driveConnectBtn, true, 'drive.connect');
+        try {
+            const r = await fetch('/api/google-drive/connect-url');
+            const data = await r.json();
+            if (!r.ok) throw new Error(data.error || t('drive.connectError'));
+            window.location.href = data.url;
+        } catch (err) {
+            showAlert(driveErrorAlert, err.message || t('drive.oauthUnavailable'));
+            setBtnLoading(driveConnectBtn, false, 'drive.connect');
+        }
     });
+
+    driveDisconnectBtn?.addEventListener('click', async () => {
+        hideAlert(driveSuccessAlert);
+        hideAlert(driveErrorAlert);
+        setBtnLoading(driveDisconnectBtn, true, 'drive.disconnect');
+        try {
+            const r = await fetch('/api/google-drive/disconnect', { method: 'POST' });
+            const data = await r.json();
+            if (!r.ok) throw new Error(data.error || t('drive.disconnectError'));
+            driveStatusLoaded = false;
+            driveFilesLoaded = false;
+            driveAvailableFiles = [];
+            driveSelectedFiles = [];
+            renderDriveStatus({ connected: false, runtime_ready: true });
+            showAlert(driveSuccessAlert, '', 'success', 4000, 'drive.disconnectSuccess');
+        } catch (err) {
+            showAlert(driveErrorAlert, err.message || t('drive.disconnectError'));
+        } finally {
+            setBtnLoading(driveDisconnectBtn, false, 'drive.disconnect');
+            if (!driveIsConnected && driveDisconnectBtn) driveDisconnectBtn.disabled = true;
+            if (!driveIsConnected && driveSyncBtn) driveSyncBtn.disabled = true;
+            if (!driveIsConnected && driveRefreshFilesBtn) driveRefreshFilesBtn.disabled = true;
+        }
+    });
+
+    driveRefreshFilesBtn?.addEventListener('click', () => {
+        loadDriveFiles({ force: true });
+    });
+
+    driveFileSearch?.addEventListener('input', () => {
+        window.clearTimeout(driveSearchTimer);
+        driveSearchTimer = window.setTimeout(() => {
+            driveFilesLoaded = false;
+            loadDriveFiles({ force: true });
+        }, 350);
+    });
+
+    driveSyncBtn?.addEventListener('click', async () => {
+        hideAlert(driveSuccessAlert);
+        hideAlert(driveErrorAlert);
+        if (!driveSelectedFiles.length) {
+            showAlert(driveErrorAlert, '', 'danger', 0, 'drive.folderRequired');
+            return;
+        }
+        const configSaved = await saveDriveConfig();
+        if (!configSaved) return;
+        setBtnLoading(driveSyncBtn, true, 'drive.syncRun');
+        try {
+            const r = await fetch('/api/google-drive/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ run_etl: true }),
+            });
+            const data = await r.json();
+            if (!r.ok) throw new Error(data.error || data.message || t('drive.syncError'));
+            const total = data.synced_files?.length || 0;
+            showAlert(driveSuccessAlert, `${t('drive.syncSuccess')} (${total})`, 'success', 0);
+        } catch (err) {
+            showAlert(driveErrorAlert, err.message || t('drive.syncError'));
+        } finally {
+            setBtnLoading(driveSyncBtn, false, 'drive.syncRun');
+        }
+    });
+
+    driveConfigForm?.addEventListener('submit', async event => {
+        event.preventDefault();
+        await saveDriveConfig();
+    });
+
+    const initialParams = new URLSearchParams(window.location.search);
+    if (initialParams.get('tab') === 'drive') {
+        document.querySelector('[data-tab="drive"]')?.click();
+    }
+    if (initialParams.get('drive') === 'connected') {
+        showAlert(driveSuccessAlert, '', 'success', 5000, 'drive.statusConnected');
+        loadDriveStatus({ force: true });
+    }
+    if (initialParams.get('drive_error')) {
+        showAlert(driveErrorAlert, initialParams.get('drive_error'), 'danger');
+        loadDriveStatus({ force: true });
+    }
 
     // ── Password toggle (show/hide) ───────────────────────────
     document.querySelectorAll('[data-toggle-password]').forEach(btn => {
