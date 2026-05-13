@@ -463,6 +463,28 @@ def process_supplier_file(conn, tenant_id: str, file_path: str, batch_date: date
     return {'rows_extracted': inserted, 'rows_inserted': inserted, 'rows_rejected': 0}
 
 
+def clear_staging_for_run(conn, tenant_id: str, source_types: set) -> None:
+    """Clear staging rows only for source domains included in the current ETL run."""
+    staging_tables = {
+        'sales': 'STG_SalesRaw',
+        'inventory': 'STG_InventoryRaw',
+        'customer': 'STG_CustomerRaw',
+        'product': 'STG_ProductRaw',
+        'purchase': 'STG_PurchaseRaw',
+    }
+    for source_type, table_name in staging_tables.items():
+        if source_type not in source_types:
+            continue
+
+        columns = get_table_columns(conn, table_name)
+        if 'TenantID' in columns:
+            run_sql(conn, f'DELETE FROM {table_name} WHERE TenantID = %s;', [tenant_id])
+        else:
+            # Product staging can be shared in older schemas; clear it only when a product file is part of this run.
+            run_sql(conn, f'DELETE FROM {table_name};')
+        logger.info(f'  [STAGING] Cleared {table_name} for current {source_type} load')
+
+
 # =============================================================================
 # Main ETL per tenant
 # =============================================================================
@@ -531,12 +553,14 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
 
         if not all_files and not failed_files:
             logger.warning(f'[{tenant_id}] No recognizable data files found in {landing_dir}')
-            return True
+            return False
 
         logger.info(
             f'[{tenant_id}] Found {len(all_files)} files: '
             f'{[(os.path.basename(f["path"]), f["type"]) for f in all_files]}'
         )
+        source_types = {f['type'] for f in all_files}
+        clear_staging_for_run(conn, tenant_id, source_types)
 
         # Track overall results
         total_stats = {
@@ -547,6 +571,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
             'purchase':   {'extracted': 0, 'inserted': 0},
             'supplier':   {'extracted': 0, 'inserted': 0},
         }
+        failed_types = set()
 
         # ---- PHASE 2: EXTRACT per file ----
         logger.info(f'[PHASE 2] EXTRACT — {tenant_id}')
@@ -583,6 +608,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
 
             except Exception as ex:
                 failed_files.append(fname)
+                failed_types.add(ftype)
                 logger.error(f'  [{tenant_id}] Failed to process {fname}: {ex}')
                 log_table = 'DimSupplier' if ftype == 'supplier' else (
                     f'STG_{ftype.title()}Raw' if ftype != 'product' else 'STG_ProductRaw'
@@ -597,6 +623,11 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                 except Exception as move_ex:
                     logger.error(f'  [{tenant_id}] Could not move failed file {fname}: {move_ex}')
                 # Continue with other files — don't abort the whole tenant
+
+        replace_fact_types = {
+            ftype for ftype in ('sales', 'inventory', 'purchase')
+            if total_stats[ftype]['extracted'] > 0 and ftype not in failed_types
+        }
 
         # ---- PHASE 3: TRANSFORM (Python — already done per-file for Sales) ----
         logger.info(f'[PHASE 3] TRANSFORM — {tenant_id} (handled inline in Phase 2 for Sales)')
@@ -700,6 +731,9 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
 
         # -- 5A. FactSales: STG_SalesRaw → FactSales --
         try:
+            if 'sales' in replace_fact_types:
+                run_sql(conn, 'DELETE FROM FactSales WHERE TenantID = %s;', [tenant_id])
+                logger.info('  [REPLACE] Cleared FactSales for current tenant')
             run_sql(conn, f"""
                 INSERT INTO FactSales (
                     TenantID, SaleDate, ProductID, CustomerID, StoreKey,
@@ -755,6 +789,9 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
 
         # -- 5B. FactInventory: STG_InventoryRaw → FactInventory --
         try:
+            if 'inventory' in replace_fact_types:
+                run_sql(conn, 'DELETE FROM FactInventory WHERE TenantID = %s;', [tenant_id])
+                logger.info('  [REPLACE] Cleared FactInventory for current tenant')
             run_sql(conn, f"""
                 INSERT INTO FactInventory (
                     TenantID, CheckDate, ProductID, StoreKey,
@@ -794,6 +831,9 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
 
         # -- 5C. FactPurchase: STG_PurchaseRaw → FactPurchase --
         try:
+            if 'purchase' in replace_fact_types:
+                run_sql(conn, 'DELETE FROM FactPurchase WHERE TenantID = %s;', [tenant_id])
+                logger.info('  [REPLACE] Cleared FactPurchase for current tenant')
             run_sql(conn, f"""
                 INSERT INTO FactPurchase (
                     TenantID, PurchaseDate, ProductID, SupplierID,

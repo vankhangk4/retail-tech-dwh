@@ -104,6 +104,14 @@ def get_tenant_data_dir(tenant_id: str) -> Path:
     return ensure_tenant_stage_dirs(tenant_id)['landing']
 
 
+def list_landing_source_files(tenant_id: str) -> list[Path]:
+    landing_dir = get_tenant_data_dir(tenant_id)
+    return sorted(
+        f for f in landing_dir.iterdir()
+        if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS
+    )
+
+
 def ensure_tenant_access(payload: dict, tenant_id: str) -> None:
     """Superadmin được thao tác mọi tenant; các role khác chỉ được đúng tenant trong JWT."""
     if payload.get('role') == 'superadmin':
@@ -146,6 +154,13 @@ async def save_upload_file(upload_file: UploadFile, dest_path: Path) -> int:
 
 
 def run_etl_for_tenant_sync(tenant_id: str) -> dict:
+    if not list_landing_source_files(tenant_id):
+        return {
+            'exit_code': 2,
+            'stdout': '',
+            'stderr': 'Chua upload du lieu moi trong 1_landing.',
+        }
+
     script_path = PROJECT_ROOT / 'etl' / 'orchestrator' / 'main_etl.py'
     env = {
         **os.environ,
@@ -336,6 +351,13 @@ async def trigger_etl(
     ensure_tenant_access(payload, tenant_id)
 
     validate_tenant(tenant_id)
+
+    landing_files = list_landing_source_files(tenant_id)
+    if not landing_files:
+        raise HTTPException(
+            400,
+            detail='Chua upload du lieu moi. Vui long upload file vao 1_landing truoc khi chay ETL.'
+        )
 
     background_tasks.add_task(run_etl_background, tenant_id)
 
