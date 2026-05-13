@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Thiết lập tài khoản | DWH Operations Console</title>
-    {% set asset_version = '20260513-avatar1' %}
+    {% set asset_version = '20260513-sidebar1' %}
     <script>
         (function () {
             try {
@@ -27,6 +27,15 @@
       data-user-id="{{ user.user_id or '' }}"
       data-access-token="{{ session.get('access_token', '') }}"
       data-ui-lang="vi">
+    <script>
+        (function () {
+            try {
+                if (window.innerWidth > 1024 && localStorage.getItem('dwh_sidebar_collapsed') === '1') {
+                    document.body.classList.add('sidebar-collapsed');
+                }
+            } catch (e) { /* ignore */ }
+        })();
+    </script>
     <a href="#mainContent" class="skip-link" data-i18n="page.skipLink">Bỏ qua điều hướng, chuyển tới nội dung chính</a>
 
     {% set sidebar_surface = 'settings' %}

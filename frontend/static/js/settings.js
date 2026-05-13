@@ -659,20 +659,33 @@
 
     // ── Sidebar toggle ────────────────────────────────────────
     const toggleBtn = document.getElementById('toggleSidebar');
+    const SIDEBAR_COLLAPSE_KEY = 'dwh_sidebar_collapsed';
+
+    function readCollapsedPref() {
+        try { return localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === '1'; } catch (_) { return false; }
+    }
+    function writeCollapsedPref(value) {
+        try { localStorage.setItem(SIDEBAR_COLLAPSE_KEY, value ? '1' : '0'); } catch (_) { /* ignore */ }
+    }
+
     function setSidebarState() {
-        document.body.classList.remove('sidebar-collapsed');
-        if (window.innerWidth > 1024) {
+        if (window.innerWidth <= 1024) {
+            document.body.classList.remove('sidebar-collapsed');
+        } else {
             document.body.classList.remove('sidebar-open');
+            document.body.classList.toggle('sidebar-collapsed', readCollapsedPref());
         }
         syncSidebarChrome();
     }
 
     function toggleSidebar() {
         if (window.innerWidth > 1024) {
-            syncSidebarChrome();
-            return;
+            const willCollapse = !document.body.classList.contains('sidebar-collapsed');
+            document.body.classList.toggle('sidebar-collapsed', willCollapse);
+            writeCollapsedPref(willCollapse);
+        } else {
+            document.body.classList.toggle('sidebar-open');
         }
-        document.body.classList.toggle('sidebar-open');
         syncSidebarChrome();
     }
 
@@ -684,8 +697,12 @@
     }
 
     function syncSidebarChrome() {
-        const expanded = window.innerWidth > 1024 || document.body.classList.contains('sidebar-open');
-        toggleBtn?.setAttribute('aria-expanded', String(expanded));
+        if (!toggleBtn) return;
+        const isMobile = window.innerWidth <= 1024;
+        const expanded = isMobile
+            ? document.body.classList.contains('sidebar-open')
+            : !document.body.classList.contains('sidebar-collapsed');
+        toggleBtn.setAttribute('aria-expanded', String(expanded));
     }
 
     if (toggleBtn) toggleBtn.addEventListener('click', toggleSidebar);
