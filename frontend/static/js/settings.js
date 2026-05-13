@@ -5,8 +5,297 @@
 (function () {
     'use strict';
 
-    // ── Health check / logout (shared with dashboard) ────────
+    const APP_CONTEXT = {
+        userRole: document.body.dataset.userRole || 'viewer',
+        userTenant: document.body.dataset.userTenant || '',
+    };
+
+    const LANGUAGE_STORAGE_KEY = 'dwh_ui_lang';
+    const LEGACY_LANGUAGE_STORAGE_KEYS = ['dwh_settings_ui_lang'];
+    const SUPPORTED_LANGUAGES = new Set(['vi', 'en']);
+
+    const COPY = {
+        vi: {
+            language: {
+                vietnamese: 'Tiếng Việt',
+                english: 'English',
+            },
+            common: {
+                notAvailable: 'Chưa xác định',
+                processing: 'Đang xử lý',
+            },
+            roles: {
+                superadmin: 'Quản trị hệ thống',
+                admin: 'Quản trị chi nhánh',
+                viewer: 'Người xem báo cáo',
+            },
+            page: {
+                browserTitle: 'Thiết lập tài khoản | DWH Operations Console',
+                skipLink: 'Bỏ qua điều hướng, chuyển tới nội dung chính',
+                closeNavigation: 'Đóng thanh điều hướng',
+                toggleNavigation: 'Thu gọn hoặc mở thanh điều hướng',
+                eyebrow: 'Người dùng',
+                title: 'Thiết lập tài khoản',
+                description: 'Quản trị hồ sơ người dùng, thông tin liên hệ và bảo mật truy cập của tài khoản đang đăng nhập.',
+                usernameChip: 'Tên đăng nhập',
+                roleChip: 'Vai trò',
+                languageLabel: 'Ngôn ngữ',
+                languageSelectAria: 'Chọn ngôn ngữ giao diện',
+                tabsAria: 'Nhóm chức năng thiết lập',
+            },
+            tabs: {
+                profile: 'Hồ sơ tài khoản',
+                security: 'Bảo mật truy cập',
+            },
+            profile: {
+                avatarTitle: 'Ảnh đại diện',
+                avatarDesc: 'Cập nhật ảnh nhận diện dùng tại thanh điều hướng và các màn hình tài khoản. Hỗ trợ JPG, PNG, WEBP, dung lượng đầu vào tối đa 8 MB.',
+                avatarPreviewAria: 'Ảnh đại diện hiện hành',
+                avatarAlt: 'Ảnh đại diện người dùng',
+                avatarUploadTitle: 'Cập nhật ảnh đại diện',
+                avatarInputAria: 'Chọn tệp ảnh đại diện',
+                avatarHint: 'Hệ thống tự động chuẩn hóa ảnh về kích thước tối đa 200×200 px trước khi lưu.',
+                avatarRemove: 'Xóa ảnh hiện hành',
+                avatarUpdated: 'Đã cập nhật ảnh đại diện.',
+                avatarRemoved: 'Đã xóa ảnh đại diện.',
+                infoTitle: 'Thông tin tài khoản',
+                infoDesc: 'Cập nhật tên hiển thị và đầu mối liên hệ phục vụ trao đổi vận hành.',
+                usernameLabel: 'Tên đăng nhập',
+                roleLabel: 'Vai trò',
+                tenantLabel: 'Chi nhánh',
+                createdAtLabel: 'Ngày tạo tài khoản',
+                displayNameLabel: 'Tên hiển thị',
+                displayNamePlaceholder: 'Nhập họ tên hoặc tên đầu mối phụ trách',
+                displayNameHint: 'Hiển thị tại thanh điều hướng và các màn hình báo cáo.',
+                emailLabel: 'Email',
+                emailPlaceholder: 'ten.nguoi.dung@congty.vn',
+                phoneLabel: 'Số điện thoại liên hệ',
+                phonePlaceholder: 'Ví dụ: 0900 000 000',
+                save: 'Lưu cập nhật',
+                reset: 'Khôi phục',
+                loadError: 'Không thể tải thông tin tài khoản. Vui lòng tải lại màn hình.',
+                updateSuccess: 'Đã lưu cập nhật thông tin tài khoản.',
+                updateError: 'Không thể cập nhật thông tin tài khoản.',
+                avatarUploadError: 'Không thể tải ảnh đại diện.',
+                avatarDeleteError: 'Không thể xóa ảnh đại diện.',
+                avatarFileTooLarge: 'Tệp ảnh vượt dung lượng cho phép, tối đa 8 MB trước khi chuẩn hóa.',
+                avatarReadError: 'Không thể đọc tệp ảnh.',
+                fileReadError: 'Không thể đọc tệp đã chọn.',
+            },
+            security: {
+                title: 'Cập nhật mật khẩu',
+                desc: 'Thiết lập mật khẩu mới cho tài khoản đăng nhập. Mật khẩu nên có tối thiểu 6 ký tự và bao gồm nhiều nhóm ký tự.',
+                currentPasswordLabel: 'Mật khẩu hiện hành',
+                currentPasswordPlaceholder: 'Nhập mật khẩu hiện hành',
+                newPasswordLabel: 'Mật khẩu mới',
+                newPasswordPlaceholder: 'Tối thiểu 6 ký tự',
+                confirmPasswordLabel: 'Xác nhận mật khẩu mới',
+                confirmPasswordPlaceholder: 'Nhập lại để xác nhận',
+                togglePasswordAria: 'Hiển thị hoặc ẩn mật khẩu',
+                save: 'Lưu mật khẩu mới',
+                confirmMismatch: 'Mật khẩu xác nhận không trùng khớp.',
+                minLengthError: 'Mật khẩu mới phải có tối thiểu 6 ký tự.',
+                updateSuccess: 'Đã cập nhật mật khẩu. Vui lòng đăng nhập lại nếu hệ thống yêu cầu.',
+                updateError: 'Không thể cập nhật mật khẩu.',
+                strength: {
+                    weak: 'Yếu',
+                    medium: 'Trung bình',
+                    fair: 'Khá',
+                    strong: 'Mạnh',
+                },
+            },
+            history: {
+                title: 'Nhật ký đăng nhập',
+                desc: 'Theo dõi 20 phiên gần nhất để đối soát hoạt động truy cập tài khoản.',
+                refresh: 'Làm mới',
+                time: 'Thời điểm',
+                ip: 'IP truy cập',
+                device: 'Thiết bị / Trình duyệt',
+                result: 'Kết quả',
+                loading: 'Đang tải nhật ký đăng nhập...',
+                emptyTitle: 'Chưa phát sinh dữ liệu',
+                emptyDesc: 'Hệ thống chưa ghi nhận phiên đăng nhập trong phạm vi theo dõi.',
+                error: 'Không thể tải nhật ký đăng nhập.',
+                success: 'Thành công',
+                failure: 'Không thành công',
+                currentSession: 'Phiên hiện tại',
+                unknownClient: 'Chưa xác định',
+            },
+            sidebar: {
+                brandMeta: 'Trung tâm vận hành cho hệ thống Data Warehouse đa chi nhánh',
+                scopePrefix: 'Phạm vi dữ liệu',
+                scopeAll: 'Toàn hệ thống',
+                scopeBranchMode: 'Phạm vi chi nhánh',
+                groupOperations: 'Vận hành',
+                groupAnalytics: 'Phân tích',
+                groupAdmin: 'Quản trị',
+                groupAccount: 'Tài khoản',
+                primaryNavAria: 'Điều hướng chính',
+                overviewTitle: 'Tổng quan',
+                overviewMeta: 'Chỉ báo vận hành',
+                etlTitle: 'Vận hành ETL',
+                etlMeta: 'Nạp dữ liệu và ETL',
+                analysisTitle: 'Phân tích',
+                analysisMeta: 'Truy cập 5 báo cáo phân tích',
+                manageTitle: 'Quản lý chi nhánh',
+                manageMeta: 'Người dùng theo chi nhánh',
+                adminTitle: 'Quản trị hệ thống',
+                adminMeta: 'Chi nhánh, người dùng, giám sát ETL',
+                settingsTitle: 'Thiết lập',
+                settingsMeta: 'Thông tin và bảo mật',
+                healthLoading: 'Đang kiểm tra kết nối API',
+                healthHealthy: 'Kết nối API ổn định',
+                healthCheck: 'Cần kiểm tra kết nối API',
+                signOut: 'Đăng xuất',
+            },
+        },
+        en: {
+            language: {
+                vietnamese: 'Vietnamese',
+                english: 'English',
+            },
+            common: {
+                notAvailable: 'Not available',
+                processing: 'Processing',
+            },
+            roles: {
+                superadmin: 'System Administrator',
+                admin: 'Branch Administrator',
+                viewer: 'Report Viewer',
+            },
+            page: {
+                browserTitle: 'Account Settings | DWH Operations Console',
+                skipLink: 'Skip navigation and go to main content',
+                closeNavigation: 'Close navigation panel',
+                toggleNavigation: 'Collapse or open navigation panel',
+                eyebrow: 'User',
+                title: 'Account Settings',
+                description: 'Manage the active account profile, contact information, and access security.',
+                usernameChip: 'Username',
+                roleChip: 'Role',
+                languageLabel: 'Language',
+                languageSelectAria: 'Choose interface language',
+                tabsAria: 'Settings function groups',
+            },
+            tabs: {
+                profile: 'Account Profile',
+                security: 'Access Security',
+            },
+            profile: {
+                avatarTitle: 'Avatar',
+                avatarDesc: 'Update the identity image used in navigation and account views. Supports JPG, PNG, and WEBP. Maximum upload size is 8 MB.',
+                avatarPreviewAria: 'Current avatar',
+                avatarAlt: 'User avatar',
+                avatarUploadTitle: 'Update avatar',
+                avatarInputAria: 'Select avatar image file',
+                avatarHint: 'The system standardizes the image to a maximum size of 200×200 px before saving.',
+                avatarRemove: 'Remove current avatar',
+                avatarUpdated: 'Avatar updated.',
+                avatarRemoved: 'Avatar removed.',
+                infoTitle: 'Account Information',
+                infoDesc: 'Update the display name and contact details used for operational coordination.',
+                usernameLabel: 'Username',
+                roleLabel: 'Role',
+                tenantLabel: 'Branch',
+                createdAtLabel: 'Account Created On',
+                displayNameLabel: 'Display Name',
+                displayNamePlaceholder: 'Enter the full name or operational contact name',
+                displayNameHint: 'Displayed in navigation and reporting screens.',
+                emailLabel: 'Email',
+                emailPlaceholder: 'user.name@company.com',
+                phoneLabel: 'Contact Phone Number',
+                phonePlaceholder: 'Example: +84 900 000 000',
+                save: 'Save Changes',
+                reset: 'Restore Values',
+                loadError: 'Unable to load account information. Please reload the screen.',
+                updateSuccess: 'Account information updated.',
+                updateError: 'Unable to update account information.',
+                avatarUploadError: 'Unable to upload the avatar.',
+                avatarDeleteError: 'Unable to remove the avatar.',
+                avatarFileTooLarge: 'The image file exceeds the allowed size. Maximum input size is 8 MB before standardization.',
+                avatarReadError: 'Unable to read the image file.',
+                fileReadError: 'Unable to read the selected file.',
+            },
+            security: {
+                title: 'Update Password',
+                desc: 'Set a new password for the sign-in account. Use at least 6 characters and combine multiple character groups where possible.',
+                currentPasswordLabel: 'Current Password',
+                currentPasswordPlaceholder: 'Enter the current password',
+                newPasswordLabel: 'New Password',
+                newPasswordPlaceholder: 'Minimum 6 characters',
+                confirmPasswordLabel: 'Confirm New Password',
+                confirmPasswordPlaceholder: 'Enter again to confirm',
+                togglePasswordAria: 'Show or hide password',
+                save: 'Save New Password',
+                confirmMismatch: 'The confirmation password does not match.',
+                minLengthError: 'The new password must contain at least 6 characters.',
+                updateSuccess: 'Password updated. Sign in again if the system requests it.',
+                updateError: 'Unable to update the password.',
+                strength: {
+                    weak: 'Weak',
+                    medium: 'Moderate',
+                    fair: 'Good',
+                    strong: 'Strong',
+                },
+            },
+            history: {
+                title: 'Sign-in Log',
+                desc: 'Review the latest 20 sessions to reconcile account access activity.',
+                refresh: 'Refresh',
+                time: 'Timestamp',
+                ip: 'IP Address',
+                device: 'Device / Browser',
+                result: 'Result',
+                loading: 'Loading the sign-in log...',
+                emptyTitle: 'No records available',
+                emptyDesc: 'No sign-in sessions have been recorded in the monitored window.',
+                error: 'Unable to load the sign-in log.',
+                success: 'Successful',
+                failure: 'Unsuccessful',
+                currentSession: 'Current Session',
+                unknownClient: 'Not identified',
+            },
+            sidebar: {
+                brandMeta: 'Operations hub for the multi-branch Data Warehouse platform',
+                scopePrefix: 'Data scope',
+                scopeAll: 'System-wide',
+                scopeBranchMode: 'Branch scope',
+                groupOperations: 'Operations',
+                groupAnalytics: 'Analytics',
+                groupAdmin: 'Administration',
+                groupAccount: 'Account',
+                primaryNavAria: 'Primary navigation',
+                overviewTitle: 'Overview',
+                overviewMeta: 'Operational signals',
+                etlTitle: 'ETL Operations',
+                etlMeta: 'Data upload and ETL',
+                analysisTitle: 'Analytics',
+                analysisMeta: 'Access 5 analytical reports',
+                manageTitle: 'Branch Management',
+                manageMeta: 'Users by branch',
+                adminTitle: 'System Administration',
+                adminMeta: 'Branches, users, and ETL monitoring',
+                settingsTitle: 'Settings',
+                settingsMeta: 'Profile and security',
+                healthLoading: 'Checking API connection',
+                healthHealthy: 'API connection is healthy',
+                healthCheck: 'Check API connection',
+                signOut: 'Sign out',
+            },
+        },
+    };
+
+    const strengthLabelKeys = ['', 'security.strength.weak', 'security.strength.medium', 'security.strength.fair', 'security.strength.strong'];
+
+    let currentLanguage = 'vi';
+    let profileCache = null;
+    let healthState = 'loading';
+    let loginHistoryCache = [];
+    let loginHistoryState = 'idle';
+
     const logoutBtn = document.getElementById('logoutBtn');
+    const languageSelect = document.getElementById('languageSelect');
+
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
             try {
@@ -17,16 +306,215 @@
         });
     }
 
-    fetch('/api/health').then(r => r.json()).then(data => {
+    function normalizeLanguage(value) {
+        return SUPPORTED_LANGUAGES.has(value) ? value : 'vi';
+    }
+
+    function loadSavedLanguage() {
+        try {
+            const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+            if (saved) {
+                return normalizeLanguage(saved);
+            }
+
+            for (const key of LEGACY_LANGUAGE_STORAGE_KEYS) {
+                const legacyValue = localStorage.getItem(key);
+                if (!legacyValue) continue;
+                const normalizedLegacy = normalizeLanguage(legacyValue);
+                localStorage.setItem(LANGUAGE_STORAGE_KEY, normalizedLegacy);
+                return normalizedLegacy;
+            }
+
+            return 'vi';
+        } catch (error) {
+            return 'vi';
+        }
+    }
+
+    function saveLanguage(value) {
+        try {
+            localStorage.setItem(LANGUAGE_STORAGE_KEY, value);
+        } catch (error) {
+            // Ignore storage failures and keep the current in-memory language.
+        }
+    }
+
+    function resolveCopy(path) {
+        return path.split('.').reduce((acc, part) => (acc && acc[part] !== undefined ? acc[part] : undefined), COPY[currentLanguage]);
+    }
+
+    function t(path) {
+        return resolveCopy(path) ?? path;
+    }
+
+    function translateStaticCopy() {
+        document.documentElement.lang = currentLanguage;
+        document.body.dataset.uiLang = currentLanguage;
+        document.title = t('page.browserTitle');
+
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            el.textContent = t(el.dataset.i18n);
+        });
+
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            el.placeholder = t(el.dataset.i18nPlaceholder);
+        });
+
+        document.querySelectorAll('[data-i18n-title]').forEach(el => {
+            el.title = t(el.dataset.i18nTitle);
+        });
+
+        document.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
+            el.setAttribute('aria-label', t(el.dataset.i18nAriaLabel));
+        });
+
+        document.querySelectorAll('[data-i18n-alt]').forEach(el => {
+            el.alt = t(el.dataset.i18nAlt);
+        });
+
+        if (languageSelect) languageSelect.value = currentLanguage;
+    }
+
+    function translateRole(role) {
+        return t(`roles.${role}`);
+    }
+
+    function syncRoleLabels() {
+        const roleLabel = translateRole(APP_CONTEXT.userRole);
+        const headerRoleValue = document.getElementById('headerRoleValue');
+        if (headerRoleValue) headerRoleValue.textContent = roleLabel;
+
+        const identityRolePill = document.getElementById('identityRolePill');
+        if (identityRolePill) identityRolePill.textContent = roleLabel;
+
+        const sidebarRoleLabel = document.getElementById('sidebarRoleLabel');
+        if (sidebarRoleLabel) sidebarRoleLabel.textContent = roleLabel;
+    }
+
+    function syncScopeLabels() {
+        const sidebarScopeText = document.getElementById('sidebarScopeText');
+        const sidebarScopeModeChip = document.getElementById('sidebarScopeModeChip');
+        const tenant = APP_CONTEXT.userTenant;
+
+        if (sidebarScopeText) {
+            sidebarScopeText.textContent = tenant
+                ? `${t('sidebar.scopePrefix')}: ${tenant}`
+                : `${t('sidebar.scopePrefix')}: ${t('sidebar.scopeAll')}`;
+        }
+
+        if (sidebarScopeModeChip) {
+            sidebarScopeModeChip.textContent = tenant ? t('sidebar.scopeBranchMode') : t('sidebar.scopeAll');
+        }
+    }
+
+    function applyFallbackProfileValues() {
+        const fallback = t('common.notAvailable');
+        const headerUsername = document.getElementById('headerUsername');
+        const identityUsername = document.getElementById('identityUsername');
+        const identityCreatedAt = document.getElementById('identityCreatedAt');
+
+        if (headerUsername) headerUsername.textContent = fallback;
+        if (identityUsername) identityUsername.textContent = fallback;
+        if (identityCreatedAt) identityCreatedAt.textContent = fallback;
+    }
+
+    function renderHealthIndicator() {
         const el = document.getElementById('healthIndicator');
         if (!el) return;
-        const ok = data.api === 'ok';
-        el.innerHTML = `<span class="status-pill status-pill--plain ${ok ? 'tone-success' : 'tone-danger'}"><span class="health-dot ${ok ? 'is-live' : 'is-danger'}"></span>${ok ? 'API ổn định' : 'API cần kiểm tra'}</span>`;
-    }).catch(() => {
-        const el = document.getElementById('healthIndicator');
+
+        if (healthState === 'loading') {
+            el.innerHTML = `<span class="status-pill status-pill--plain tone-neutral">${escHtml(t('sidebar.healthLoading'))}</span>`;
+            return;
+        }
+
+        const isHealthy = healthState === 'ok';
+        const pillTone = isHealthy ? 'tone-success' : 'tone-danger';
+        const dotTone = isHealthy ? 'is-live' : 'is-danger';
+        const label = isHealthy ? t('sidebar.healthHealthy') : t('sidebar.healthCheck');
+
+        el.innerHTML = `<span class="status-pill status-pill--plain ${pillTone}"><span class="health-dot ${dotTone}"></span>${escHtml(label)}</span>`;
+    }
+
+    function reapplyRuntimeTranslations() {
+        document.querySelectorAll('[data-i18n-runtime]').forEach(el => {
+            const key = el.dataset.i18nRuntime;
+            if (key) el.textContent = t(key);
+        });
+    }
+
+    function applyLanguage(lang) {
+        currentLanguage = normalizeLanguage(lang);
+        saveLanguage(currentLanguage);
+        translateStaticCopy();
+        syncRoleLabels();
+        syncScopeLabels();
+        renderHealthIndicator();
+        if (profileCache) {
+            populateProfile(profileCache);
+        } else {
+            applyFallbackProfileValues();
+        }
+        updatePasswordStrength();
+        renderLoginHistory();
+        reapplyRuntimeTranslations();
+    }
+
+    function setRuntimeTranslation(el, translationKey) {
         if (!el) return;
-        el.innerHTML = `<span class="status-pill status-pill--plain tone-danger"><span class="health-dot is-danger"></span>API cần kiểm tra</span>`;
-    });
+        if (translationKey) {
+            el.dataset.i18nRuntime = translationKey;
+        } else {
+            delete el.dataset.i18nRuntime;
+        }
+    }
+
+    function showAlert(el, msg, type = 'danger', timeoutMs = 0, translationKey = '') {
+        if (!el) return;
+        window.clearTimeout(el._hideTimer);
+        el.textContent = translationKey ? t(translationKey) : msg;
+        el.className = `alert alert--${type}`;
+        el.classList.remove('is-hidden');
+        el.classList.add('is-visible');
+        setRuntimeTranslation(el, translationKey);
+        if (timeoutMs > 0) {
+            el._hideTimer = window.setTimeout(() => {
+                hideAlert(el);
+            }, timeoutMs);
+        }
+    }
+
+    function hideAlert(el) {
+        if (!el) return;
+        window.clearTimeout(el._hideTimer);
+        el.classList.add('is-hidden');
+        el.classList.remove('is-visible');
+        el.textContent = '';
+        setRuntimeTranslation(el, '');
+    }
+
+    function setFieldError(el, translationKey = '') {
+        if (!el) return;
+        el.textContent = translationKey ? t(translationKey) : '';
+        setRuntimeTranslation(el, translationKey);
+    }
+
+    function setBtnLoading(btn, loading, labelKey) {
+        if (!btn) return;
+        btn.disabled = loading;
+        const labelEl = btn.querySelector('.button__label');
+        if (labelEl) labelEl.textContent = loading ? t('common.processing') : t(labelKey);
+    }
+
+    fetch('/api/health')
+        .then(r => r.json())
+        .then(data => {
+            healthState = data.api === 'ok' ? 'ok' : 'error';
+            renderHealthIndicator();
+        })
+        .catch(() => {
+            healthState = 'error';
+            renderHealthIndicator();
+        });
 
     // ── Sidebar toggle ────────────────────────────────────────
     const toggleBtn = document.getElementById('toggleSidebar');
@@ -68,7 +556,7 @@
     setSidebarState();
 
     // ── Tab switching ─────────────────────────────────────────
-    const tabBtns   = document.querySelectorAll('.settings-tab-btn');
+    const tabBtns = document.querySelectorAll('.settings-tab-btn');
     const tabPanels = document.querySelectorAll('.tab-panel');
 
     tabBtns.forEach(btn => {
@@ -82,8 +570,7 @@
             tabPanels.forEach(panel => {
                 panel.classList.toggle('is-hidden', panel.id !== `tab-${target}`);
             });
-            // Load login history lazily when security tab opens
-            if (target === 'security' && !historyLoaded) {
+            if (target === 'security' && loginHistoryState === 'idle') {
                 loadLoginHistory();
             }
         });
@@ -109,7 +596,7 @@
     document.querySelectorAll('[data-toggle-password]').forEach(btn => {
         btn.addEventListener('click', () => {
             const targetId = btn.dataset.target;
-            const input    = document.getElementById(targetId);
+            const input = document.getElementById(targetId);
             if (!input) return;
             const isHidden = input.type === 'password';
             input.type = isHidden ? 'text' : 'password';
@@ -117,42 +604,9 @@
         });
     });
 
-    // ── Alert helpers ─────────────────────────────────────────
-    function showAlert(el, msg, type = 'danger', timeoutMs = 0) {
-        if (!el) return;
-        window.clearTimeout(el._hideTimer);
-        el.textContent = msg;
-        el.className = `alert alert--${type}`;
-        el.classList.remove('is-hidden');
-        el.classList.add('is-visible');
-        if (timeoutMs > 0) {
-            el._hideTimer = window.setTimeout(() => {
-                hideAlert(el);
-            }, timeoutMs);
-        }
-    }
-
-    function hideAlert(el) {
-        if (!el) return;
-        window.clearTimeout(el._hideTimer);
-        el.classList.add('is-hidden');
-        el.classList.remove('is-visible');
-        el.textContent = '';
-    }
-
-    // ── Button loading state ──────────────────────────────────
-    function setBtnLoading(btn, loading, label) {
-        if (!btn) return;
-        btn.disabled = loading;
-        const labelEl = btn.querySelector('.button__label');
-        if (labelEl) labelEl.textContent = loading ? 'Đang xử lý...' : label;
-    }
-
     // ══════════════════════════════════════════════════════════
     // Load profile on page open
     // ══════════════════════════════════════════════════════════
-    let profileCache = null;
-
     async function loadProfile() {
         try {
             const r = await fetch('/api/me/profile');
@@ -161,19 +615,21 @@
             profileCache = data;
             populateProfile(data);
         } catch (error) {
-            showAlert(profileErrorAlert, 'Không tải được hồ sơ tài khoản. Vui lòng thử tải lại trang.');
+            showAlert(profileErrorAlert, '', 'danger', 0, 'profile.loadError');
         }
     }
 
     function populateProfile(data) {
+        const fallback = t('common.notAvailable');
+
         const headerUsername = document.getElementById('headerUsername');
-        if (headerUsername) headerUsername.textContent = data.username || '—';
+        if (headerUsername) headerUsername.textContent = data.username || fallback;
 
         const identityUsername = document.getElementById('identityUsername');
-        if (identityUsername) identityUsername.textContent = data.username || '—';
+        if (identityUsername) identityUsername.textContent = data.username || fallback;
 
         const identityCreatedAt = document.getElementById('identityCreatedAt');
-        if (identityCreatedAt) identityCreatedAt.textContent = data.created_at || '—';
+        if (identityCreatedAt) identityCreatedAt.textContent = data.created_at || fallback;
 
         const displayName = document.getElementById('displayName');
         if (displayName) displayName.value = data.display_name || '';
@@ -184,14 +640,12 @@
         const phone = document.getElementById('phone');
         if (phone) phone.value = data.phone || '';
 
-        // Avatar
         if (data.avatar_data) {
             setAvatarImage(data.avatar_data, data.username || '?');
         } else {
             clearAvatarImage(data.username || '?');
         }
 
-        // Update sidebar avatar initials with display_name if available
         if (sidebarAvatarInitial && (data.display_name || data.username)) {
             const name = data.display_name || data.username;
             sidebarAvatarInitial.textContent = name[0].toUpperCase();
@@ -201,12 +655,12 @@
     // ══════════════════════════════════════════════════════════
     // Avatar handling
     // ══════════════════════════════════════════════════════════
-    const avatarInput     = document.getElementById('avatarInput');
-    const avatarImg       = document.getElementById('avatarImg');
-    const avatarInitials  = document.getElementById('avatarInitials');
+    const avatarInput = document.getElementById('avatarInput');
+    const avatarImg = document.getElementById('avatarImg');
+    const avatarInitials = document.getElementById('avatarInitials');
     const avatarRemoveBtn = document.getElementById('avatarRemoveBtn');
     const avatarSuccessMsg = document.getElementById('avatarSuccessMsg');
-    const avatarErrorMsg   = document.getElementById('avatarErrorMsg');
+    const avatarErrorMsg = document.getElementById('avatarErrorMsg');
     const sidebarAvatarInitial = document.getElementById('sidebarAvatarInitial');
     const sidebarAvatarImg = document.getElementById('sidebarAvatarImg');
 
@@ -247,11 +701,10 @@
         }
     }
 
-    // Resize image to max 200×200 using Canvas, return base64 JPEG
     function resizeImage(file, maxDim = 200) {
         return new Promise((resolve, reject) => {
             if (file.size > 8_000_000) {
-                reject(new Error('Ảnh quá lớn — tối đa 8MB trước khi nén'));
+                reject(new Error(t('profile.avatarFileTooLarge')));
                 return;
             }
             const reader = new FileReader();
@@ -262,16 +715,16 @@
                     const w = Math.round(img.width * scale);
                     const h = Math.round(img.height * scale);
                     const canvas = document.createElement('canvas');
-                    canvas.width  = w;
+                    canvas.width = w;
                     canvas.height = h;
                     const ctx2 = canvas.getContext('2d');
                     ctx2.drawImage(img, 0, 0, w, h);
                     resolve(canvas.toDataURL('image/jpeg', 0.88));
                 };
-                img.onerror = () => reject(new Error('Không đọc được file ảnh'));
+                img.onerror = () => reject(new Error(t('profile.avatarReadError')));
                 img.src = evt.target.result;
             };
-            reader.onerror = () => reject(new Error('Không đọc được file'));
+            reader.onerror = () => reject(new Error(t('profile.fileReadError')));
             reader.readAsDataURL(file);
         });
     }
@@ -290,14 +743,13 @@
                     body: JSON.stringify({ avatar_data: dataUrl }),
                 });
                 const data = await r.json();
-                if (!r.ok) throw new Error(data.detail || data.error || 'Lỗi tải ảnh');
+                if (!r.ok) throw new Error(data.detail || data.error || t('profile.avatarUploadError'));
 
                 const username = profileCache?.username || '?';
                 setAvatarImage(dataUrl, username);
-
-                showAlert(avatarSuccessMsg, 'Ảnh đại diện đã được cập nhật.', 'success', 4000);
+                showAlert(avatarSuccessMsg, '', 'success', 4000, 'profile.avatarUpdated');
             } catch (err) {
-                showAlert(avatarErrorMsg, err.message || 'Lỗi tải ảnh lên');
+                showAlert(avatarErrorMsg, err.message || t('profile.avatarUploadError'));
             } finally {
                 avatarInput.value = '';
             }
@@ -309,12 +761,12 @@
             hideAlert(avatarErrorMsg);
             try {
                 const r = await fetch('/api/me/avatar', { method: 'DELETE' });
-                if (!r.ok) throw new Error('Lỗi xóa ảnh');
+                if (!r.ok) throw new Error(t('profile.avatarDeleteError'));
                 const username = profileCache?.username || '?';
                 clearAvatarImage(username);
-                showAlert(avatarSuccessMsg, 'Đã xóa ảnh đại diện.', 'success', 3000);
+                showAlert(avatarSuccessMsg, '', 'success', 3000, 'profile.avatarRemoved');
             } catch (err) {
-                showAlert(avatarErrorMsg, 'Không xóa được ảnh đại diện');
+                showAlert(avatarErrorMsg, err.message || t('profile.avatarDeleteError'));
             }
         });
     }
@@ -322,23 +774,23 @@
     // ══════════════════════════════════════════════════════════
     // Profile form submit
     // ══════════════════════════════════════════════════════════
-    const profileForm         = document.getElementById('profileForm');
-    const profileErrorAlert   = document.getElementById('profileErrorAlert');
+    const profileForm = document.getElementById('profileForm');
+    const profileErrorAlert = document.getElementById('profileErrorAlert');
     const profileSuccessAlert = document.getElementById('profileSuccessAlert');
-    const profileSaveBtn      = document.getElementById('profileSaveBtn');
-    const profileResetBtn     = document.getElementById('profileResetBtn');
+    const profileSaveBtn = document.getElementById('profileSaveBtn');
+    const profileResetBtn = document.getElementById('profileResetBtn');
 
     if (profileForm) {
         profileForm.addEventListener('submit', async e => {
             e.preventDefault();
             hideAlert(profileErrorAlert);
             hideAlert(profileSuccessAlert);
-            setBtnLoading(profileSaveBtn, true, 'Lưu thay đổi');
+            setBtnLoading(profileSaveBtn, true, 'profile.save');
 
             const body = {
                 display_name: document.getElementById('displayName')?.value.trim() || null,
-                email:        document.getElementById('email')?.value.trim() || null,
-                phone:        document.getElementById('phone')?.value.trim() || null,
+                email: document.getElementById('email')?.value.trim() || null,
+                phone: document.getElementById('phone')?.value.trim() || null,
             };
 
             try {
@@ -348,15 +800,14 @@
                     body: JSON.stringify(body),
                 });
                 const data = await r.json();
-                if (!r.ok) throw new Error(data.detail || data.error || 'Lỗi cập nhật');
+                if (!r.ok) throw new Error(data.detail || data.error || t('profile.updateError'));
 
                 if (profileCache) {
                     profileCache.display_name = body.display_name;
-                    profileCache.email        = body.email;
-                    profileCache.phone        = body.phone;
+                    profileCache.email = body.email;
+                    profileCache.phone = body.phone;
                 }
 
-                // Update sidebar initial if display_name changed
                 const name = body.display_name || profileCache?.username || '?';
                 if (sidebarAvatarInitial && sidebarAvatarImg?.classList.contains('is-hidden')) {
                     sidebarAvatarInitial.textContent = name[0].toUpperCase();
@@ -365,11 +816,11 @@
                     avatarInitials.textContent = name[0].toUpperCase();
                 }
 
-                showAlert(profileSuccessAlert, 'Hồ sơ đã được cập nhật thành công.', 'success');
+                showAlert(profileSuccessAlert, '', 'success', 0, 'profile.updateSuccess');
             } catch (err) {
-                showAlert(profileErrorAlert, err.message || 'Lỗi cập nhật hồ sơ');
+                showAlert(profileErrorAlert, err.message || t('profile.updateError'));
             } finally {
-                setBtnLoading(profileSaveBtn, false, 'Lưu thay đổi');
+                setBtnLoading(profileSaveBtn, false, 'profile.save');
             }
         });
     }
@@ -378,8 +829,8 @@
         profileResetBtn.addEventListener('click', () => {
             if (!profileCache) return;
             document.getElementById('displayName').value = profileCache.display_name || '';
-            document.getElementById('email').value        = profileCache.email || '';
-            document.getElementById('phone').value        = profileCache.phone || '';
+            document.getElementById('email').value = profileCache.email || '';
+            document.getElementById('phone').value = profileCache.phone || '';
             hideAlert(profileErrorAlert);
             hideAlert(profileSuccessAlert);
         });
@@ -388,13 +839,13 @@
     // ══════════════════════════════════════════════════════════
     // Password strength meter
     // ══════════════════════════════════════════════════════════
-    const newPasswordInput  = document.getElementById('newPassword');
-    const pwdStrengthEl     = document.getElementById('pwdStrength');
-    const pwdStrengthLabel  = document.getElementById('pwdStrengthLabel');
+    const newPasswordInput = document.getElementById('newPassword');
+    const pwdStrengthEl = document.getElementById('pwdStrength');
+    const pwdStrengthLabel = document.getElementById('pwdStrengthLabel');
 
     function scorePassword(pwd) {
         let score = 0;
-        if (pwd.length >= 6)  score++;
+        if (pwd.length >= 6) score++;
         if (pwd.length >= 10) score++;
         if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) score++;
         if (/[0-9]/.test(pwd)) score++;
@@ -402,29 +853,30 @@
         return Math.min(Math.max(Math.ceil(score * 4 / 5), 1), 4);
     }
 
-    const strengthLabels = ['', 'Yếu', 'Trung bình', 'Khá mạnh', 'Mạnh'];
+    function updatePasswordStrength() {
+        if (!newPasswordInput || !pwdStrengthEl) return;
+        const val = newPasswordInput.value;
+        if (!val) {
+            pwdStrengthEl.hidden = true;
+            return;
+        }
+        pwdStrengthEl.hidden = false;
+        const level = scorePassword(val);
+        pwdStrengthEl.dataset.level = level;
+        if (pwdStrengthLabel) pwdStrengthLabel.textContent = t(strengthLabelKeys[level]);
+    }
 
     if (newPasswordInput && pwdStrengthEl) {
-        newPasswordInput.addEventListener('input', () => {
-            const val = newPasswordInput.value;
-            if (!val) {
-                pwdStrengthEl.hidden = true;
-                return;
-            }
-            pwdStrengthEl.hidden = false;
-            const level = scorePassword(val);
-            pwdStrengthEl.dataset.level = level;
-            if (pwdStrengthLabel) pwdStrengthLabel.textContent = strengthLabels[level];
-        });
+        newPasswordInput.addEventListener('input', updatePasswordStrength);
     }
 
     // ══════════════════════════════════════════════════════════
     // Password form submit
     // ══════════════════════════════════════════════════════════
-    const passwordForm         = document.getElementById('passwordForm');
-    const passwordErrorAlert   = document.getElementById('passwordErrorAlert');
+    const passwordForm = document.getElementById('passwordForm');
+    const passwordErrorAlert = document.getElementById('passwordErrorAlert');
     const passwordSuccessAlert = document.getElementById('passwordSuccessAlert');
-    const passwordSaveBtn      = document.getElementById('passwordSaveBtn');
+    const passwordSaveBtn = document.getElementById('passwordSaveBtn');
     const confirmPasswordError = document.getElementById('confirmPasswordError');
 
     if (passwordForm) {
@@ -432,22 +884,22 @@
             e.preventDefault();
             hideAlert(passwordErrorAlert);
             hideAlert(passwordSuccessAlert);
-            if (confirmPasswordError) confirmPasswordError.textContent = '';
+            setFieldError(confirmPasswordError, '');
 
             const currentPwd = document.getElementById('currentPassword')?.value || '';
-            const newPwd     = document.getElementById('newPassword')?.value || '';
+            const newPwd = document.getElementById('newPassword')?.value || '';
             const confirmPwd = document.getElementById('confirmPassword')?.value || '';
 
             if (newPwd !== confirmPwd) {
-                if (confirmPasswordError) confirmPasswordError.textContent = 'Mật khẩu xác nhận không khớp';
+                setFieldError(confirmPasswordError, 'security.confirmMismatch');
                 return;
             }
             if (newPwd.length < 6) {
-                showAlert(passwordErrorAlert, 'Mật khẩu mới phải có ít nhất 6 ký tự');
+                showAlert(passwordErrorAlert, '', 'danger', 0, 'security.minLengthError');
                 return;
             }
 
-            setBtnLoading(passwordSaveBtn, true, 'Đổi mật khẩu');
+            setBtnLoading(passwordSaveBtn, true, 'security.save');
 
             try {
                 const r = await fetch('/api/me/password', {
@@ -456,15 +908,15 @@
                     body: JSON.stringify({ current_password: currentPwd, new_password: newPwd }),
                 });
                 const data = await r.json();
-                if (!r.ok) throw new Error(data.detail || data.error || 'Lỗi đổi mật khẩu');
+                if (!r.ok) throw new Error(data.detail || data.error || t('security.updateError'));
 
                 passwordForm.reset();
                 if (pwdStrengthEl) pwdStrengthEl.hidden = true;
-                showAlert(passwordSuccessAlert, 'Mật khẩu đã được đổi thành công. Hãy đăng nhập lại nếu được yêu cầu.', 'success');
+                showAlert(passwordSuccessAlert, '', 'success', 0, 'security.updateSuccess');
             } catch (err) {
-                showAlert(passwordErrorAlert, err.message || 'Lỗi đổi mật khẩu');
+                showAlert(passwordErrorAlert, err.message || t('security.updateError'));
             } finally {
-                setBtnLoading(passwordSaveBtn, false, 'Đổi mật khẩu');
+                setBtnLoading(passwordSaveBtn, false, 'security.save');
             }
         });
     }
@@ -472,15 +924,13 @@
     // ══════════════════════════════════════════════════════════
     // Login history
     // ══════════════════════════════════════════════════════════
-    let historyLoaded = false;
-    const loginHistoryBody  = document.getElementById('loginHistoryBody');
+    const loginHistoryBody = document.getElementById('loginHistoryBody');
     const refreshHistoryBtn = document.getElementById('refreshHistoryBtn');
 
     function parseUserAgent(ua) {
-        if (!ua) return '—';
-        // Extract browser and OS in a concise form
-        let browser = 'Không rõ';
-        let os      = '';
+        if (!ua) return t('common.notAvailable');
+        let browser = t('history.unknownClient');
+        let os = '';
 
         if (/Chrome\/(\d+)/.test(ua) && !/Chromium/.test(ua) && !/Edg/.test(ua) && !/OPR/.test(ua)) {
             browser = `Chrome ${RegExp.$1}`;
@@ -501,52 +951,71 @@
         else if (/Android/.test(ua)) os = 'Android';
         else if (/iPhone|iPad/.test(ua)) os = 'iOS';
 
-        return os ? `${browser} — ${os}` : browser;
+        return os ? `${browser}, ${os}` : browser;
+    }
+
+    function renderLoginHistory() {
+        if (!loginHistoryBody) return;
+
+        if (loginHistoryState === 'idle' || loginHistoryState === 'loading') {
+            loginHistoryBody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><span class="text-faint">${escHtml(t('history.loading'))}</span></div></td></tr>`;
+            return;
+        }
+
+        if (loginHistoryState === 'error') {
+            loginHistoryBody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><span class="tone-danger">${escHtml(t('history.error'))}</span></div></td></tr>`;
+            return;
+        }
+
+        if (!loginHistoryCache.length) {
+            loginHistoryBody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><strong>${escHtml(t('history.emptyTitle'))}</strong><span>${escHtml(t('history.emptyDesc'))}</span></div></td></tr>`;
+            return;
+        }
+
+        loginHistoryBody.innerHTML = loginHistoryCache.map((item, idx) => {
+            const isSuccess = item.status === 'success';
+            const pillClass = isSuccess ? 'tone-live' : 'tone-danger';
+            const pillLabel = isSuccess ? t('history.success') : t('history.failure');
+            const isCurrent = idx === 0
+                ? `<span class="status-pill tone-neutral login-session-pill">${escHtml(t('history.currentSession'))}</span>`
+                : '';
+
+            return `
+                <tr>
+                    <td data-label="${escHtml(t('history.time'))}">
+                        <span class="login-time">${escHtml(item.login_at)}</span>
+                        ${isCurrent}
+                    </td>
+                    <td data-label="${escHtml(t('history.ip'))}">
+                        <span class="login-ip">${escHtml(item.ip_address || t('common.notAvailable'))}</span>
+                    </td>
+                    <td data-label="${escHtml(t('history.device'))}">
+                        <span class="ua-text" title="${escHtml(item.user_agent || '')}">
+                            ${escHtml(parseUserAgent(item.user_agent))}
+                        </span>
+                    </td>
+                    <td data-label="${escHtml(t('history.result'))}">
+                        <span class="status-pill ${pillClass}">${escHtml(pillLabel)}</span>
+                    </td>
+                </tr>`;
+        }).join('');
     }
 
     async function loadLoginHistory() {
         if (!loginHistoryBody) return;
-        loginHistoryBody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><span class="text-faint">Đang tải...</span></div></td></tr>`;
+        loginHistoryState = 'loading';
+        renderLoginHistory();
 
         try {
             const r = await fetch('/api/me/login-history');
             const data = await r.json();
-            const items = data.items || [];
-
-            if (items.length === 0) {
-                loginHistoryBody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><strong>Chưa có lịch sử</strong><span>Chưa ghi nhận phiên đăng nhập nào.</span></div></td></tr>`;
-                historyLoaded = true;
-                return;
-            }
-
-            loginHistoryBody.innerHTML = items.map((item, idx) => {
-                const isSuccess = item.status === 'success';
-                const pillClass = isSuccess ? 'tone-live' : 'tone-danger';
-                const pillLabel = isSuccess ? 'Thành công' : 'Thất bại';
-                const isCurrent = idx === 0 ? '<span class="status-pill tone-neutral login-session-pill">Phiên này</span>' : '';
-                return `
-                    <tr>
-                        <td data-label="Thời gian">
-                            <span class="login-time">${escHtml(item.login_at)}</span>
-                            ${isCurrent}
-                        </td>
-                        <td data-label="Địa chỉ IP">
-                            <span class="login-ip">${escHtml(item.ip_address || '—')}</span>
-                        </td>
-                        <td data-label="Trình duyệt">
-                            <span class="ua-text" title="${escHtml(item.user_agent || '')}">
-                                ${escHtml(parseUserAgent(item.user_agent))}
-                            </span>
-                        </td>
-                        <td data-label="Trạng thái">
-                            <span class="status-pill ${pillClass}">${pillLabel}</span>
-                        </td>
-                    </tr>`;
-            }).join('');
-
-            historyLoaded = true;
+            loginHistoryCache = Array.isArray(data.items) ? data.items : [];
+            loginHistoryState = 'loaded';
+            renderLoginHistory();
         } catch (err) {
-            loginHistoryBody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><span class="tone-danger">Không tải được lịch sử đăng nhập</span></div></td></tr>`;
+            loginHistoryCache = [];
+            loginHistoryState = 'error';
+            renderLoginHistory();
         }
     }
 
@@ -560,19 +1029,25 @@
 
     if (refreshHistoryBtn) {
         refreshHistoryBtn.addEventListener('click', () => {
-            historyLoaded = false;
             loadLoginHistory();
         });
     }
 
-    // ── Sidebar nav links — store page target in sessionStorage ──
     document.querySelectorAll('[data-navto]').forEach(link => {
-        link.addEventListener('click', e => {
+        link.addEventListener('click', () => {
             const page = link.dataset.navto;
             if (page) sessionStorage.setItem('dashboardPage', page);
         });
     });
 
-    // ── Init ────────────────────────────────────────────────
+    currentLanguage = loadSavedLanguage();
+    applyLanguage(currentLanguage);
+
+    if (languageSelect) {
+        languageSelect.addEventListener('change', () => {
+            applyLanguage(languageSelect.value);
+        });
+    }
+
     loadProfile();
 }());

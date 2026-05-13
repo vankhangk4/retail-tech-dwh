@@ -257,6 +257,32 @@ body.auth-body {
     margin-bottom: 1.5rem;
 }
 
+.auth-card__toolbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.auth-locale {
+    min-width: 10.5rem;
+    display: grid;
+    gap: 0.35rem;
+}
+
+.auth-locale label {
+    color: var(--text-faint);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+}
+
+.auth-locale__select {
+    min-height: 2.7rem;
+    padding-right: 2.35rem;
+}
+
 .auth-card__head h2 {
     font-size: 2rem;
     line-height: 1.02;
@@ -489,6 +515,16 @@ body.auth-body {
     .auth-card {
         padding: 1.25rem;
         border-radius: 1.5rem;
+    }
+
+    .auth-card__toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .auth-locale {
+        min-width: 0;
+        width: 100%;
     }
 
     .auth-signal__row {

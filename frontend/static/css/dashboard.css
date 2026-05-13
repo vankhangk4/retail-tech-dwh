@@ -312,6 +312,25 @@ body.shell-body {
     font-size: 0.86rem;
 }
 
+.context-chip--language {
+    min-width: 10rem;
+}
+
+.context-chip__select {
+    min-height: 2.15rem;
+    padding: 0.2rem 2rem 0.2rem 0.25rem;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-strong);
+    font-size: 0.86rem;
+    font-weight: 700;
+}
+
+.context-chip__select:focus {
+    outline: none;
+}
+
 .page {
     display: none;
     padding: 0;
@@ -730,6 +749,8 @@ body.shell-body {
 }
 
 .analysis-picker {
+    align-self: start;
+    align-content: start;
     padding: 0;
     border: 0;
     border-radius: 0;

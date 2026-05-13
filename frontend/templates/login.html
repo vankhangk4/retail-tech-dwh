@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Đăng nhập | DWH Operations Console</title>
-    {% set asset_version = '20260511-polish1' %}
+    {% set asset_version = '20260513-i18n1' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css', v=asset_version) }}">
 </head>
-<body class="auth-body">
-    <a href="#authMain" class="skip-link">Bỏ qua giới thiệu, tới biểu mẫu đăng nhập</a>
+<body class="auth-body" data-auth-page="login" data-ui-lang="vi">
+    <a href="#authMain" class="skip-link" data-i18n="page.login.skipLink">Bỏ qua giới thiệu, tới biểu mẫu đăng nhập</a>
 
     <div class="auth-shell">
         <aside class="auth-aside">
@@ -26,38 +26,38 @@
                     </div>
                     <div class="auth-brand__copy">
                         <span class="auth-brand__name">DWH Operations Console</span>
-                        <span class="auth-brand__meta">Cổng truy cập theo tenant cho nền tảng dữ liệu bán lẻ</span>
+                        <span class="auth-brand__meta" data-i18n="page.login.brandMeta">Cổng truy cập theo tenant cho nền tảng dữ liệu bán lẻ</span>
                     </div>
                 </div>
 
                 <div class="auth-hero">
-                    <span class="eyebrow">Truy cập an toàn</span>
-                    <h1>Truy cập an toàn vào nền tảng dữ liệu bán lẻ.</h1>
-                    <p>Đăng nhập để kiểm tra trạng thái hệ thống, theo dõi dữ liệu và mở dashboard trong đúng phạm vi tenant đã được cấp.</p>
+                    <span class="eyebrow" data-i18n="page.login.heroEyebrow">Truy cập an toàn</span>
+                    <h1 data-i18n="page.login.heroTitle">Truy cập an toàn vào nền tảng dữ liệu bán lẻ.</h1>
+                    <p data-i18n="page.login.heroDescription">Đăng nhập để kiểm tra trạng thái hệ thống, theo dõi dữ liệu và mở dashboard trong đúng phạm vi tenant đã được cấp.</p>
                 </div>
 
-                <div class="auth-status-cluster" aria-label="Tín hiệu hệ thống và bảo mật">
+                <div class="auth-status-cluster" data-i18n-aria-label="page.login.statusAria" aria-label="Tín hiệu hệ thống và bảo mật">
                     <section class="auth-signal">
-                        <span class="auth-signal__title">Tư thế bảo mật</span>
+                        <span class="auth-signal__title" data-i18n="page.login.signalSecurityTitle">Tư thế bảo mật</span>
                         <div class="auth-signal__row">
-                            <span>Auth Gateway</span>
-                            <strong data-auth-health-label data-state="checking">Đang kiểm tra</strong>
+                            <span data-i18n="page.login.signalGatewayLabel">Auth Gateway</span>
+                            <strong data-auth-health-label data-state="checking" data-i18n="trust.checking.label">Đang kiểm tra</strong>
                         </div>
                         <div class="auth-signal__row">
-                            <span>Chính sách phiên</span>
-                            <strong>Thiết lập sau đăng nhập</strong>
+                            <span data-i18n="page.login.signalSessionLabel">Chính sách phiên</span>
+                            <strong data-i18n="page.login.signalSessionValue">Thiết lập sau đăng nhập</strong>
                         </div>
                     </section>
 
                     <section class="auth-signal">
-                        <span class="auth-signal__title">Phân quyền dữ liệu</span>
+                        <span class="auth-signal__title" data-i18n="page.login.signalScopeTitle">Phân quyền dữ liệu</span>
                         <div class="auth-signal__row">
-                            <span>Phạm vi tenant</span>
-                            <strong>Xác định sau xác thực</strong>
+                            <span data-i18n="page.login.signalTenantLabel">Phạm vi tenant</span>
+                            <strong data-i18n="page.login.signalTenantValue">Xác định sau xác thực</strong>
                         </div>
                         <div class="auth-signal__row">
-                            <span>Quyền truy cập</span>
-                            <strong>Theo vai trò được cấp</strong>
+                            <span data-i18n="page.login.signalAccessLabel">Quyền truy cập</span>
+                            <strong data-i18n="page.login.signalAccessValue">Theo vai trò được cấp</strong>
                         </div>
                     </section>
                 </div>
@@ -67,23 +67,32 @@
         <main class="auth-panel" id="authMain">
             <section class="auth-card">
                 <div class="auth-card__head">
-                    <span class="eyebrow">Đăng nhập</span>
-                    <h2>Vào nền tảng</h2>
-                    <p>Dùng tài khoản đã được cấp để mở dashboard, tín hiệu vận hành và lớp dữ liệu liên quan đến tenant của bạn.</p>
+                    <div class="auth-card__toolbar">
+                        <span class="eyebrow" data-i18n="page.login.cardEyebrow">Đăng nhập</span>
+                        <div class="auth-locale">
+                            <label for="languageSelect" data-i18n="page.languageLabel">Ngôn ngữ</label>
+                            <select class="select auth-locale__select" id="languageSelect" data-i18n-aria-label="page.languageSelectAria">
+                                <option value="vi" data-i18n="language.vietnamese">Tiếng Việt</option>
+                                <option value="en" data-i18n="language.english">English</option>
+                            </select>
+                        </div>
+                    </div>
+                    <h2 data-i18n="page.login.cardTitle">Vào nền tảng</h2>
+                    <p data-i18n="page.login.cardDescription">Dùng tài khoản đã được cấp để mở dashboard, tín hiệu vận hành và lớp dữ liệu liên quan đến tenant của bạn.</p>
                 </div>
 
                 <form id="loginForm" class="auth-form" novalidate>
                     <div class="field">
-                        <label for="username">Tên đăng nhập</label>
-                        <input class="input" type="text" id="username" name="username" autocomplete="username" aria-describedby="usernameError" placeholder="ví dụ: admin" required>
+                        <label for="username" data-i18n="page.login.usernameLabel">Tên đăng nhập</label>
+                        <input class="input" type="text" id="username" name="username" autocomplete="username" aria-describedby="usernameError" data-i18n-placeholder="page.login.usernamePlaceholder" placeholder="ví dụ: admin" required>
                         <span class="field-error" id="usernameError" data-input="username"></span>
                     </div>
 
                     <div class="field">
-                        <label for="password">Mật khẩu</label>
+                        <label for="password" data-i18n="page.login.passwordLabel">Mật khẩu</label>
                         <div class="password-shell">
-                            <input class="input" type="password" id="password" name="password" autocomplete="current-password" aria-describedby="passwordError" placeholder="Nhập mật khẩu" required>
-                            <button class="password-toggle" type="button" data-toggle-password data-target="password" aria-label="Hiện hoặc ẩn mật khẩu" aria-pressed="false">
+                            <input class="input" type="password" id="password" name="password" autocomplete="current-password" aria-describedby="passwordError" data-i18n-placeholder="page.login.passwordPlaceholder" placeholder="Nhập mật khẩu" required>
+                            <button class="password-toggle" type="button" data-toggle-password data-target="password" data-i18n-aria-label="page.login.passwordToggleAria" aria-label="Hiện hoặc ẩn mật khẩu" aria-pressed="false">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                                     <circle cx="12" cy="12" r="3"/>
@@ -96,23 +105,24 @@
                     <div class="alert alert--danger" id="loginAlert" aria-live="polite"></div>
 
                     <button id="loginBtn" class="button button--primary" type="submit">
-                        <span class="button__label">Đăng nhập vào hệ thống</span>
+                        <span class="button__label" data-i18n="page.login.submit">Đăng nhập vào hệ thống</span>
                     </button>
 
                     <div class="auth-trust-strip">
                         <span class="auth-trust-strip__dot is-checking" data-auth-trust-dot aria-hidden="true"></span>
-                        <span data-auth-trust-message>Đang kiểm tra lớp xác thực trước khi cho phép đăng nhập.</span>
+                        <span data-auth-trust-message data-i18n="trust.checking.loginMessage">Đang kiểm tra lớp xác thực trước khi cho phép đăng nhập.</span>
                     </div>
                 </form>
 
                 <div class="auth-footer">
-                    <span>Chưa có tài khoản? <a class="auth-link" href="/register">Tạo tài khoản User</a></span>
-                    <span>Đăng nhập là điểm vào cho dữ liệu, dashboard và tín hiệu hệ thống.</span>
+                    <span><span data-i18n="page.login.footerPrompt">Chưa có tài khoản?</span> <a class="auth-link" href="/register" data-i18n="page.login.footerLink">Tạo tài khoản User</a></span>
+                    <span data-i18n="page.login.footerNote">Đăng nhập là điểm vào cho dữ liệu, dashboard và tín hiệu hệ thống.</span>
                 </div>
             </section>
         </main>
     </div>
 
+    <script src="{{ url_for('static', filename='js/i18n.js', v=asset_version) }}" defer></script>
     <script src="{{ url_for('static', filename='js/auth.js', v=asset_version) }}" defer></script>
 </body>
 </html>

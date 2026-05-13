@@ -6,8 +6,9 @@
 .settings-page {
     display: grid;
     gap: 1.5rem;
-    padding: 1.5rem;
-    max-width: 62rem;
+    width: 100%;
+    max-width: none;
+    padding: 0;
 }
 
 /* ── Tab navigation ── */
@@ -338,6 +339,30 @@
     margin: 0;
 }
 
+.context-chip--language {
+    min-width: 10.5rem;
+}
+
+.context-chip__select {
+    width: auto;
+    min-height: 0;
+    height: 1.45rem;
+    padding: 0 1.15rem 0 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text-strong);
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: none;
+}
+
+.context-chip__select:focus {
+    border-color: transparent;
+    box-shadow: none;
+}
+
 .login-session-pill {
     margin-left: 0.5rem;
     font-size: 0.72rem;
@@ -351,10 +376,6 @@
 }
 
 @media (max-width: 640px) {
-    .settings-page {
-        padding: 1rem;
-    }
-
     .settings-tabs {
         width: 100%;
     }

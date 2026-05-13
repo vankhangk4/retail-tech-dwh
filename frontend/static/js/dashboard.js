@@ -10,38 +10,1008 @@ const APP_CONTEXT = {
     accessToken: APP_DATASET.accessToken || '',
 };
 
+const COPY = {
+    vi: {
+        page: {
+            browserTitle: 'DWH Operations Console',
+            skipLink: 'Bỏ qua thanh điều hướng, tới nội dung chính',
+            closeNavigation: 'Đóng thanh điều hướng',
+            toggleNavigation: 'Thu gọn hoặc mở thanh điều hướng',
+            languageLabel: 'Ngôn ngữ',
+            languageSelectAria: 'Chọn ngôn ngữ giao diện',
+            scopeChip: 'Phạm vi',
+            roleChip: 'Quyền',
+            timestampChip: 'Thời điểm',
+            timestampLoading: 'Đang cập nhật...',
+        },
+        pages: {
+            overview: {
+                eyebrow: 'Điều hành',
+                title: 'Tổng quan điều hành',
+                subtitle: 'Đọc tín hiệu hệ thống trước, sau đó đi sâu vào phân tích hoặc quản trị.',
+            },
+            analysis: {
+                eyebrow: 'Phân tích',
+                title: 'Phòng phân tích',
+                subtitle: 'Chọn đúng góc nhìn phân tích, rồi mở báo cáo tương ứng trong cùng một giao diện.',
+            },
+            etl: {
+                eyebrow: 'Vận hành',
+                title: 'Vận hành ETL',
+                subtitle: 'Tải file, kích hoạt pipeline và kiểm tra lịch sử upload trong cùng một luồng.',
+            },
+            manage: {
+                eyebrow: 'Quản trị',
+                title: 'Quản lý tenant',
+                subtitle: 'Tạo user mới và kiểm soát người dùng trong tenant hiện tại.',
+            },
+            admin: {
+                eyebrow: 'Quản trị',
+                title: 'Quản trị hệ thống',
+                subtitle: 'Quản lý tenant, user và log ETL trong cùng một giao diện điều hành.',
+            },
+        },
+        overview: {
+            mission: {
+                eyebrow: 'Nhịp điều hành',
+                title: 'Hệ thống Phân tích Dữ liệu Bán lẻ.',
+                description: 'Nền tảng hỗ trợ theo dõi hiệu năng hệ thống, giám sát luồng dữ liệu và phân tích chỉ số kinh doanh đa chi nhánh.',
+            },
+            actions: {
+                openAnalysis: 'Mở phân tích',
+                openEtl: 'Giám sát ETL',
+                openAdmin: 'Quản trị hệ thống',
+                openManage: 'Quản trị hệ thống',
+            },
+            health: {
+                eyebrow: 'Tuyến vận hành',
+                loadingLabel: 'Đang kiểm tra Auth Gateway',
+                loadingCopy: 'Hệ thống đang nạp tín hiệu vận hành ban đầu.',
+            },
+            session: {
+                eyebrow: 'Phiên hiện tại',
+                scopeLabel: 'Phạm vi dữ liệu',
+                userLabel: 'Tài khoản đang dùng',
+                lastSyncLabel: 'Lần cập nhật giao diện',
+                lastSyncWaiting: 'Đang chờ log ETL',
+            },
+            kpi: {
+                revenueLabel: 'Tổng doanh thu',
+                revenueLoading: 'Đang nạp chỉ số doanh thu.',
+                profitLabel: 'Lợi nhuận gộp',
+                profitLoading: 'Đang nạp biên lợi nhuận.',
+                ordersLabel: 'Đơn hàng',
+                ordersLoading: 'Đang nạp tín hiệu vận hành đơn hàng.',
+                customersLabel: 'Khách hàng',
+                customersLoading: 'Đang nạp độ phủ khách hàng.',
+            },
+            attention: {
+                title: 'Cần xử lý ngay',
+                description: 'Chỉ giữ lại các tín hiệu có thể làm yếu buổi demo hoặc ảnh hưởng tính tin cậy của dashboard.',
+            },
+            roadmap: {
+                title: 'Lộ trình phiên này',
+                description: 'Đọc nhanh dữ liệu có đủ tin cậy không, rồi chọn đúng giao diện phân tích hoặc quản trị.',
+            },
+            freshness: {
+                loadingLabel: 'Đang tính toán độ tươi dữ liệu',
+                loadingCaption: 'Khi log ETL xuất hiện, hệ thống sẽ nhắc thời điểm đồng bộ gần nhất ở đây.',
+            },
+            nextAction: {
+                eyebrow: 'Bước tiếp theo',
+                loading: 'Đang xây dựng gợi ý cho bước demo tiếp theo.',
+            },
+            focus: {
+                analysis: {
+                    title: 'Đi vào phân tích',
+                    description: 'Một điểm vào cho toàn bộ báo cáo nghiệp vụ.',
+                    meta: '5 góc nhìn',
+                },
+                etl: {
+                    title: 'Kiểm tra ETL',
+                    description: 'Dùng khi cần thống kê dữ liệu vừa được nạp và log đang sạch.',
+                    meta: 'Pipeline',
+                },
+                admin: {
+                    title: 'Mở quản trị hệ thống',
+                    description: 'Kiểm tra tenant, user và log ETL từ cùng một giao diện điều hành.',
+                    meta: 'Governance',
+                },
+                manage: {
+                    title: 'Mở quản trị tenant',
+                    description: 'Đi thẳng vào user trong cửa hàng hiện tại khi cần giải thích phân quyền.',
+                    meta: 'Tenant',
+                },
+            },
+            foundation: {
+                title: 'Tình trạng nền',
+                description: 'Gom tenant, user và lỗi ETL về một hàng để biết hệ thống đang ở trạng thái nào trước khi đi sâu hơn.',
+                tenantLabel: 'Tenant',
+                tenantLoading: 'Đang nạp danh sách tenant.',
+                userLabel: 'User',
+                userLoading: 'Đang nạp danh sách user.',
+                issueLabel: 'Lỗi ETL',
+                issueLoading: 'Đang kiểm tra log ETL lỗi.',
+            },
+        },
+        analysis: {
+            picker: {
+                title: 'Góc nhìn phân tích',
+                description: 'Chỉ chọn một trục phân tích tại một thời điểm để tránh mở quá nhiều dashboard song song.',
+            },
+            options: {
+                revenue: {
+                    label: 'Doanh thu',
+                    summary: 'Toàn cảnh doanh thu, cùng kỳ và chênh lệch giữa các tenant.',
+                },
+                products: {
+                    label: 'Sản phẩm',
+                    summary: 'Sản phẩm bán chạy, biên lợi nhuận và danh mục chủ lực.',
+                },
+                inventory: {
+                    label: 'Tồn kho',
+                    summary: 'Thiếu hàng, lệch tồn và rủi ro ảnh hưởng doanh thu.',
+                },
+                customers: {
+                    label: 'Khách hàng',
+                    summary: 'Phân khúc, hành vi mua và chân dung khách hàng trong DWH.',
+                },
+                employees: {
+                    label: 'Nhân viên',
+                    summary: 'Hiệu suất bán hàng và mức đóng góp theo đội ngũ.',
+                },
+            },
+            dashboard: {
+                revenue: {
+                    title: 'Phòng phân tích doanh thu',
+                    description: 'Dùng khi cần thống kê toàn cảnh doanh thu, theo thời gian, theo tenant hoặc theo danh mục.',
+                },
+                products: {
+                    title: 'Phòng phân tích sản phẩm',
+                    description: 'Mở khi cần giải thích tăng trưởng đến từ mặt hàng nào, lợi nhuận nằm ở đâu và đâu là danh mục chủ lực.',
+                },
+                inventory: {
+                    title: 'Phòng phân tích tồn kho',
+                    description: 'Dùng khi hội đồng hỏi về rủi ro vận hành, mức tồn tối thiểu và dòng chảy hàng hóa.',
+                },
+                customers: {
+                    title: 'Phòng phân tích khách hàng',
+                    description: 'Phù hợp khi cần trình bày cách warehouse hỗ trợ đọc chân dung khách hàng, cụm RFM và giá trị vòng đời.',
+                },
+                employees: {
+                    title: 'Phòng phân tích nhân viên',
+                    description: 'Dùng cho doanh số, hiệu suất và mức đóng góp của nhân sự bán hàng.',
+                },
+            },
+            stage: {
+                eyebrow: 'Trục phân tích',
+                embedPill: 'Nhúng từ Superset',
+                openModal: 'Mở dạng tập trung',
+                contextLoading: 'Trục đang xem: Doanh thu',
+                frameLoading: 'Đang chuẩn bị dựng dashboard nhúng.',
+                iframeTitle: 'Dashboard phân tích',
+            },
+        },
+        etl: {
+            hero: {
+                eyebrow: 'Nạp vào staging',
+                title: 'Kéo file nguồn vào đúng tenant rồi kích hoạt pipeline.',
+                description: 'Màn hình ETL ưu tiên thao tác vận hành trước. Chọn phạm vi, nạp file, rồi xác minh staging đang chứa đúng dữ liệu cho lần chạy kế tiếp.',
+            },
+            scope: {
+                label: 'Tenant đang vận hành',
+                loading: 'Đang tải tenant...',
+            },
+            upload: {
+                eyebrow: 'Upload source',
+                title: 'Kéo thả file nguồn hoặc chọn thủ công.',
+                description: 'Chấp nhận `.xlsx`, `.xls` và `.csv`. Sau khi nạp, lịch sử file gần đây sẽ được cập nhật ngay ở phía dưới để bạn xác minh lại staging.',
+                chooseFiles: 'Chọn file nguồn',
+                runNow: 'Chạy ETL ngay',
+            },
+            guide: {
+                title: 'Hướng dẫn file nguồn',
+                description: 'Giữ nhịp đặt tên ổn định để ETL phân loại nhanh và để lúc demo bạn giải thích nguồn dữ liệu không bị khựng.',
+                revenueLabel: 'Doanh thu',
+                revenueExample: 'Ví dụ: `BaoCaoDoanhThu_HN_20260101.xlsx`',
+                inventoryLabel: 'Tồn kho',
+                inventoryExample: 'Ví dụ: `QuanLyKho_HCM_20260101.xlsx`',
+                catalogLabel: 'Danh mục',
+                catalogExample: 'Dùng `DanhMucSanPham.csv`, `DanhMucKhachHang.csv`, `DanhMucNhaCungCap.csv`.',
+                inboundLabel: 'Nhập hàng',
+                inboundExample: 'Dùng `PhieuNhapHang.csv` cho luồng nhập kho và nhà cung cấp.',
+            },
+            library: {
+                title: 'File đã nạp gần đây',
+                description: 'Dùng để xác minh nhanh staging đang chứa đúng nguồn dữ liệu cho tenant đang vận hành.',
+                loading: 'Đang tải lịch sử upload.',
+            },
+        },
+        manage: {
+            create: {
+                title: 'Tạo user trong tenant',
+                description: 'Dùng cho manager hoặc viewer mới trong tenant {tenant}.',
+            },
+            form: {
+                usernameLabel: 'Tên đăng nhập',
+                usernamePlaceholder: 'ví dụ: manager_cn1',
+                passwordLabel: 'Mật khẩu',
+                passwordPlaceholder: 'Ít nhất 6 ký tự',
+                submit: 'Tạo user tenant',
+            },
+            users: {
+                titleWithTenant: 'User trong tenant {tenant}',
+                description: 'Danh sách này giúp kiểm soát trạng thái truy cập trong phạm vi cửa hàng hiện tại.',
+                roleHeader: 'Vai trò',
+                statusHeader: 'Trạng thái',
+                createdAtHeader: 'Ngày tạo',
+                actionsHeader: 'Thao tác',
+                loading: 'Đang tải danh sách user...',
+            },
+        },
+        admin: {
+            createTenant: {
+                title: 'Tạo tenant mới',
+                description: 'Thiết lập tenant, đường dẫn dữ liệu và thời hạn hiệu lực cho hệ thống multi-tenant.',
+                idLabel: 'Mã tenant',
+                idPlaceholder: 'ví dụ: STORE_DN',
+                nameLabel: 'Tên tenant',
+                namePlaceholder: 'ví dụ: Cửa hàng Đà Nẵng',
+                pathLabel: 'Đường dẫn dữ liệu',
+                expiresAtLabel: 'Ngày hết hạn',
+                submit: 'Tạo tenant',
+            },
+            createUser: {
+                title: 'Tạo user hệ thống',
+                description: 'Gắn user với tenant cụ thể hoặc để trống khi cần cấp quyền rộng hơn trong hệ thống.',
+                usernameLabel: 'Tên đăng nhập',
+                usernamePlaceholder: 'ví dụ: manager_dn',
+                passwordLabel: 'Mật khẩu',
+                passwordPlaceholder: 'Nhập mật khẩu',
+                tenantLabel: 'Tenant',
+                roleLabel: 'Vai trò',
+                roleViewer: 'Viewer',
+                roleAdmin: 'Admin',
+                submit: 'Tạo user',
+            },
+            tenants: {
+                title: 'Danh sách tenant',
+                description: 'Kiểm tra hiệu lực, trạng thái và đường dẫn dữ liệu của từng tenant.',
+                idHeader: 'Mã',
+                nameHeader: 'Tên',
+                pathHeader: 'Đường dẫn',
+                statusHeader: 'Trạng thái',
+                expiresAtHeader: 'Hiệu lực',
+                actionsHeader: 'Thao tác',
+                loading: 'Đang tải tenant...',
+            },
+            users: {
+                title: 'Danh sách user',
+                description: 'Kiểm soát quyền và phạm vi truy cập của toàn bộ user trong hệ thống.',
+                tenantHeader: 'Tenant',
+                roleHeader: 'Vai trò',
+                statusHeader: 'Trạng thái',
+                actionsHeader: 'Thao tác',
+                loading: 'Đang tải user...',
+            },
+            etl: {
+                title: 'Giám sát ETL gần đây',
+                description: 'Dùng để giải thích độ tươi dữ liệu, tình trạng pipeline và khả năng truy vết của hệ thống.',
+                loading: 'Đang tải log ETL...',
+            },
+        },
+        modals: {
+            editTenant: {
+                eyebrow: 'Chỉnh tenant',
+                title: 'Chỉnh tenant',
+                closeAria: 'Đóng modal chỉnh tenant',
+                nameLabel: 'Tên tenant',
+                pathLabel: 'Đường dẫn dữ liệu',
+                expiresAtLabel: 'Ngày hết hạn',
+                statusLabel: 'Trạng thái',
+                submit: 'Lưu thay đổi tenant',
+            },
+            editUser: {
+                eyebrow: 'Chỉnh user',
+                title: 'Chỉnh user',
+                closeAria: 'Đóng modal chỉnh user',
+                passwordLabel: 'Mật khẩu mới',
+                passwordPlaceholder: 'Để trống nếu không đổi',
+                tenantLabel: 'Tenant',
+                roleLabel: 'Vai trò',
+                roleViewer: 'Viewer',
+                roleAdmin: 'Admin',
+                statusLabel: 'Trạng thái',
+                submit: 'Lưu thay đổi user',
+            },
+            focus: {
+                eyebrow: 'Chế độ tập trung',
+                title: 'Bảng phân tích tập trung',
+                closeAria: 'Đóng modal bảng phân tích',
+                iframeTitle: 'Bảng phân tích Superset',
+            },
+            confirm: {
+                eyebrow: 'Xác nhận',
+                title: 'Xác nhận thao tác',
+                closeAria: 'Đóng hộp thoại xác nhận',
+                detail: 'Thao tác này không thể hoàn tác.',
+            },
+        },
+        runtime: {
+            analysis: {
+                context: 'Trục đang xem: {label}',
+                tokenLoading: 'Đang xin dashboard token và dựng phiên nhúng.',
+                frameReady: 'Đang hiển thị dashboard nhúng qua Superset.',
+                frameError: 'Không thể dựng dashboard nhúng ở thời điểm này.',
+                frameFallback: 'Không thể tải bảng phân tích nhúng. Vui lòng đăng nhập lại hoặc kiểm tra dịch vụ Superset.',
+            },
+            health: {
+                stable: 'API ổn định',
+                check: 'API cần kiểm tra',
+                stableLabel: 'Tuyến xác thực đang phản hồi ổn định',
+                stableCopy: 'Có thể tiếp tục đọc tín hiệu vận hành, mở dashboard phân tích hoặc kiểm tra ETL.',
+                failedLabel: 'Auth Gateway đang mất phản hồi hoặc trả về trạng thái lỗi',
+                failedCopy: 'Ưu tiên kiểm tra dịch vụ nền trước khi trình bày dashboard phân tích cho hội đồng.',
+            },
+            kpi: {
+                revenueMeta: 'Dùng để mở câu chuyện doanh thu theo tenant và danh mục.',
+                profitMeta: 'Biên lợi nhuận gộp: {value}%',
+                ordersMetaWithAlerts: '{count} cảnh báo tồn kho đang mở.',
+                ordersMetaEmpty: 'Chưa ghi nhận cảnh báo tồn kho khẩn.',
+                customersMeta: 'Theo dõi phạm vi khách hàng đang hiện diện trong hệ thống.',
+            },
+            freshness: {
+                noLogLabel: 'Chưa có log ETL gần đây',
+                noLogCaption: 'Cần chạy ETL hoặc xác nhận kênh log trước khi trình bày độ tươi dữ liệu.',
+                noLogTimestamp: 'Chưa có mốc đồng bộ',
+                freshLabel: 'Dữ liệu đang ở vùng tươi',
+                remindLabel: 'Dữ liệu cần được nhắc lại khi demo',
+                staleLabel: 'Dữ liệu đã lâu chưa được làm tươi',
+                latestRunAt: 'Lần ETL gần nhất chạy lúc {time}.',
+                latestRunWas: 'Lần ETL gần nhất là {time}.',
+            },
+            attention: {
+                expiredTitle: '{tenant} đã hết hạn',
+                expiredDetail: 'Tenant cần được gia hạn hoặc giải thích rõ trạng thái trước khi cấp dashboard.',
+                inactiveTitle: '{tenant} đang tắt',
+                inactiveDetail: 'Tenant hiện không active. Cần xác minh đây là chủ ý quản trị hay sự cố.',
+                failingLogTitle: 'ETL lỗi tại {tenant}',
+                failingLogDetail: '{source} trả về trạng thái {status} lúc {time}.',
+                cleanTitle: 'Chưa có tenant cần can thiệp ngay',
+                cleanDetail: 'Có thể dùng overview làm điểm mở đầu rồi chuyển thẳng sang phòng phân tích phù hợp.',
+            },
+            governance: {
+                tenantLoaded: '{count} tenant đang active trong hệ thống.',
+                tenantLoading: 'Sẽ hiển thị khi danh sách tenant được nạp.',
+                userLoaded: 'Bao gồm admin hệ thống và các user theo tenant.',
+                userLoading: 'Chưa nạp danh sách user quản trị.',
+                issueLoaded: 'Có log ETL lỗi cần được giải thích hoặc xử lý.',
+                issueLoading: 'Chưa ghi nhận log ETL lỗi trong dữ liệu đang có.',
+            },
+            nextAction: {
+                default: 'Mở Phòng phân tích và bắt đầu từ trục doanh thu.',
+                checkAuth: 'Kiểm tra Auth Gateway trước, sau đó mới trình bày phần dashboard.',
+                checkEtl: 'Đi tới Vận hành ETL hoặc Giám sát ETL để giải thích lỗi pipeline mới nhất.',
+                checkTenant: 'Mở Quản trị hệ thống để xử lý tenant đã hết hạn rồi mới đi tiếp.',
+                checkFreshness: 'Nhắc rõ thời điểm ETL gần nhất trước khi đi sâu vào các chỉ số phân tích.',
+            },
+            tables: {
+                emptyTenants: 'Chưa có tenant nào trong hệ thống.',
+                emptyUsers: 'Chưa có user nào trong hệ thống.',
+                emptyTenantUsers: 'Tenant này chưa có user nào.',
+                emptyLogs: 'Chưa có log ETL.',
+                emptyLogsDetail: 'Khi pipeline chạy, các bản ghi gần nhất sẽ xuất hiện ở đây.',
+                timeHeader: 'Thời gian',
+                tenantHeader: 'Tenant',
+                sourceHeader: 'Nguồn',
+                statusHeader: 'Trạng thái',
+                rowsHeader: 'Số dòng',
+                usernameHeader: 'Username',
+                pathHeader: 'Đường dẫn',
+                roleHeader: 'Vai trò',
+                actionsHeader: 'Thao tác',
+                expiresAtHeader: 'Hiệu lực',
+                createdAtHeader: 'Ngày tạo',
+                fileNameHeader: 'Tên file',
+                fileTypeHeader: 'Loại',
+                fileSizeHeader: 'Kích thước',
+                uploadedAtHeader: 'Thời điểm',
+                tenantIdLabel: 'Mã tenant',
+                tenantNameLabel: 'Tên tenant',
+                pathLabel: 'Đường dẫn',
+                statusLabel: 'Trạng thái',
+                expiresAtLabel: 'Hiệu lực',
+                actionsLabel: 'Thao tác',
+                usernameLabel: 'Username',
+                tenantLabel: 'Tenant',
+                roleLabel: 'Vai trò',
+                timeLabel: 'Thời gian',
+                sourceLabel: 'Nguồn',
+                rowsLabel: 'Số dòng',
+                createdAtLabel: 'Ngày tạo',
+                fileNameLabel: 'Tên file',
+                fileTypeLabel: 'Loại',
+                fileSizeLabel: 'Kích thước',
+                uploadedAtLabel: 'Thời điểm',
+                editTenant: 'Chỉnh tenant',
+                editUser: 'Chỉnh user',
+                deleteFile: 'Xóa file',
+                unknownType: 'Chưa rõ',
+            },
+            upload: {
+                previewUpload: 'Nạp file vào staging',
+                previewRunEtl: 'Chạy ETL ngay',
+                selectFile: 'Chọn ít nhất một file trước khi nạp vào staging.',
+                runningTitle: 'Đang nạp {count} file lên staging',
+                runningDetail: 'Hệ thống đang gửi file tới API upload và kiểm tra phản hồi.',
+                successTitle: 'Đã nạp {successful}/{total} file vào staging',
+                successLine: '{marker} {filename}{type}{error}',
+                failedTitle: 'Không thể nạp file vào staging',
+            },
+            etlRun: {
+                selectTenant: 'Chọn tenant trước khi kích hoạt ETL.',
+                runningTitle: 'Đang kích hoạt ETL cho {tenant}',
+                runningDetail: 'Pipeline sẽ nạp dữ liệu vào warehouse và tạo log tương ứng.',
+                successTitle: 'ETL đã được kích hoạt cho {tenant}',
+                successDetail: 'Theo dõi log ETL để kiểm tra tiến trình nạp dữ liệu.',
+                failedTitle: 'ETL không thể khởi chạy',
+            },
+            files: {
+                noTenantTitle: 'Chưa có tenant đang được chọn.',
+                noTenantDetail: 'Chọn tenant trước khi xem lịch sử upload.',
+                emptyTitle: 'Chưa có file nào được nạp gần đây.',
+                emptyDetail: 'Sau khi upload, lịch sử file sẽ hiển thị ở đây.',
+                loadErrorTitle: 'Lỗi tải file.',
+                deleteTitle: 'Xóa file khỏi staging',
+                deleteDetail: 'File "{filename}" sẽ bị xóa khỏi tenant {tenant}. Thao tác này không thể hoàn tác.',
+                deleteConfirm: 'Xóa file',
+                deleteSuccess: 'Đã xóa file {filename} khỏi staging.',
+            },
+            forms: {
+                invalidTenantId: 'Vui lòng nhập mã tenant hợp lệ.',
+                creatingTenant: 'Đang tạo tenant...',
+                tenantCreated: 'Đã tạo tenant {tenant}.',
+                saveTenantError: 'Không thể tạo tenant',
+                viewerNeedsTenant: 'Viewer cần gắn với một tenant cụ thể.',
+                creatingUser: 'Đang tạo user...',
+                userCreated: 'Đã tạo user {username}.',
+                saveUserError: 'Không thể tạo user',
+                loadUsersError: 'Không tải được danh sách user',
+                creatingTenantUser: 'Đang tạo user tenant...',
+                savingChanges: 'Đang lưu thay đổi...',
+                tenantSaved: 'Đã lưu thay đổi tenant.',
+                userSaved: 'Đã lưu thay đổi user.',
+                saveTenantUpdateError: 'Không thể lưu tenant',
+                saveUserUpdateError: 'Không thể lưu user',
+                editTenantTitle: 'Chỉnh tenant {tenant}',
+                editUserTitle: 'Chỉnh user {username}',
+            },
+            scope: {
+                currentTenant: 'Tenant hiện tại: {tenant}',
+            },
+        },
+    },
+    en: {
+        page: {
+            browserTitle: 'DWH Operations Console',
+            skipLink: 'Skip navigation and go to the main content',
+            closeNavigation: 'Close the navigation panel',
+            toggleNavigation: 'Collapse or open the navigation panel',
+            languageLabel: 'Language',
+            languageSelectAria: 'Choose interface language',
+            scopeChip: 'Scope',
+            roleChip: 'Role',
+            timestampChip: 'Timestamp',
+            timestampLoading: 'Updating...',
+        },
+        pages: {
+            overview: {
+                eyebrow: 'Executive',
+                title: 'Executive Overview',
+                subtitle: 'Review system signals first, then move into analytics or administration.',
+            },
+            analysis: {
+                eyebrow: 'Analytics',
+                title: 'Analytics Room',
+                subtitle: 'Choose the right analytical angle, then open the corresponding report in the same workspace.',
+            },
+            etl: {
+                eyebrow: 'Operations',
+                title: 'ETL Operations',
+                subtitle: 'Upload files, trigger the pipeline, and review upload history in one workflow.',
+            },
+            manage: {
+                eyebrow: 'Administration',
+                title: 'Branch Management',
+                subtitle: 'Create new users and control access within the current branch.',
+            },
+            admin: {
+                eyebrow: 'Administration',
+                title: 'System Administration',
+                subtitle: 'Manage branches, users, and ETL logs in one operational workspace.',
+            },
+        },
+        overview: {
+            mission: {
+                eyebrow: 'Operational rhythm',
+                title: 'Retail Data Analytics Platform.',
+                description: 'The platform supports system performance monitoring, data pipeline supervision, and multi-branch business analytics.',
+            },
+            actions: {
+                openAnalysis: 'Open analytics',
+                openEtl: 'Monitor ETL',
+                openAdmin: 'System administration',
+                openManage: 'Branch administration',
+            },
+            health: {
+                eyebrow: 'Operational lane',
+                loadingLabel: 'Checking Auth Gateway',
+                loadingCopy: 'The platform is loading the initial operational signals.',
+            },
+            session: {
+                eyebrow: 'Current session',
+                scopeLabel: 'Data scope',
+                userLabel: 'Active account',
+                lastSyncLabel: 'Interface refresh point',
+                lastSyncWaiting: 'Waiting for ETL logs',
+            },
+            kpi: {
+                revenueLabel: 'Total revenue',
+                revenueLoading: 'Loading revenue indicators.',
+                profitLabel: 'Gross profit',
+                profitLoading: 'Loading margin signals.',
+                ordersLabel: 'Orders',
+                ordersLoading: 'Loading order operation signals.',
+                customersLabel: 'Customers',
+                customersLoading: 'Loading customer coverage.',
+            },
+            attention: {
+                title: 'Immediate attention',
+                description: 'Keep only the signals that could weaken the demo or reduce trust in the dashboards.',
+            },
+            roadmap: {
+                title: 'Session route',
+                description: 'Quickly confirm whether the data is reliable enough, then move to the right analytical or administrative surface.',
+            },
+            freshness: {
+                loadingLabel: 'Calculating data freshness',
+                loadingCaption: 'Once ETL logs are available, the platform will display the latest sync point here.',
+            },
+            nextAction: {
+                eyebrow: 'Next step',
+                loading: 'Preparing the next demo recommendation.',
+            },
+            focus: {
+                analysis: {
+                    title: 'Go to analytics',
+                    description: 'One entry point for the full set of business reports.',
+                    meta: '5 views',
+                },
+                etl: {
+                    title: 'Review ETL',
+                    description: 'Use this when you need to show that data was loaded recently and the logs are clean.',
+                    meta: 'Pipeline',
+                },
+                admin: {
+                    title: 'Open system administration',
+                    description: 'Review branches, users, and ETL logs from one control surface.',
+                    meta: 'Governance',
+                },
+                manage: {
+                    title: 'Open branch administration',
+                    description: 'Go directly to users in the current branch when you need to explain access scope.',
+                    meta: 'Branch',
+                },
+            },
+            foundation: {
+                title: 'Platform baseline',
+                description: 'Bring branches, users, and ETL issues into one row to understand platform status before going deeper.',
+                tenantLabel: 'Branches',
+                tenantLoading: 'Loading branch inventory.',
+                userLabel: 'Users',
+                userLoading: 'Loading user inventory.',
+                issueLabel: 'ETL issues',
+                issueLoading: 'Checking ETL failure logs.',
+            },
+        },
+        analysis: {
+            picker: {
+                title: 'Analytical perspective',
+                description: 'Select one analytical axis at a time to avoid opening too many dashboards in parallel.',
+            },
+            options: {
+                revenue: {
+                    label: 'Revenue',
+                    summary: 'Revenue overview, period comparison, and variance across branches.',
+                },
+                products: {
+                    label: 'Products',
+                    summary: 'Best sellers, profit margins, and leading categories.',
+                },
+                inventory: {
+                    label: 'Inventory',
+                    summary: 'Stock shortages, inventory gaps, and revenue risks.',
+                },
+                customers: {
+                    label: 'Customers',
+                    summary: 'Segments, purchase behavior, and customer profiles in the DWH.',
+                },
+                employees: {
+                    label: 'Employees',
+                    summary: 'Sales performance and contribution by team.',
+                },
+            },
+            dashboard: {
+                revenue: {
+                    title: 'Revenue Analytics Room',
+                    description: 'Use this when you need to present the full revenue view by time, branch, or category.',
+                },
+                products: {
+                    title: 'Product Analytics Room',
+                    description: 'Open this when you need to explain which items drive growth, where profit sits, and which categories are leading.',
+                },
+                inventory: {
+                    title: 'Inventory Analytics Room',
+                    description: 'Use this when stakeholders ask about operational risk, minimum stock, and goods movement.',
+                },
+                customers: {
+                    title: 'Customer Analytics Room',
+                    description: 'Best suited for presenting how the warehouse supports customer profiling, RFM clusters, and lifetime value.',
+                },
+                employees: {
+                    title: 'Employee Analytics Room',
+                    description: 'Use this for sales, performance, and contribution analysis by sales staff.',
+                },
+            },
+            stage: {
+                eyebrow: 'Analytical axis',
+                embedPill: 'Embedded from Superset',
+                openModal: 'Open focus mode',
+                contextLoading: 'Viewing axis: Revenue',
+                frameLoading: 'Preparing the embedded dashboard.',
+                iframeTitle: 'Analytical dashboard',
+            },
+        },
+        etl: {
+            hero: {
+                eyebrow: 'Load into staging',
+                title: 'Move source files into the right branch and trigger the pipeline.',
+                description: 'The ETL screen prioritizes operational actions first. Choose the scope, upload files, then verify that staging contains the correct data for the next run.',
+            },
+            scope: {
+                label: 'Operating branch',
+                loading: 'Loading branches...',
+            },
+            upload: {
+                eyebrow: 'Source upload',
+                title: 'Drag and drop source files or choose them manually.',
+                description: 'Accepts `.xlsx`, `.xls`, and `.csv`. After upload, the recent file history is refreshed below so you can validate staging immediately.',
+                chooseFiles: 'Choose source files',
+                runNow: 'Run ETL now',
+            },
+            guide: {
+                title: 'Source file guide',
+                description: 'Keep naming consistent so ETL can classify files quickly and your demo explanation stays smooth.',
+                revenueLabel: 'Revenue',
+                revenueExample: 'Example: `BaoCaoDoanhThu_HN_20260101.xlsx`',
+                inventoryLabel: 'Inventory',
+                inventoryExample: 'Example: `QuanLyKho_HCM_20260101.xlsx`',
+                catalogLabel: 'Catalog',
+                catalogExample: 'Use `DanhMucSanPham.csv`, `DanhMucKhachHang.csv`, and `DanhMucNhaCungCap.csv`.',
+                inboundLabel: 'Inbound',
+                inboundExample: 'Use `PhieuNhapHang.csv` for the inbound inventory and supplier flow.',
+            },
+            library: {
+                title: 'Recently uploaded files',
+                description: 'Use this to confirm that staging contains the correct source data for the operating branch.',
+                loading: 'Loading upload history.',
+            },
+        },
+        manage: {
+            create: {
+                title: 'Create branch user',
+                description: 'Use this for a new manager or viewer in branch {tenant}.',
+            },
+            form: {
+                usernameLabel: 'Username',
+                usernamePlaceholder: 'example: manager_cn1',
+                passwordLabel: 'Password',
+                passwordPlaceholder: 'At least 6 characters',
+                submit: 'Create branch user',
+            },
+            users: {
+                titleWithTenant: 'Users in branch {tenant}',
+                description: 'This list helps control access status within the current branch scope.',
+                roleHeader: 'Role',
+                statusHeader: 'Status',
+                createdAtHeader: 'Created on',
+                actionsHeader: 'Actions',
+                loading: 'Loading users...',
+            },
+        },
+        admin: {
+            createTenant: {
+                title: 'Create new branch',
+                description: 'Set up the branch, data path, and validity period for the multi-tenant platform.',
+                idLabel: 'Branch code',
+                idPlaceholder: 'example: STORE_DN',
+                nameLabel: 'Branch name',
+                namePlaceholder: 'example: Da Nang Store',
+                pathLabel: 'Data path',
+                expiresAtLabel: 'Expiry date',
+                submit: 'Create branch',
+            },
+            createUser: {
+                title: 'Create system user',
+                description: 'Assign the user to a specific branch or leave it empty when wider access is required.',
+                usernameLabel: 'Username',
+                usernamePlaceholder: 'example: manager_dn',
+                passwordLabel: 'Password',
+                passwordPlaceholder: 'Enter the password',
+                tenantLabel: 'Branch',
+                roleLabel: 'Role',
+                roleViewer: 'Viewer',
+                roleAdmin: 'Admin',
+                submit: 'Create user',
+            },
+            tenants: {
+                title: 'Branch list',
+                description: 'Review validity, status, and data paths for each branch.',
+                idHeader: 'Code',
+                nameHeader: 'Name',
+                pathHeader: 'Path',
+                statusHeader: 'Status',
+                expiresAtHeader: 'Validity',
+                actionsHeader: 'Actions',
+                loading: 'Loading branches...',
+            },
+            users: {
+                title: 'User list',
+                description: 'Control rights and access scope for all users across the platform.',
+                tenantHeader: 'Branch',
+                roleHeader: 'Role',
+                statusHeader: 'Status',
+                actionsHeader: 'Actions',
+                loading: 'Loading users...',
+            },
+            etl: {
+                title: 'Recent ETL monitoring',
+                description: 'Use this to explain data freshness, pipeline status, and system traceability.',
+                loading: 'Loading ETL logs...',
+            },
+        },
+        modals: {
+            editTenant: {
+                eyebrow: 'Edit branch',
+                title: 'Edit branch',
+                closeAria: 'Close the branch edit modal',
+                nameLabel: 'Branch name',
+                pathLabel: 'Data path',
+                expiresAtLabel: 'Expiry date',
+                statusLabel: 'Status',
+                submit: 'Save branch changes',
+            },
+            editUser: {
+                eyebrow: 'Edit user',
+                title: 'Edit user',
+                closeAria: 'Close the user edit modal',
+                passwordLabel: 'New password',
+                passwordPlaceholder: 'Leave blank to keep the current password',
+                tenantLabel: 'Branch',
+                roleLabel: 'Role',
+                roleViewer: 'Viewer',
+                roleAdmin: 'Admin',
+                statusLabel: 'Status',
+                submit: 'Save user changes',
+            },
+            focus: {
+                eyebrow: 'Focus mode',
+                title: 'Central analytics view',
+                closeAria: 'Close the analytics modal',
+                iframeTitle: 'Superset analytics view',
+            },
+            confirm: {
+                eyebrow: 'Confirmation',
+                title: 'Confirm action',
+                closeAria: 'Close the confirmation dialog',
+                detail: 'This action cannot be undone.',
+            },
+        },
+        runtime: {
+            analysis: {
+                context: 'Viewing axis: {label}',
+                tokenLoading: 'Requesting the dashboard token and building the embedded session.',
+                frameReady: 'Displaying the embedded dashboard through Superset.',
+                frameError: 'Unable to build the embedded dashboard at this time.',
+                frameFallback: 'Unable to load the embedded analytical report. Please sign in again or verify the Superset service.',
+            },
+            health: {
+                stable: 'API stable',
+                check: 'Check API',
+                stableLabel: 'The authentication lane is responding normally',
+                stableCopy: 'You can continue reviewing operational signals, opening analytics dashboards, or checking ETL.',
+                failedLabel: 'The Auth Gateway is not responding or is returning an error state',
+                failedCopy: 'Prioritize checking the platform services before presenting analytical dashboards.',
+            },
+            kpi: {
+                revenueMeta: 'Use this to open the revenue narrative by branch and category.',
+                profitMeta: 'Gross margin: {value}%',
+                ordersMetaWithAlerts: '{count} inventory alerts are currently open.',
+                ordersMetaEmpty: 'No urgent inventory alerts are recorded.',
+                customersMeta: 'Monitor the customer coverage currently present in the platform.',
+            },
+            freshness: {
+                noLogLabel: 'No recent ETL logs',
+                noLogCaption: 'Run ETL or confirm the logging channel before presenting data freshness.',
+                noLogTimestamp: 'No sync point available',
+                freshLabel: 'Data is in a fresh window',
+                remindLabel: 'Data freshness should be mentioned during the demo',
+                staleLabel: 'Data has not been refreshed for a long time',
+                latestRunAt: 'The latest ETL run started at {time}.',
+                latestRunWas: 'The latest ETL run was at {time}.',
+            },
+            attention: {
+                expiredTitle: '{tenant} has expired',
+                expiredDetail: 'The branch should be renewed or its status explained clearly before providing dashboards.',
+                inactiveTitle: '{tenant} is disabled',
+                inactiveDetail: 'The branch is currently inactive. Confirm whether this is an intentional administrative state or an issue.',
+                failingLogTitle: 'ETL failure at {tenant}',
+                failingLogDetail: '{source} returned status {status} at {time}.',
+                cleanTitle: 'No branch requires immediate action',
+                cleanDetail: 'You can use the overview as the opening point and then move directly to the right analytical room.',
+            },
+            governance: {
+                tenantLoaded: '{count} branches are active in the platform.',
+                tenantLoading: 'This will appear once the branch list is loaded.',
+                userLoaded: 'Includes system administrators and branch-level users.',
+                userLoading: 'The administrative user list has not been loaded yet.',
+                issueLoaded: 'There are failing ETL logs that should be explained or resolved.',
+                issueLoading: 'No failing ETL logs are currently recorded in the available data.',
+            },
+            nextAction: {
+                default: 'Open the Analytics Room and start with the revenue axis.',
+                checkAuth: 'Check the Auth Gateway first, then continue with the dashboard presentation.',
+                checkEtl: 'Go to ETL Operations or ETL Monitoring to explain the latest pipeline failure.',
+                checkTenant: 'Open system administration to address the expired branch before continuing.',
+                checkFreshness: 'State the latest ETL time clearly before moving deeper into analytical indicators.',
+            },
+            tables: {
+                emptyTenants: 'No branches are available in the platform.',
+                emptyUsers: 'No users are available in the platform.',
+                emptyTenantUsers: 'This branch has no users yet.',
+                emptyLogs: 'No ETL logs are available.',
+                emptyLogsDetail: 'Recent records will appear here when the pipeline runs.',
+                timeHeader: 'Time',
+                tenantHeader: 'Branch',
+                sourceHeader: 'Source',
+                statusHeader: 'Status',
+                rowsHeader: 'Rows',
+                usernameHeader: 'Username',
+                pathHeader: 'Path',
+                roleHeader: 'Role',
+                actionsHeader: 'Actions',
+                expiresAtHeader: 'Validity',
+                createdAtHeader: 'Created on',
+                fileNameHeader: 'File name',
+                fileTypeHeader: 'Type',
+                fileSizeHeader: 'Size',
+                uploadedAtHeader: 'Uploaded at',
+                tenantIdLabel: 'Branch code',
+                tenantNameLabel: 'Branch name',
+                pathLabel: 'Path',
+                statusLabel: 'Status',
+                expiresAtLabel: 'Validity',
+                actionsLabel: 'Actions',
+                usernameLabel: 'Username',
+                tenantLabel: 'Branch',
+                roleLabel: 'Role',
+                timeLabel: 'Time',
+                sourceLabel: 'Source',
+                rowsLabel: 'Rows',
+                createdAtLabel: 'Created on',
+                fileNameLabel: 'File name',
+                fileTypeLabel: 'Type',
+                fileSizeLabel: 'Size',
+                uploadedAtLabel: 'Uploaded at',
+                editTenant: 'Edit branch',
+                editUser: 'Edit user',
+                deleteFile: 'Delete file',
+                unknownType: 'Unknown',
+            },
+            upload: {
+                previewUpload: 'Upload to staging',
+                previewRunEtl: 'Run ETL now',
+                selectFile: 'Choose at least one file before uploading to staging.',
+                runningTitle: 'Uploading {count} file(s) to staging',
+                runningDetail: 'The platform is sending files to the upload API and checking the response.',
+                successTitle: 'Uploaded {successful}/{total} file(s) to staging',
+                successLine: '{marker} {filename}{type}{error}',
+                failedTitle: 'Unable to upload files to staging',
+            },
+            etlRun: {
+                selectTenant: 'Choose a branch before triggering ETL.',
+                runningTitle: 'Triggering ETL for {tenant}',
+                runningDetail: 'The pipeline will load data into the warehouse and create the related log.',
+                successTitle: 'ETL was triggered for {tenant}',
+                successDetail: 'Monitor ETL logs to review data loading progress.',
+                failedTitle: 'ETL could not be started',
+            },
+            files: {
+                noTenantTitle: 'No branch is currently selected.',
+                noTenantDetail: 'Choose a branch before reviewing upload history.',
+                emptyTitle: 'No files were uploaded recently.',
+                emptyDetail: 'Uploaded files will appear here after the operation completes.',
+                loadErrorTitle: 'File loading error.',
+                deleteTitle: 'Delete file from staging',
+                deleteDetail: 'File "{filename}" will be removed from branch {tenant}. This action cannot be undone.',
+                deleteConfirm: 'Delete file',
+                deleteSuccess: 'File {filename} was removed from staging.',
+            },
+            forms: {
+                invalidTenantId: 'Enter a valid branch code.',
+                creatingTenant: 'Creating branch...',
+                tenantCreated: 'Branch {tenant} has been created.',
+                saveTenantError: 'Unable to create branch',
+                viewerNeedsTenant: 'A Viewer must be assigned to a specific branch.',
+                creatingUser: 'Creating user...',
+                userCreated: 'User {username} has been created.',
+                saveUserError: 'Unable to create user',
+                loadUsersError: 'Unable to load the user list',
+                creatingTenantUser: 'Creating branch user...',
+                savingChanges: 'Saving changes...',
+                tenantSaved: 'Branch changes have been saved.',
+                userSaved: 'User changes have been saved.',
+                saveTenantUpdateError: 'Unable to save the branch',
+                saveUserUpdateError: 'Unable to save the user',
+                editTenantTitle: 'Edit branch {tenant}',
+                editUserTitle: 'Edit user {username}',
+            },
+            scope: {
+                currentTenant: 'Current branch: {tenant}',
+            },
+        },
+    },
+};
+
 const DASHBOARD_MAP = {
     revenue: {
         id: 1,
-        label: 'Doanh thu',
-        title: 'Phòng phân tích doanh thu',
-        description: 'Dùng khi cần chứng minh toàn cảnh doanh thu, theo thời gian, theo tenant hoặc theo danh mục.',
+        labelKey: 'analysis.options.revenue.label',
+        titleKey: 'analysis.dashboard.revenue.title',
+        descriptionKey: 'analysis.dashboard.revenue.description',
     },
     products: {
         id: 2,
-        label: 'Sản phẩm',
-        title: 'Phòng phân tích sản phẩm',
-        description: 'Mở khi cần giải thích tăng trưởng đến từ mặt hàng nào, lợi nhuận nằm ở đâu và đâu là danh mục kéo doanh số.',
+        labelKey: 'analysis.options.products.label',
+        titleKey: 'analysis.dashboard.products.title',
+        descriptionKey: 'analysis.dashboard.products.description',
     },
     inventory: {
         id: 3,
-        label: 'Tồn kho',
-        title: 'Phòng phân tích tồn kho',
-        description: 'Dùng khi hội đồng hỏi về rủi ro vận hành, mức tồn tối thiểu và dòng chảy hàng hóa.',
+        labelKey: 'analysis.options.inventory.label',
+        titleKey: 'analysis.dashboard.inventory.title',
+        descriptionKey: 'analysis.dashboard.inventory.description',
     },
     customers: {
         id: 4,
-        label: 'Khách hàng',
-        title: 'Phòng phân tích khách hàng',
-        description: 'Phù hợp khi cần trình bày cách warehouse hỗ trợ đọc chân dung khách hàng, cụm RFM và giá trị vòng đời.',
+        labelKey: 'analysis.options.customers.label',
+        titleKey: 'analysis.dashboard.customers.title',
+        descriptionKey: 'analysis.dashboard.customers.description',
     },
     employees: {
         id: 5,
-        label: 'Nhân viên',
-        title: 'Phòng phân tích nhân viên',
-        description: 'Dùng cho doanh số, hiệu suất và mức đóng góp của nhân sự bán hàng.',
+        labelKey: 'analysis.options.employees.label',
+        titleKey: 'analysis.dashboard.employees.title',
+        descriptionKey: 'analysis.dashboard.employees.description',
     },
 };
+
+const languageSelect = document.getElementById('languageSelect');
+const i18n = window.DWHI18n.createPageI18n({
+    copy: COPY,
+    documentTitleKey: 'page.browserTitle',
+    languageSelect,
+});
 
 const appState = {
     health: 'checking',
@@ -49,8 +1019,16 @@ const appState = {
     tenants: [],
     users: [],
     etlLogs: [],
+    tenantUsers: [],
+    uploadedFiles: [],
+    uploadedFilesTenant: APP_CONTEXT.userTenant || '',
+    uploadedFilesError: '',
     activePage: APP_CONTEXT.defaultPage,
     activeAnalysis: DASHBOARD_MAP[APP_CONTEXT.defaultAnalysis] ? APP_CONTEXT.defaultAnalysis : 'revenue',
+    uploadStatus: null,
+    editingTenantId: '',
+    editingUserName: '',
+    confirmDialog: null,
 };
 
 let confirmResolver = null;
@@ -58,6 +1036,8 @@ let confirmResolver = null;
 function byId(id) {
     return document.getElementById(id);
 }
+
+const t = (path, params) => i18n.t(path, params);
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -68,19 +1048,27 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
+function getDashboardConfig(key) {
+    const config = DASHBOARD_MAP[key];
+    if (!config) return null;
+    return {
+        id: config.id,
+        label: t(config.labelKey),
+        title: t(config.titleKey),
+        description: t(config.descriptionKey),
+    };
+}
+
 function formatCurrency(value) {
-    return `${new Intl.NumberFormat('vi-VN').format(Number(value || 0))} VNĐ`;
+    return i18n.formatCurrency(value);
 }
 
 function formatInteger(value) {
-    return new Intl.NumberFormat('vi-VN').format(Number(value || 0));
+    return i18n.formatInteger(value);
 }
 
 function formatDateTime(value) {
-    if (!value) return '—';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '—';
-    return date.toLocaleString('vi-VN');
+    return i18n.formatDateTime(value);
 }
 
 function sortLogs(logs) {
@@ -115,13 +1103,29 @@ function authFetch(url, options = {}) {
     return fetch(url, { ...options, headers });
 }
 
-function showAlert(el, message, tone = 'danger', timeoutMs = 0) {
+function setFormMessage(element, toneClass, translationKey = '', params = {}, fallbackMessage = '') {
+    if (!element) return;
+    element.textContent = translationKey ? t(translationKey, params) : fallbackMessage;
+    element.className = `microcopy form-msg ${toneClass}`;
+    i18n.setRuntimeCopy(element, translationKey, params);
+}
+
+function clearFormMessage(element) {
+    if (!element) return;
+    element.textContent = '';
+    element.className = 'microcopy form-msg';
+    i18n.setRuntimeCopy(element);
+}
+
+function showAlert(el, message = '', tone = 'danger', timeoutMs = 0, translationKey = '', params = {}) {
     if (!el) return;
     window.clearTimeout(el._hideTimer);
-    el.textContent = message;
+    el.textContent = translationKey ? t(translationKey, params) : message;
     const shellClass = el.classList.contains('shell-alert') ? 'shell-alert ' : '';
     el.className = `${shellClass}alert alert--${tone}`;
     el.classList.add('is-visible');
+    el.classList.remove('is-hidden');
+    i18n.setRuntimeCopy(el, translationKey, params);
     if (timeoutMs > 0) {
         el._hideTimer = window.setTimeout(() => hideAlert(el), timeoutMs);
     }
@@ -133,10 +1137,11 @@ function hideAlert(el) {
     el.classList.remove('is-visible');
     el.classList.add('is-hidden');
     el.textContent = '';
+    i18n.setRuntimeCopy(el);
 }
 
-function showShellAlert(message, tone = 'danger', timeoutMs = 5000) {
-    showAlert(byId('shellAlert'), message, tone, timeoutMs);
+function showShellAlert(message = '', tone = 'danger', timeoutMs = 5000, translationKey = '', params = {}) {
+    showAlert(byId('shellAlert'), message, tone, timeoutMs, translationKey, params);
 }
 
 function setEmbedFallback({ iframeId, fallbackId, message = '' }) {
@@ -154,6 +1159,37 @@ function setEmbedFallback({ iframeId, fallbackId, message = '' }) {
     fallback.textContent = '';
     fallback.classList.add('is-hidden');
     iframe.classList.remove('is-hidden');
+}
+
+function renderShellContext() {
+    const tenant = APP_CONTEXT.userTenant || '';
+    const scopeValue = tenant || t('common.systemWide');
+    const roleValue = i18n.roleLabel(APP_CONTEXT.userRole);
+
+    if (byId('sessionScope')) {
+        byId('sessionScope').textContent = scopeValue;
+    }
+    if (byId('sessionRole')) {
+        byId('sessionRole').textContent = roleValue;
+    }
+    if (byId('sidebarRoleLabel')) {
+        byId('sidebarRoleLabel').textContent = roleValue;
+    }
+    if (byId('sidebarScopeText')) {
+        byId('sidebarScopeText').textContent = `${t('sidebar.scopePrefix')}: ${scopeValue}`;
+    }
+    if (byId('sidebarScopeModeChip')) {
+        byId('sidebarScopeModeChip').textContent = tenant ? t('sidebar.scopeBranchMode') : t('sidebar.scopeAll');
+    }
+    if (byId('tenantCreateUserDescription')) {
+        byId('tenantCreateUserDescription').textContent = t('manage.create.description', { tenant: tenant || t('common.systemWide') });
+    }
+    if (byId('tenantUsersTitle')) {
+        byId('tenantUsersTitle').textContent = t('manage.users.titleWithTenant', { tenant: tenant || t('common.systemWide') });
+    }
+    if (byId('etlCurrentTenantPill')) {
+        byId('etlCurrentTenantPill').textContent = t('runtime.scope.currentTenant', { tenant });
+    }
 }
 
 function setSidebarState() {
@@ -192,14 +1228,14 @@ function syncSidebarChrome() {
 function updatePageChrome(page) {
     const target = document.querySelector(`.page[data-page="${page}"]`);
     if (!target) return;
-    byId('pageTitle').textContent = target.dataset.pageTitle || target.querySelector('h2')?.textContent || 'Điều hành';
-    byId('pageSubtitle').textContent = target.dataset.pageSubtitle || '';
-    byId('pageEyebrow').textContent = target.dataset.pageEyebrow || 'Điều hành';
+    byId('pageTitle').textContent = target.dataset.pageTitleKey ? t(target.dataset.pageTitleKey) : target.querySelector('h2')?.textContent || t('pages.overview.eyebrow');
+    byId('pageSubtitle').textContent = target.dataset.pageSubtitleKey ? t(target.dataset.pageSubtitleKey) : '';
+    byId('pageEyebrow').textContent = target.dataset.pageEyebrowKey ? t(target.dataset.pageEyebrowKey) : t('pages.overview.eyebrow');
 }
 
 function setActiveAnalysis(key, { loadIframe = false } = {}) {
     const dashboardKey = DASHBOARD_MAP[key] ? key : appState.activeAnalysis;
-    const config = DASHBOARD_MAP[dashboardKey];
+    const config = getDashboardConfig(dashboardKey);
     if (!config) return;
 
     appState.activeAnalysis = dashboardKey;
@@ -217,7 +1253,7 @@ function setActiveAnalysis(key, { loadIframe = false } = {}) {
         byId('analysisDescription').textContent = config.description;
     }
     if (byId('analysisContextPill')) {
-        byId('analysisContextPill').textContent = `Trục đang xem: ${config.label}`;
+        byId('analysisContextPill').textContent = t('runtime.analysis.context', { label: config.label });
     }
 
     const modalButton = byId('analysisOpenModalBtn');
@@ -333,28 +1369,28 @@ function renderEmbeddedDashboard(iframe, data) {
 }
 
 async function loadSupersetIframe(dashboardKey, { iframeId = 'iframe-analysis', frameStateId = 'frameState-analysis' } = {}) {
-    const config = DASHBOARD_MAP[dashboardKey];
+    const config = getDashboardConfig(dashboardKey);
     const iframe = byId(iframeId);
     if (!config || !iframe) return;
 
     iframe.src = 'about:blank';
     setEmbedFallback({ iframeId, fallbackId: iframeId === 'modalIframe' ? 'modalFallback' : 'frameFallback-analysis' });
     const frameState = byId(frameStateId);
-    if (frameState) frameState.textContent = 'Đang xin dashboard token và dựng phiên nhúng.';
+    if (frameState) frameState.textContent = t('runtime.analysis.tokenLoading');
 
     try {
         const response = await fetch(`/api/dashboard-token?dashboard_id=${config.id}`);
         if (!response.ok) throw new Error('Token error');
         const data = await response.json();
         renderEmbeddedDashboard(iframe, data);
-        if (frameState) frameState.textContent = 'Đang hiển thị dashboard nhúng qua Superset.';
+        if (frameState) frameState.textContent = t('runtime.analysis.frameReady');
     } catch (error) {
         setEmbedFallback({
             iframeId,
             fallbackId: iframeId === 'modalIframe' ? 'modalFallback' : 'frameFallback-analysis',
-            message: 'Không thể tải bảng phân tích nhúng. Vui lòng đăng nhập lại hoặc kiểm tra dịch vụ Superset.',
+            message: t('runtime.analysis.frameFallback'),
         });
-        if (frameState) frameState.textContent = 'Không thể dựng dashboard nhúng ở thời điểm này.';
+        if (frameState) frameState.textContent = t('runtime.analysis.frameError');
     }
 }
 
@@ -365,11 +1401,12 @@ function toggleModal(id, visible) {
 }
 
 async function openSupersetDashboard(dashboardId) {
-    const currentConfig = Object.values(DASHBOARD_MAP).find((item) => item.id === dashboardId);
-    byId('modalTitle').textContent = currentConfig ? currentConfig.title : 'Bảng phân tích tập trung';
+    const dashboardKey = Object.keys(DASHBOARD_MAP).find((key) => DASHBOARD_MAP[key].id === dashboardId) || appState.activeAnalysis;
+    const currentConfig = getDashboardConfig(dashboardKey);
+    byId('modalTitle').textContent = currentConfig ? currentConfig.title : t('modals.focus.title');
     toggleModal('modalOverlay', true);
     await loadSupersetIframe(
-        Object.keys(DASHBOARD_MAP).find((key) => DASHBOARD_MAP[key].id === dashboardId) || appState.activeAnalysis,
+        dashboardKey,
         { iframeId: 'modalIframe', frameStateId: null }
     );
 }
@@ -386,12 +1423,22 @@ function closeConfirmModal(confirmed = false) {
         confirmResolver(confirmed);
         confirmResolver = null;
     }
+    if (confirmed || !document.querySelector('#modalConfirm.is-visible')) {
+        appState.confirmDialog = null;
+    }
 }
 
-function requestConfirmation({ title, detail, confirmLabel = 'Xác nhận' }) {
-    byId('confirmTitle').textContent = title;
-    byId('confirmDetail').textContent = detail;
-    byId('confirmActionBtn').textContent = confirmLabel;
+function renderConfirmDialog() {
+    if (!appState.confirmDialog) return;
+    const { titleKey, detailKey, confirmLabelKey, params } = appState.confirmDialog;
+    byId('confirmTitle').textContent = t(titleKey, params);
+    byId('confirmDetail').textContent = t(detailKey, params);
+    byId('confirmActionBtn').textContent = t(confirmLabelKey, params);
+}
+
+function requestConfirmation({ titleKey, detailKey, confirmLabelKey = 'common.confirm', params = {} }) {
+    appState.confirmDialog = { titleKey, detailKey, confirmLabelKey, params };
+    renderConfirmDialog();
     toggleModal('modalConfirm', true);
     return new Promise((resolve) => {
         confirmResolver = resolve;
@@ -414,21 +1461,30 @@ function renderHealthState() {
     const indicator = byId('healthIndicator');
     const healthLabel = byId('overviewHealthLabel');
     const healthCopy = byId('overviewHealthCopy');
+    if (!indicator || !healthLabel || !healthCopy) return;
+
+    if (appState.health === 'checking') {
+        indicator.innerHTML = `<span class="status-pill status-pill--plain tone-neutral">${escapeHtml(t('sidebar.healthLoading'))}</span>`;
+        healthLabel.textContent = t('overview.health.loadingLabel');
+        healthCopy.textContent = t('overview.health.loadingCopy');
+        return;
+    }
+
     const liveStatus = appState.health === 'ok';
 
     indicator.innerHTML = `
         <span class="status-pill status-pill--plain ${liveStatus ? 'tone-success' : 'tone-danger'}">
             <span class="health-dot ${liveStatus ? 'is-live' : 'is-danger'}"></span>
-            ${liveStatus ? 'API ổn định' : 'API cần kiểm tra'}
+            ${liveStatus ? escapeHtml(t('sidebar.healthHealthy')) : escapeHtml(t('sidebar.healthCheck'))}
         </span>
     `;
 
     healthLabel.textContent = liveStatus
-        ? 'Tuyến xác thực đang phản hồi ổn định'
-        : 'Auth Gateway đang mất phản hồi hoặc trả về trạng thái lỗi';
+        ? t('runtime.health.stableLabel')
+        : t('runtime.health.failedLabel');
     healthCopy.textContent = liveStatus
-        ? 'Có thể tiếp tục đọc tín hiệu vận hành, mở dashboard phân tích hoặc kiểm tra ETL.'
-        : 'Ưu tiên kiểm tra dịch vụ nền trước khi trình bày dashboard phân tích cho hội đồng.';
+        ? t('runtime.health.stableCopy')
+        : t('runtime.health.failedCopy');
 }
 
 async function loadKPIs() {
@@ -447,12 +1503,12 @@ function renderKPIs() {
     byId('kpi-profit').textContent = formatCurrency(kpi.total_profit || 0);
     byId('kpi-orders').textContent = formatInteger(kpi.total_orders || 0);
     byId('kpi-customers').textContent = formatInteger(kpi.total_customers || 0);
-    byId('kpi-revenue-change').textContent = 'Dùng để mở câu chuyện doanh thu theo tenant và danh mục.';
-    byId('kpi-profit-change').textContent = `Biên lợi nhuận gộp: ${kpi.profit_margin_pct || 0}%`;
+    byId('kpi-revenue-change').textContent = t('runtime.kpi.revenueMeta');
+    byId('kpi-profit-change').textContent = t('runtime.kpi.profitMeta', { value: kpi.profit_margin_pct || 0 });
     byId('kpi-orders-change').textContent = (kpi.low_stock_alerts || 0) > 0
-        ? `${kpi.low_stock_alerts} cảnh báo tồn kho đang mở.`
-        : 'Chưa ghi nhận cảnh báo tồn kho khẩn.';
-    byId('kpi-customers-change').textContent = 'Theo dõi phạm vi khách hàng đang hiện diện trong hệ thống.';
+        ? t('runtime.kpi.ordersMetaWithAlerts', { count: kpi.low_stock_alerts || 0 })
+        : t('runtime.kpi.ordersMetaEmpty');
+    byId('kpi-customers-change').textContent = t('runtime.kpi.customersMeta');
     renderOverviewIntel();
 }
 
@@ -461,9 +1517,9 @@ function getFreshnessInfo() {
     if (!latestLog?.start_time) {
         return {
             tone: 'tone-warning',
-            label: 'Chưa có log ETL gần đây',
-            caption: 'Cần chạy ETL hoặc xác nhận kênh log trước khi trình bày độ tươi dữ liệu.',
-            timestamp: 'Chưa có mốc đồng bộ',
+            label: t('runtime.freshness.noLogLabel'),
+            caption: t('runtime.freshness.noLogCaption'),
+            timestamp: t('runtime.freshness.noLogTimestamp'),
         };
     }
 
@@ -472,23 +1528,23 @@ function getFreshnessInfo() {
     if (diffHours <= 8) {
         return {
             tone: 'tone-success',
-            label: 'Dữ liệu đang ở vùng tươi',
-            caption: `Lần ETL gần nhất chạy lúc ${formatDateTime(latestLog.start_time)}.`,
+            label: t('runtime.freshness.freshLabel'),
+            caption: t('runtime.freshness.latestRunAt', { time: formatDateTime(latestLog.start_time) }),
             timestamp: formatDateTime(latestLog.start_time),
         };
     }
     if (diffHours <= 24) {
         return {
             tone: 'tone-warning',
-            label: 'Dữ liệu cần được nhắc lại khi demo',
-            caption: `Lần ETL gần nhất chạy lúc ${formatDateTime(latestLog.start_time)}.`,
+            label: t('runtime.freshness.remindLabel'),
+            caption: t('runtime.freshness.latestRunAt', { time: formatDateTime(latestLog.start_time) }),
             timestamp: formatDateTime(latestLog.start_time),
         };
     }
     return {
         tone: 'tone-danger',
-        label: 'Dữ liệu đã lâu chưa được làm tươi',
-        caption: `Lần ETL gần nhất là ${formatDateTime(latestLog.start_time)}.`,
+        label: t('runtime.freshness.staleLabel'),
+        caption: t('runtime.freshness.latestRunWas', { time: formatDateTime(latestLog.start_time) }),
         timestamp: formatDateTime(latestLog.start_time),
     };
 }
@@ -506,32 +1562,36 @@ function renderAttentionList() {
     expired.forEach((tenant) => {
         items.push({
             tone: 'tone-danger',
-            title: `${tenant.tenant_id} đã hết hạn`,
-            detail: `Tenant cần được gia hạn hoặc giải thích rõ trạng thái trước khi cấp dashboard.`,
+            title: t('runtime.attention.expiredTitle', { tenant: tenant.tenant_id }),
+            detail: t('runtime.attention.expiredDetail'),
         });
     });
 
     inactive.forEach((tenant) => {
         items.push({
             tone: 'tone-warning',
-            title: `${tenant.tenant_id} đang tắt`,
-            detail: 'Tenant hiện không active. Cần xác minh đây là chủ ý quản trị hay sự cố.',
+            title: t('runtime.attention.inactiveTitle', { tenant: tenant.tenant_id }),
+            detail: t('runtime.attention.inactiveDetail'),
         });
     });
 
     latestFailingLogs.forEach((log) => {
         items.push({
             tone: 'tone-danger',
-            title: `ETL lỗi tại ${log.tenant_id || 'tenant chưa rõ'}`,
-            detail: `${log.source_table || 'Nguồn dữ liệu'} trả về trạng thái ${log.status || 'lỗi'} lúc ${formatDateTime(log.start_time)}.`,
+            title: t('runtime.attention.failingLogTitle', { tenant: log.tenant_id || t('common.unknown') }),
+            detail: t('runtime.attention.failingLogDetail', {
+                source: log.source_table || t('runtime.tables.sourceHeader'),
+                status: log.status || t('common.unknown'),
+                time: formatDateTime(log.start_time),
+            }),
         });
     });
 
     if (!items.length) {
         items.push({
             tone: 'tone-success',
-            title: 'Chưa có tenant cần can thiệp ngay',
-            detail: 'Có thể dùng overview làm điểm mở đầu rồi chuyển thẳng sang phòng phân tích phù hợp.',
+            title: t('runtime.attention.cleanTitle'),
+            detail: t('runtime.attention.cleanDetail'),
         });
     }
 
@@ -554,37 +1614,37 @@ function renderGovernanceStats() {
     if (byId('tenantInventoryCount')) {
         byId('tenantInventoryCount').textContent = formatInteger(tenantCount);
         byId('tenantInventoryNote').textContent = tenantCount
-            ? `${activeTenantCount} tenant đang active trong hệ thống.`
-            : 'Sẽ hiển thị khi danh sách tenant được nạp.';
+            ? t('runtime.governance.tenantLoaded', { count: activeTenantCount })
+            : t('runtime.governance.tenantLoading');
     }
 
     if (byId('userInventoryCount')) {
         byId('userInventoryCount').textContent = formatInteger(users);
         byId('userInventoryNote').textContent = users
-            ? 'Bao gồm admin hệ thống và các user theo tenant.'
-            : 'Chưa nạp danh sách user quản trị.';
+            ? t('runtime.governance.userLoaded')
+            : t('runtime.governance.userLoading');
     }
 
     if (byId('etlIssueCount')) {
         byId('etlIssueCount').textContent = formatInteger(etlIssues);
         byId('etlIssueNote').textContent = etlIssues
-            ? 'Có log ETL lỗi cần được giải thích hoặc xử lý.'
-            : 'Chưa ghi nhận log ETL lỗi trong dữ liệu đang có.';
+            ? t('runtime.governance.issueLoaded')
+            : t('runtime.governance.issueLoading');
     }
 }
 
 function renderNextAction() {
     const freshness = getFreshnessInfo();
-    let nextAction = 'Mở Phòng phân tích và bắt đầu từ trục doanh thu.';
+    let nextAction = t('runtime.nextAction.default');
 
     if (appState.health !== 'ok') {
-        nextAction = 'Kiểm tra Auth Gateway trước, sau đó mới trình bày phần dashboard.';
+        nextAction = t('runtime.nextAction.checkAuth');
     } else if (appState.etlLogs.some((log) => isFailStatus(log.status))) {
-        nextAction = 'Đi tới Vận hành ETL hoặc Giám sát ETL để giải thích lỗi pipeline mới nhất.';
+        nextAction = t('runtime.nextAction.checkEtl');
     } else if (appState.tenants.some((tenant) => tenant.expires_at && new Date(tenant.expires_at) < new Date())) {
-        nextAction = 'Mở Quản trị hệ thống để xử lý tenant đã hết hạn rồi mới đi tiếp.';
+        nextAction = t('runtime.nextAction.checkTenant');
     } else if (freshness.tone === 'tone-warning' || freshness.tone === 'tone-danger') {
-        nextAction = 'Nhắc rõ thời điểm ETL gần nhất trước khi đi sâu vào các chỉ số phân tích.';
+        nextAction = t('runtime.nextAction.checkFreshness');
     }
 
     if (byId('nextActionText')) {
@@ -604,20 +1664,11 @@ function renderOverviewIntel() {
     if (byId('lastSyncTime')) {
         byId('lastSyncTime').textContent = freshness.timestamp;
     }
-    if (byId('sessionScope')) {
-        byId('sessionScope').textContent = APP_CONTEXT.userTenant || 'Toàn hệ thống';
-    }
-    if (byId('sessionRole')) {
-        byId('sessionRole').textContent = APP_CONTEXT.userRole === 'superadmin'
-            ? 'Superadmin'
-            : APP_CONTEXT.userRole === 'admin'
-                ? 'Admin'
-                : 'Viewer';
-    }
     if (byId('overviewTimestamp')) {
-        byId('overviewTimestamp').textContent = new Date().toLocaleString('vi-VN');
+        byId('overviewTimestamp').textContent = formatDateTime(new Date());
     }
 
+    renderShellContext();
     renderAttentionList();
     renderGovernanceStats();
     renderNextAction();
@@ -631,7 +1682,7 @@ function renderTenants(tenants) {
     const container = byId('tenant-list');
     if (!container) return;
     if (!tenants.length) {
-        container.innerHTML = tableEmpty('Chưa có tenant nào trong hệ thống.', 6);
+        container.innerHTML = tableEmpty(t('runtime.tables.emptyTenants'), 6);
         return;
     }
     const now = new Date();
@@ -639,17 +1690,17 @@ function renderTenants(tenants) {
         const expired = tenant.expires_at && new Date(tenant.expires_at) < now;
         return `
             <tr>
-                <td data-label="Mã tenant"><strong>${escapeHtml(tenant.tenant_id)}</strong></td>
-                <td data-label="Tên tenant">${escapeHtml(tenant.tenant_name)}</td>
-                <td data-label="Đường dẫn">${escapeHtml(tenant.file_path || '—')}</td>
-                <td data-label="Trạng thái"><span class="status-pill ${statusToneByBool(tenant.is_active)}">${tenant.is_active ? 'Hoạt động' : 'Tắt'}</span></td>
-                <td data-label="Hiệu lực">
+                <td data-label="${escapeHtml(t('runtime.tables.tenantIdLabel'))}"><strong>${escapeHtml(tenant.tenant_id)}</strong></td>
+                <td data-label="${escapeHtml(t('runtime.tables.tenantNameLabel'))}">${escapeHtml(tenant.tenant_name)}</td>
+                <td data-label="${escapeHtml(t('runtime.tables.pathLabel'))}">${escapeHtml(tenant.file_path || '—')}</td>
+                <td data-label="${escapeHtml(t('runtime.tables.statusLabel'))}"><span class="status-pill ${statusToneByBool(tenant.is_active)}">${tenant.is_active ? t('common.active') : t('common.inactive')}</span></td>
+                <td data-label="${escapeHtml(t('runtime.tables.expiresAtLabel'))}">
                     <span class="status-pill ${expired ? 'tone-danger' : tenant.expires_at ? 'tone-warning' : 'tone-neutral'}">
-                        ${tenant.expires_at ? formatDateTime(tenant.expires_at) : 'Không giới hạn'}
+                        ${tenant.expires_at ? formatDateTime(tenant.expires_at) : t('common.noLimit')}
                     </span>
                 </td>
-                <td data-label="Thao tác">
-                    <button class="button button--secondary button--compact" type="button" data-edit-tenant="${escapeHtml(tenant.tenant_id)}">Chỉnh tenant</button>
+                <td data-label="${escapeHtml(t('runtime.tables.actionsLabel'))}">
+                    <button class="button button--secondary button--compact" type="button" data-edit-tenant="${escapeHtml(tenant.tenant_id)}">${escapeHtml(t('runtime.tables.editTenant'))}</button>
                 </td>
             </tr>
         `;
@@ -660,18 +1711,18 @@ function renderUsers(users) {
     const container = byId('user-list');
     if (!container) return;
     if (!users.length) {
-        container.innerHTML = tableEmpty('Chưa có user nào trong hệ thống.', 5);
+        container.innerHTML = tableEmpty(t('runtime.tables.emptyUsers'), 5);
         return;
     }
     container.innerHTML = users.map((user) => {
         return `
         <tr>
-            <td data-label="Username"><strong>${escapeHtml(user.username)}</strong></td>
-            <td data-label="Tenant">${escapeHtml(user.tenant_id || '—')}</td>
-            <td data-label="Vai trò"><span class="status-pill ${user.role === 'admin' ? 'tone-warning' : 'tone-neutral'}">${user.role === 'admin' ? 'Admin' : 'Viewer'}</span></td>
-            <td data-label="Trạng thái"><span class="status-pill ${statusToneByBool(user.is_active)}">${user.is_active ? 'Hoạt động' : 'Tắt'}</span></td>
-            <td data-label="Thao tác">
-                <button class="button button--secondary button--compact" type="button" data-edit-user data-user-id="${Number(user.user_id)}" data-username="${escapeHtml(user.username || '')}" data-tenant="${escapeHtml(user.tenant_id || '')}" data-role="${escapeHtml(user.role || 'viewer')}" data-active="${Boolean(user.is_active)}">Chỉnh user</button>
+            <td data-label="${escapeHtml(t('runtime.tables.usernameLabel'))}"><strong>${escapeHtml(user.username)}</strong></td>
+            <td data-label="${escapeHtml(t('runtime.tables.tenantLabel'))}">${escapeHtml(user.tenant_id || '—')}</td>
+            <td data-label="${escapeHtml(t('runtime.tables.roleLabel'))}"><span class="status-pill ${user.role === 'admin' ? 'tone-warning' : 'tone-neutral'}">${escapeHtml(i18n.roleLabel(user.role === 'superadmin' ? 'superadmin' : user.role === 'admin' ? 'admin' : 'viewer'))}</span></td>
+            <td data-label="${escapeHtml(t('runtime.tables.statusLabel'))}"><span class="status-pill ${statusToneByBool(user.is_active)}">${user.is_active ? t('common.active') : t('common.inactive')}</span></td>
+            <td data-label="${escapeHtml(t('runtime.tables.actionsLabel'))}">
+                <button class="button button--secondary button--compact" type="button" data-edit-user data-user-id="${Number(user.user_id)}" data-username="${escapeHtml(user.username || '')}" data-tenant="${escapeHtml(user.tenant_id || '')}" data-role="${escapeHtml(user.role || 'viewer')}" data-active="${Boolean(user.is_active)}">${escapeHtml(t('runtime.tables.editUser'))}</button>
             </td>
         </tr>
     `;
@@ -682,7 +1733,7 @@ function renderETLLogs(logs) {
     const container = byId('etl-logs');
     if (!container) return;
     if (!logs.length) {
-        container.innerHTML = '<div class="empty-state"><strong>Chưa có log ETL.</strong><span class="microcopy">Khi pipeline chạy, các bản ghi gần nhất sẽ xuất hiện ở đây.</span></div>';
+        container.innerHTML = `<div class="empty-state"><strong>${escapeHtml(t('runtime.tables.emptyLogs'))}</strong><span class="microcopy">${escapeHtml(t('runtime.tables.emptyLogsDetail'))}</span></div>`;
         return;
     }
 
@@ -691,21 +1742,21 @@ function renderETLLogs(logs) {
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Thời gian</th>
-                        <th>Tenant</th>
-                        <th>Nguồn</th>
-                        <th>Trạng thái</th>
-                        <th>Số dòng</th>
+                        <th>${escapeHtml(t('runtime.tables.timeHeader'))}</th>
+                        <th>${escapeHtml(t('runtime.tables.tenantHeader'))}</th>
+                        <th>${escapeHtml(t('runtime.tables.sourceHeader'))}</th>
+                        <th>${escapeHtml(t('runtime.tables.statusHeader'))}</th>
+                        <th>${escapeHtml(t('runtime.tables.rowsHeader'))}</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${sortLogs(logs).slice(0, 20).map((log) => `
                         <tr>
-                            <td data-label="Thời gian">${formatDateTime(log.start_time)}</td>
-                            <td data-label="Tenant"><strong>${escapeHtml(log.tenant_id || '—')}</strong></td>
-                            <td data-label="Nguồn">${escapeHtml(log.source_table || '—')}</td>
-                            <td data-label="Trạng thái"><span class="status-pill ${isFailStatus(log.status) ? 'tone-danger' : isSuccessStatus(log.status) ? 'tone-success' : 'tone-neutral'}">${escapeHtml(log.status || '—')}</span></td>
-                            <td data-label="Số dòng" class="tabular">${formatInteger(log.rows_inserted || 0)}</td>
+                            <td data-label="${escapeHtml(t('runtime.tables.timeLabel'))}">${formatDateTime(log.start_time)}</td>
+                            <td data-label="${escapeHtml(t('runtime.tables.tenantLabel'))}"><strong>${escapeHtml(log.tenant_id || '—')}</strong></td>
+                            <td data-label="${escapeHtml(t('runtime.tables.sourceLabel'))}">${escapeHtml(log.source_table || '—')}</td>
+                            <td data-label="${escapeHtml(t('runtime.tables.statusLabel'))}"><span class="status-pill ${isFailStatus(log.status) ? 'tone-danger' : isSuccessStatus(log.status) ? 'tone-success' : 'tone-neutral'}">${escapeHtml(log.status || '—')}</span></td>
+                            <td data-label="${escapeHtml(t('runtime.tables.rowsLabel'))}" class="tabular">${formatInteger(log.rows_inserted || 0)}</td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -747,18 +1798,75 @@ async function loadAdminData() {
     renderOverviewIntel();
 }
 
-function populateStatusBlock({ toneClass, icon, title, detail }) {
+function renderUploadStatus() {
     const status = byId('uploadStatus');
     const iconEl = byId('statusIcon');
     const titleEl = byId('statusText');
     const detailEl = byId('statusDetail');
     if (!status || !iconEl || !titleEl || !detailEl) return;
 
+    if (!appState.uploadStatus) {
+        status.hidden = true;
+        iconEl.innerHTML = '';
+        titleEl.textContent = '';
+        detailEl.innerHTML = '';
+        return;
+    }
+
+    const state = appState.uploadStatus;
+    let toneClass = 'is-running';
+    let icon = '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"></circle><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>';
+    let title = '';
+    let detail = '';
+
+    if (state.kind === 'upload-running') {
+        toneClass = 'is-running';
+        title = t('runtime.upload.runningTitle', { count: state.fileCount });
+        detail = `<p>${escapeHtml(t('runtime.upload.runningDetail'))}</p>`;
+    } else if (state.kind === 'upload-success') {
+        toneClass = 'is-success';
+        icon = '<path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>';
+        title = t('runtime.upload.successTitle', {
+            successful: state.successfulUploads,
+            total: state.totalFiles,
+        });
+        detail = state.uploadedFiles.map((file) => {
+            const marker = file.success ? '✓' : '✕';
+            const type = file.file_type ? ` · ${escapeHtml(file.file_type)}` : '';
+            const error = file.error ? ` · ${escapeHtml(file.error)}` : '';
+            return `<p>${escapeHtml(t('runtime.upload.successLine', { marker, filename: file.filename }))}${type}${error}</p>`;
+        }).join('');
+    } else if (state.kind === 'upload-error') {
+        toneClass = 'is-error';
+        icon = '<path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"></path>';
+        title = t('runtime.upload.failedTitle');
+        detail = `<p>${escapeHtml(state.message)}</p>`;
+    } else if (state.kind === 'etl-running') {
+        toneClass = 'is-running';
+        title = t('runtime.etlRun.runningTitle', { tenant: state.tenant });
+        detail = `<p>${escapeHtml(t('runtime.etlRun.runningDetail'))}</p>`;
+    } else if (state.kind === 'etl-success') {
+        toneClass = 'is-success';
+        icon = '<path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>';
+        title = t('runtime.etlRun.successTitle', { tenant: state.tenant });
+        detail = `<p>${escapeHtml(state.message || t('runtime.etlRun.successDetail'))}</p>`;
+    } else if (state.kind === 'etl-error') {
+        toneClass = 'is-error';
+        icon = '<path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"></path>';
+        title = t('runtime.etlRun.failedTitle');
+        detail = `<p>${escapeHtml(state.message)}</p>`;
+    }
+
     status.className = `workflow-status ${toneClass}`;
     status.hidden = false;
     iconEl.innerHTML = icon;
     titleEl.textContent = title;
     detailEl.innerHTML = detail;
+}
+
+function setUploadStatus(nextStatus) {
+    appState.uploadStatus = nextStatus;
+    renderUploadStatus();
 }
 
 function currentTenant() {
@@ -788,13 +1896,13 @@ function showFilePreview() {
             ${Array.from(input.files).map((file) => `
                 <article class="preview-item">
                     <strong>${escapeHtml(file.name)}</strong>
-                    <span>${(file.size / (1024 * 1024)).toFixed(2)} MB</span>
+                    <span>${escapeHtml(i18n.formatFileSize(file.size))}</span>
                 </article>
             `).join('')}
         </div>
         <div class="inline-actions">
-            <button class="button button--primary" id="btnUploadSubmit" type="button">Nạp file vào staging</button>
-            <button class="button button--secondary" type="button" id="btnRunEtl">Chạy ETL ngay</button>
+            <button class="button button--primary" id="btnUploadSubmit" type="button">${escapeHtml(t('runtime.upload.previewUpload'))}</button>
+            <button class="button button--secondary" type="button" id="btnRunEtl">${escapeHtml(t('runtime.upload.previewRunEtl'))}</button>
         </div>
     `;
 
@@ -805,7 +1913,7 @@ function showFilePreview() {
 async function uploadFile() {
     const input = byId('fileInput');
     if (!input?.files.length) {
-        showShellAlert('Chọn ít nhất một file trước khi nạp vào staging.');
+        showShellAlert('', 'danger', 5000, 'runtime.upload.selectFile');
         return;
     }
 
@@ -817,12 +1925,7 @@ async function uploadFile() {
     const submitButton = byId('btnUploadSubmit');
     if (submitButton) submitButton.disabled = true;
 
-    populateStatusBlock({
-        toneClass: 'is-running',
-        icon: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"></circle><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>',
-        title: `Đang nạp ${input.files.length} file lên staging`,
-        detail: '<p>Hệ thống đang gửi file tới API upload và kiểm tra phản hồi.</p>',
-    });
+    setUploadStatus({ kind: 'upload-running', fileCount: input.files.length });
 
     try {
         const response = await authFetch(`/api/upload/${currentTenant()}`, {
@@ -831,28 +1934,21 @@ async function uploadFile() {
         });
         const data = await response.json();
         if (!response.ok || !data.success) {
-            throw new Error(data.detail || data.message || 'Upload thất bại');
+            throw new Error(data.detail || data.message || t('runtime.upload.failedTitle'));
         }
 
-        populateStatusBlock({
-            toneClass: 'is-success',
-            icon: '<path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>',
-            title: `Đã nạp ${data.successful_uploads}/${data.total_files} file vào staging`,
-            detail: data.uploaded_files.map((file) => (
-                `<p>${file.success ? '✓' : '✕'} ${escapeHtml(file.filename)}${file.file_type ? ` · ${escapeHtml(file.file_type)}` : ''}${file.error ? ` · ${escapeHtml(file.error)}` : ''}</p>`
-            )).join(''),
+        setUploadStatus({
+            kind: 'upload-success',
+            successfulUploads: data.successful_uploads,
+            totalFiles: data.total_files,
+            uploadedFiles: data.uploaded_files || [],
         });
 
         input.value = '';
         byId('uploadPreview').innerHTML = '';
         await loadUploadedFiles();
     } catch (error) {
-        populateStatusBlock({
-            toneClass: 'is-error',
-            icon: '<path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"></path>',
-            title: 'Không thể nạp file vào staging',
-            detail: `<p>${escapeHtml(error.message)}</p>`,
-        });
+        setUploadStatus({ kind: 'upload-error', message: error.message });
     } finally {
         if (submitButton) submitButton.disabled = false;
     }
@@ -860,86 +1956,75 @@ async function uploadFile() {
 
 async function triggerETL(tenant) {
     if (!tenant) {
-        showShellAlert('Chọn tenant trước khi kích hoạt ETL.');
+        showShellAlert('', 'danger', 5000, 'runtime.etlRun.selectTenant');
         return;
     }
 
-    populateStatusBlock({
-        toneClass: 'is-running',
-        icon: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"></circle><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>',
-        title: `Đang kích hoạt ETL cho ${tenant}`,
-        detail: '<p>Pipeline sẽ nạp dữ liệu vào warehouse và tạo log tương ứng.</p>',
-    });
+    setUploadStatus({ kind: 'etl-running', tenant });
 
     try {
         const response = await authFetch(`/api/upload/${tenant}/etl`, { method: 'POST' });
         const data = await response.json();
         if (!response.ok || !data.success) {
-            throw new Error(data.detail || data.message || 'Không kích hoạt được ETL');
+            throw new Error(data.detail || data.message || t('runtime.etlRun.failedTitle'));
         }
 
-        populateStatusBlock({
-            toneClass: 'is-success',
-            icon: '<path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>',
-            title: `ETL đã được kích hoạt cho ${tenant}`,
-            detail: `<p>${escapeHtml(data.message || 'Theo dõi log ETL để kiểm tra tiến trình nạp dữ liệu.')}</p>`,
+        setUploadStatus({
+            kind: 'etl-success',
+            tenant,
+            message: data.message || t('runtime.etlRun.successDetail'),
         });
 
         if (APP_CONTEXT.userRole === 'superadmin') {
             await loadAdminData();
         }
     } catch (error) {
-        populateStatusBlock({
-            toneClass: 'is-error',
-            icon: '<path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"></path>',
-            title: 'ETL không thể khởi chạy',
-            detail: `<p>${escapeHtml(error.message)}</p>`,
-        });
+        setUploadStatus({ kind: 'etl-error', message: error.message });
     }
 }
 
-async function loadUploadedFiles() {
-    const tenant = currentTenant();
+function renderUploadedFiles() {
     const container = byId('uploadedFilesList');
     if (!container) return;
+    const tenant = appState.uploadedFilesTenant;
 
     if (!tenant) {
-        container.innerHTML = '<div class="empty-state"><strong>Chưa có tenant đang được chọn.</strong><span class="microcopy">Chọn tenant trước khi xem lịch sử upload.</span></div>';
+        container.innerHTML = `<div class="empty-state"><strong>${escapeHtml(t('runtime.files.noTenantTitle'))}</strong><span class="microcopy">${escapeHtml(t('runtime.files.noTenantDetail'))}</span></div>`;
         return;
     }
 
-    try {
-        const response = await authFetch(`/api/upload/${tenant}/files`);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        const files = data.files || [];
+    if (appState.uploadedFilesError) {
+        container.innerHTML = `<div class="empty-state"><strong>${escapeHtml(t('runtime.files.loadErrorTitle'))}</strong><span class="microcopy">${escapeHtml(appState.uploadedFilesError)}</span></div>`;
+        return;
+    }
 
-        if (!files.length) {
-            container.innerHTML = '<div class="empty-state"><strong>Chưa có file nào được nạp gần đây.</strong><span class="microcopy">Sau khi upload, lịch sử file sẽ hiển thị ở đây.</span></div>';
-            return;
-        }
+    const files = appState.uploadedFiles;
+    if (!files.length) {
+        container.innerHTML = `<div class="empty-state"><strong>${escapeHtml(t('runtime.files.emptyTitle'))}</strong><span class="microcopy">${escapeHtml(t('runtime.files.emptyDetail'))}</span></div>`;
+        return;
+    }
 
-        container.innerHTML = `
+    container.innerHTML = `
             <div class="table-shell">
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Tên file</th>
-                            <th>Loại</th>
-                            <th>Kích thước</th>
-                            <th>Thời điểm</th>
-                            ${['admin', 'superadmin'].includes(APP_CONTEXT.userRole) ? '<th>Thao tác</th>' : ''}
+                            <th>${escapeHtml(t('runtime.tables.fileNameHeader'))}</th>
+                            <th>${escapeHtml(t('runtime.tables.fileTypeHeader'))}</th>
+                            <th>${escapeHtml(t('runtime.tables.fileSizeHeader'))}</th>
+                            <th>${escapeHtml(t('runtime.tables.uploadedAtHeader'))}</th>
+                            ${['admin', 'superadmin'].includes(APP_CONTEXT.userRole) ? `<th>${escapeHtml(t('runtime.tables.actionsHeader'))}</th>` : ''}
                         </tr>
                     </thead>
                     <tbody>
                         ${files.map((file) => `
                             <tr>
-                                <td data-label="Tên file"><strong>${escapeHtml(file.filename)}</strong></td>
-                                <td data-label="Loại"><span class="status-pill tone-neutral">${escapeHtml(file.file_type || 'Chưa rõ')}</span></td>
-                                <td data-label="Kích thước">${file.size_bytes > 1024 * 1024 ? `${(file.size_bytes / 1024 / 1024).toFixed(1)} MB` : `${(file.size_bytes / 1024).toFixed(1)} KB`}</td>
-                                <td data-label="Thời điểm">${formatDateTime(file.uploaded_at)}</td>
+                                <td data-label="${escapeHtml(t('runtime.tables.fileNameLabel'))}"><strong>${escapeHtml(file.filename)}</strong></td>
+                                <td data-label="${escapeHtml(t('runtime.tables.fileTypeLabel'))}"><span class="status-pill tone-neutral">${escapeHtml(file.file_type || t('runtime.tables.unknownType'))}</span></td>
+                                <td data-label="${escapeHtml(t('runtime.tables.fileSizeLabel'))}">${escapeHtml(i18n.formatFileSize(file.size_bytes))}</td>
+                                <td data-label="${escapeHtml(t('runtime.tables.uploadedAtLabel'))}">${formatDateTime(file.uploaded_at)}</td>
                                 ${['admin', 'superadmin'].includes(APP_CONTEXT.userRole)
-                                    ? `<td data-label="Thao tác"><button class="button button--danger button--compact" type="button" data-delete-file data-tenant="${escapeHtml(tenant)}" data-filename="${escapeHtml(file.filename)}">Xóa file</button></td>`
+                                    ? `<td data-label="${escapeHtml(t('runtime.tables.actionsLabel'))}"><button class="button button--danger button--compact" type="button" data-delete-file data-tenant="${escapeHtml(tenant)}" data-filename="${escapeHtml(file.filename)}">${escapeHtml(t('runtime.tables.deleteFile'))}</button></td>`
                                     : ''}
                             </tr>
                         `).join('')}
@@ -947,41 +2032,79 @@ async function loadUploadedFiles() {
                 </table>
             </div>
         `;
-    } catch (error) {
-        container.innerHTML = `<div class="empty-state"><strong>Lỗi tải file.</strong><span class="microcopy">${escapeHtml(error.message)}</span></div>`;
+}
+
+async function loadUploadedFiles() {
+    const tenant = currentTenant();
+    appState.uploadedFilesTenant = tenant;
+    appState.uploadedFilesError = '';
+    appState.uploadedFiles = [];
+
+    if (!tenant) {
+        renderUploadedFiles();
+        return;
     }
+
+    try {
+        const response = await authFetch(`/api/upload/${tenant}/files`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        appState.uploadedFiles = data.files || [];
+    } catch (error) {
+        appState.uploadedFilesError = error.message;
+    }
+
+    renderUploadedFiles();
 }
 
 async function deleteFile(tenant, filename) {
     const decodedTenant = tenant;
     const decodedFilename = filename;
     const confirmed = await requestConfirmation({
-        title: 'Xóa file khỏi staging',
-        detail: `File "${decodedFilename}" sẽ bị xóa khỏi tenant ${decodedTenant}. Thao tác này không thể hoàn tác.`,
-        confirmLabel: 'Xóa file',
+        titleKey: 'runtime.files.deleteTitle',
+        detailKey: 'runtime.files.deleteDetail',
+        confirmLabelKey: 'runtime.files.deleteConfirm',
+        params: {
+            filename: decodedFilename,
+            tenant: decodedTenant,
+        },
     });
     if (!confirmed) return;
     try {
-        const response = await fetch(`/api/upload/${encodeURIComponent(decodedTenant)}/files/${encodeURIComponent(decodedFilename)}`, { method: 'DELETE' });
+        const response = await authFetch(`/api/upload/${encodeURIComponent(decodedTenant)}/files/${encodeURIComponent(decodedFilename)}`, { method: 'DELETE' });
         const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.detail || data.message || 'Không thể xóa file');
+        if (!response.ok || !data.success) throw new Error(data.detail || data.message || t('runtime.files.deleteTitle'));
         await loadUploadedFiles();
-        showShellAlert(`Đã xóa file ${decodedFilename} khỏi staging.`, 'success', 4000);
+        showShellAlert('', 'success', 4000, 'runtime.files.deleteSuccess', { filename: decodedFilename });
     } catch (error) {
         showShellAlert(error.message);
     }
+}
+
+function tenantOptionsMarkup(tenants, includeSystemWide = true) {
+    const options = [];
+    if (includeSystemWide) {
+        options.push(`<option value="">${escapeHtml(t('common.systemWide'))}</option>`);
+    }
+    tenants.forEach((tenant) => {
+        options.push(`<option value="${tenant.tenant_id}">${tenant.tenant_id} — ${escapeHtml(tenant.tenant_name)}</option>`);
+    });
+    return options.join('');
 }
 
 async function populateTenantDropdown() {
     const select = byId('adminNewUserTenant');
     if (!select) return;
     try {
-        const response = await authFetch('/api/tenants');
-        if (!response.ok) return;
-        const data = await response.json();
-        const tenants = data.tenants || [];
-        select.innerHTML = '<option value="">Toàn hệ thống</option>' +
-            tenants.map((tenant) => `<option value="${tenant.tenant_id}">${tenant.tenant_id} — ${tenant.tenant_name}</option>`).join('');
+        if (!appState.tenants.length) {
+            const response = await authFetch('/api/tenants');
+            if (!response.ok) return;
+            const data = await response.json();
+            appState.tenants = data.tenants || [];
+        }
+        const selectedValue = select.value || '';
+        select.innerHTML = tenantOptionsMarkup(appState.tenants);
+        select.value = selectedValue;
     } catch (error) {}
 }
 
@@ -999,13 +2122,11 @@ async function createTenant(event) {
     const expiresAt = byId('newTenantExpiresAt').value;
 
     if (!tenantId) {
-        message.textContent = 'Vui lòng nhập mã tenant hợp lệ.';
-        message.className = 'microcopy form-msg is-error';
+        setFormMessage(message, 'is-error', 'runtime.forms.invalidTenantId');
         return;
     }
 
-    message.textContent = 'Đang tạo tenant...';
-    message.className = 'microcopy form-msg is-running';
+    setFormMessage(message, 'is-running', 'runtime.forms.creatingTenant');
 
     const body = { tenant_id: tenantId, tenant_name: tenantName, file_path: filePath };
     if (expiresAt) body.expires_at = expiresAt;
@@ -1017,17 +2138,15 @@ async function createTenant(event) {
             body: JSON.stringify(body),
         });
         const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.detail || data.message || 'Không thể tạo tenant');
+        if (!response.ok || !data.success) throw new Error(data.detail || data.message || t('runtime.forms.saveTenantError'));
 
-        message.textContent = `Đã tạo tenant ${tenantId}.`;
-        message.className = 'microcopy form-msg is-success';
+        setFormMessage(message, 'is-success', 'runtime.forms.tenantCreated', { tenant: tenantId });
         ['newTenantId', 'newTenantName', 'newTenantFilePath', 'newTenantExpiresAt'].forEach((id) => {
             byId(id).value = '';
         });
         await loadAdminData();
     } catch (error) {
-        message.textContent = error.message;
-        message.className = 'microcopy form-msg is-error';
+        setFormMessage(message, 'is-error', '', {}, error.message);
     }
 }
 
@@ -1040,13 +2159,11 @@ async function createUser(event) {
     const role = byId('adminNewUserRole').value;
 
     if (role === 'viewer' && !tenantId) {
-        message.textContent = 'Viewer cần gắn với một tenant cụ thể.';
-        message.className = 'microcopy form-msg is-error';
+        setFormMessage(message, 'is-error', 'runtime.forms.viewerNeedsTenant');
         return;
     }
 
-    message.textContent = 'Đang tạo user...';
-    message.className = 'microcopy form-msg is-running';
+    setFormMessage(message, 'is-running', 'runtime.forms.creatingUser');
 
     try {
         const response = await authFetch('/api/users', {
@@ -1055,17 +2172,15 @@ async function createUser(event) {
             body: JSON.stringify({ username, password, tenant_id: tenantId, role }),
         });
         const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.detail || data.message || 'Không thể tạo user');
+        if (!response.ok || !data.success) throw new Error(data.detail || data.message || t('runtime.forms.saveUserError'));
 
-        message.textContent = `Đã tạo user ${username}.`;
-        message.className = 'microcopy form-msg is-success';
+        setFormMessage(message, 'is-success', 'runtime.forms.userCreated', { username });
         byId('adminNewUserUsername').value = '';
         byId('adminNewUserPassword').value = '';
         byId('adminNewUserTenant').value = '';
         await loadAdminData();
     } catch (error) {
-        message.textContent = error.message;
-        message.className = 'microcopy form-msg is-error';
+        setFormMessage(message, 'is-error', '', {}, error.message);
     }
 }
 
@@ -1074,9 +2189,10 @@ async function loadTenantUsers() {
     if (!container) return;
     try {
         const response = await authFetch('/api/users');
-        if (!response.ok) throw new Error('Không tải được danh sách user');
+        if (!response.ok) throw new Error(t('runtime.forms.loadUsersError'));
         const data = await response.json();
-        renderTenantUsers(data.users || []);
+        appState.tenantUsers = data.users || [];
+        renderTenantUsers(appState.tenantUsers);
     } catch (error) {
         container.innerHTML = tableEmpty(error.message, 5);
     }
@@ -1086,17 +2202,17 @@ function renderTenantUsers(users) {
     const container = byId('tenant-user-list');
     if (!container) return;
     if (!users.length) {
-        container.innerHTML = tableEmpty('Tenant này chưa có user nào.', 5);
+        container.innerHTML = tableEmpty(t('runtime.tables.emptyTenantUsers'), 5);
         return;
     }
     container.innerHTML = users.map((user) => {
         return `
         <tr>
-            <td data-label="Username"><strong>${escapeHtml(user.username)}</strong></td>
-            <td data-label="Vai trò"><span class="status-pill tone-neutral">${escapeHtml(user.role === 'viewer' ? 'Viewer' : user.role)}</span></td>
-            <td data-label="Trạng thái"><span class="status-pill ${statusToneByBool(user.is_active)}">${user.is_active ? 'Hoạt động' : 'Tắt'}</span></td>
-            <td data-label="Ngày tạo">${formatDateTime(user.created_at)}</td>
-            <td data-label="Thao tác"><button class="button button--secondary button--compact" type="button" data-edit-user data-user-id="${Number(user.user_id)}" data-username="${escapeHtml(user.username || '')}" data-tenant="${escapeHtml(APP_CONTEXT.userTenant || '')}" data-role="${escapeHtml(user.role || 'viewer')}" data-active="${Boolean(user.is_active)}">Chỉnh user</button></td>
+            <td data-label="${escapeHtml(t('runtime.tables.usernameLabel'))}"><strong>${escapeHtml(user.username)}</strong></td>
+            <td data-label="${escapeHtml(t('runtime.tables.roleLabel'))}"><span class="status-pill tone-neutral">${escapeHtml(i18n.roleLabel(user.role === 'admin' ? 'admin' : 'viewer'))}</span></td>
+            <td data-label="${escapeHtml(t('runtime.tables.statusLabel'))}"><span class="status-pill ${statusToneByBool(user.is_active)}">${user.is_active ? t('common.active') : t('common.inactive')}</span></td>
+            <td data-label="${escapeHtml(t('runtime.tables.createdAtLabel'))}">${formatDateTime(user.created_at)}</td>
+            <td data-label="${escapeHtml(t('runtime.tables.actionsLabel'))}"><button class="button button--secondary button--compact" type="button" data-edit-user data-user-id="${Number(user.user_id)}" data-username="${escapeHtml(user.username || '')}" data-tenant="${escapeHtml(APP_CONTEXT.userTenant || '')}" data-role="${escapeHtml(user.role || 'viewer')}" data-active="${Boolean(user.is_active)}">${escapeHtml(t('runtime.tables.editUser'))}</button></td>
         </tr>
     `;
     }).join('');
@@ -1108,8 +2224,7 @@ async function createTenantUser(event) {
     const username = byId('tenantNewUserUsername').value.trim();
     const password = byId('tenantNewUserPassword').value;
 
-    message.textContent = 'Đang tạo user tenant...';
-    message.className = 'microcopy form-msg is-running';
+    setFormMessage(message, 'is-running', 'runtime.forms.creatingTenantUser');
 
     try {
         const response = await authFetch('/api/users', {
@@ -1118,16 +2233,30 @@ async function createTenantUser(event) {
             body: JSON.stringify({ username, password, role: 'viewer' }),
         });
         const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.detail || data.message || 'Không thể tạo user');
+        if (!response.ok || !data.success) throw new Error(data.detail || data.message || t('runtime.forms.saveUserError'));
 
-        message.textContent = `Đã tạo user ${username}.`;
-        message.className = 'microcopy form-msg is-success';
+        setFormMessage(message, 'is-success', 'runtime.forms.userCreated', { username });
         byId('tenantNewUserUsername').value = '';
         byId('tenantNewUserPassword').value = '';
         await loadTenantUsers();
     } catch (error) {
-        message.textContent = error.message;
-        message.className = 'microcopy form-msg is-error';
+        setFormMessage(message, 'is-error', '', {}, error.message);
+    }
+}
+
+function renderEditTenantTitle() {
+    if (byId('editTenantTitle')) {
+        byId('editTenantTitle').textContent = appState.editingTenantId
+            ? t('runtime.forms.editTenantTitle', { tenant: appState.editingTenantId })
+            : t('modals.editTenant.title');
+    }
+}
+
+function renderEditUserTitle() {
+    if (byId('editUserTitle')) {
+        byId('editUserTitle').textContent = appState.editingUserName
+            ? t('runtime.forms.editUserTitle', { username: appState.editingUserName })
+            : t('modals.editUser.title');
     }
 }
 
@@ -1135,6 +2264,7 @@ function openEditTenant(tenantId) {
     const tenant = appState.tenants.find((item) => item.tenant_id === tenantId);
     if (!tenant) return;
 
+    appState.editingTenantId = tenantId;
     byId('editTenantId').value = tenant.tenant_id;
     byId('editTenantName').value = tenant.tenant_name;
     byId('editTenantFilePath').value = tenant.file_path || '';
@@ -1142,12 +2272,13 @@ function openEditTenant(tenantId) {
     byId('editTenantExpiresAt').value = tenant.expires_at
         ? new Date(new Date(tenant.expires_at).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)
         : '';
-    byId('editTenantTitle').textContent = `Chỉnh tenant ${tenantId}`;
-    byId('editTenantMsg').textContent = '';
+    renderEditTenantTitle();
+    clearFormMessage(byId('editTenantMsg'));
     toggleModal('modalEditTenant', true);
 }
 
 function closeEditTenantModal() {
+    appState.editingTenantId = '';
     toggleModal('modalEditTenant', false);
 }
 
@@ -1156,8 +2287,7 @@ async function submitEditTenant(event) {
     const message = byId('editTenantMsg');
     const tenantId = byId('editTenantId').value;
 
-    message.textContent = 'Đang lưu thay đổi...';
-    message.className = 'microcopy form-msg is-running';
+    setFormMessage(message, 'is-running', 'runtime.forms.savingChanges');
 
     const body = {
         tenant_name: byId('editTenantName').value.trim(),
@@ -1173,43 +2303,44 @@ async function submitEditTenant(event) {
             body: JSON.stringify(body),
         });
         const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.detail || data.message || 'Không thể lưu tenant');
+        if (!response.ok || !data.success) throw new Error(data.detail || data.message || t('runtime.forms.saveTenantUpdateError'));
 
-        message.textContent = 'Đã lưu thay đổi tenant.';
-        message.className = 'microcopy form-msg is-success';
+        setFormMessage(message, 'is-success', 'runtime.forms.tenantSaved');
         await loadAdminData();
         window.setTimeout(closeEditTenantModal, 700);
     } catch (error) {
-        message.textContent = error.message;
-        message.className = 'microcopy form-msg is-error';
+        setFormMessage(message, 'is-error', '', {}, error.message);
     }
 }
 
 async function openEditUser(userId, username, tenantId, role, isActive) {
+    appState.editingUserName = username;
     byId('editUserId').value = userId;
     byId('editUserUsername').value = username;
     byId('editUserPassword').value = '';
     byId('editUserRole').value = role;
     byId('editUserActive').value = isActive ? '1' : '0';
-    byId('editUserTitle').textContent = `Chỉnh user ${username}`;
-    byId('editUserMsg').textContent = '';
+    renderEditUserTitle();
+    clearFormMessage(byId('editUserMsg'));
 
     const select = byId('editUserTenant');
-    select.innerHTML = '<option value="">Toàn hệ thống</option>';
+    select.innerHTML = tenantOptionsMarkup(appState.tenants);
     try {
-        const response = await authFetch('/api/tenants');
-        if (response.ok) {
-            const data = await response.json();
-            const tenants = data.tenants || [];
-            select.innerHTML = '<option value="">Toàn hệ thống</option>' +
-                tenants.map((tenant) => `<option value="${tenant.tenant_id}">${tenant.tenant_id} — ${tenant.tenant_name}</option>`).join('');
+        if (!appState.tenants.length) {
+            const response = await authFetch('/api/tenants');
+            if (response.ok) {
+                const data = await response.json();
+                appState.tenants = data.tenants || [];
+            }
         }
+        select.innerHTML = tenantOptionsMarkup(appState.tenants);
     } catch (error) {}
     select.value = tenantId || '';
     toggleModal('modalEditUser', true);
 }
 
 function closeEditUserModal() {
+    appState.editingUserName = '';
     toggleModal('modalEditUser', false);
 }
 
@@ -1227,8 +2358,7 @@ async function submitEditUser(event) {
         body.password = byId('editUserPassword').value;
     }
 
-    message.textContent = 'Đang lưu thay đổi user...';
-    message.className = 'microcopy form-msg is-running';
+    setFormMessage(message, 'is-running', 'runtime.forms.savingChanges');
 
     try {
         const response = await authFetch(`/api/users/${userId}`, {
@@ -1237,10 +2367,9 @@ async function submitEditUser(event) {
             body: JSON.stringify(body),
         });
         const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.detail || data.message || 'Không thể lưu user');
+        if (!response.ok || !data.success) throw new Error(data.detail || data.message || t('runtime.forms.saveUserUpdateError'));
 
-        message.textContent = 'Đã lưu thay đổi user.';
-        message.className = 'microcopy form-msg is-success';
+        setFormMessage(message, 'is-success', 'runtime.forms.userSaved');
         if (APP_CONTEXT.userRole === 'superadmin') {
             await loadAdminData();
         } else if (APP_CONTEXT.userRole === 'admin') {
@@ -1248,8 +2377,7 @@ async function submitEditUser(event) {
         }
         window.setTimeout(closeEditUserModal, 700);
     } catch (error) {
-        message.textContent = error.message;
-        message.className = 'microcopy form-msg is-error';
+        setFormMessage(message, 'is-error', '', {}, error.message);
     }
 }
 
@@ -1354,12 +2482,44 @@ function bindForms() {
     byId('newTenantId')?.addEventListener('input', autoFillTenantPath);
 }
 
+function renderLocaleState() {
+    renderShellContext();
+    updatePageChrome(appState.activePage || APP_CONTEXT.defaultPage);
+    setActiveAnalysis(appState.activeAnalysis);
+    renderHealthState();
+    renderOverviewIntel();
+    renderTenants(appState.tenants);
+    renderUsers(appState.users);
+    renderETLLogs(appState.etlLogs);
+    renderTenantUsers(appState.tenantUsers);
+    renderUploadedFiles();
+    renderUploadStatus();
+    renderEditTenantTitle();
+    renderEditUserTitle();
+    renderConfirmDialog();
+    populateTenantDropdown();
+
+    const editUserTenant = byId('editUserTenant');
+    if (editUserTenant && appState.tenants.length) {
+        const selectedValue = editUserTenant.value || '';
+        editUserTenant.innerHTML = tenantOptionsMarkup(appState.tenants);
+        editUserTenant.value = selectedValue;
+    }
+
+    if (byId('fileInput')?.files?.length) {
+        showFilePreview();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     bindNavigation();
     bindGlobalEvents();
     bindForms();
     setSidebarState();
+    renderShellContext();
+    renderHealthState();
     renderOverviewIntel();
+    i18n.onChange(renderLocaleState);
     checkHealth();
     loadKPIs();
     populateETLTenantSelect();
@@ -1380,6 +2540,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (APP_CONTEXT.userRole === 'admin') {
         await loadTenantUsers();
     }
+
+    renderLocaleState();
 });
 
 window.openEditTenant = openEditTenant;

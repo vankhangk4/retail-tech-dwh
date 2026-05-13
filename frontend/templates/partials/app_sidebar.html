@@ -15,7 +15,7 @@
             </div>
             <div class="rail-brand__copy">
                 <span class="rail-brand__title">DWH Operations Console</span>
-                <span class="rail-brand__meta">Trung tâm điều hành cho hệ thống Data Warehouse đa tenant</span>
+                <span class="rail-brand__meta" data-i18n="sidebar.brandMeta">Trung tâm vận hành cho hệ thống Data Warehouse đa chi nhánh</span>
             </div>
         </div>
     </section>
@@ -27,29 +27,29 @@
                 <img class="avatar-stamp__img is-hidden" id="sidebarAvatarImg" alt="">
             </div>
             <div class="rail-user__meta">
-                <strong>
+                <strong id="sidebarRoleLabel">
                     {% if user.role == 'superadmin' %}
-                        Superadmin
+                        Quản trị hệ thống
                     {% elif user.role == 'admin' %}
-                        Admin
+                        Quản trị chi nhánh
                     {% else %}
-                        Viewer
+                        Người xem báo cáo
                     {% endif %}
                 </strong>
-                <span>
+                <span id="sidebarScopeText">
                     {% if user.tenant_id %}
-                        Phạm vi: {{ user.tenant_id }}
+                        Phạm vi dữ liệu: {{ user.tenant_id }}
                     {% else %}
-                        Phạm vi: toàn hệ thống
+                        Phạm vi dữ liệu: toàn hệ thống
                     {% endif %}
                 </span>
             </div>
         </div>
         <div class="rail-user__chips">
             <span class="status-pill status-pill--plain tone-neutral">ID {{ user.user_id }}</span>
-            <span class="status-pill status-pill--plain {% if user.tenant_id %}tone-live{% else %}tone-neutral{% endif %}">
+            <span class="status-pill status-pill--plain {% if user.tenant_id %}tone-live{% else %}tone-neutral{% endif %}" id="sidebarScopeModeChip">
                 {% if user.tenant_id %}
-                    Chế độ tenant
+                    Phạm vi chi nhánh
                 {% else %}
                     Toàn hệ thống
                 {% endif %}
@@ -57,9 +57,9 @@
         </div>
     </section>
 
-    <nav class="rail-nav" aria-label="Điều hướng chính">
+    <nav class="rail-nav" data-i18n-aria-label="sidebar.primaryNavAria" aria-label="Điều hướng chính">
         <div class="rail-group">
-            <span class="rail-group__label">Điều hành</span>
+            <span class="rail-group__label" data-i18n="sidebar.groupOperations">Vận hành</span>
             {% if on_dashboard %}
             <button class="nav-link{% if current == 'overview' %} is-active{% endif %}" type="button" data-page="overview">
             {% else %}
@@ -67,8 +67,8 @@
             {% endif %}
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                 <span class="nav-link__copy">
-                    <span class="nav-link__title">Tổng quan</span>
-                    <span class="nav-link__meta">Tín hiệu vận hành</span>
+                    <span class="nav-link__title" data-i18n="sidebar.overviewTitle">Tổng quan</span>
+                    <span class="nav-link__meta" data-i18n="sidebar.overviewMeta">Chỉ báo vận hành</span>
                 </span>
             {% if on_dashboard %}
             </button>
@@ -83,8 +83,8 @@
             {% endif %}
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 <span class="nav-link__copy">
-                    <span class="nav-link__title">Vận hành ETL</span>
-                    <span class="nav-link__meta">Upload và pipeline</span>
+                    <span class="nav-link__title" data-i18n="sidebar.etlTitle">Vận hành ETL</span>
+                    <span class="nav-link__meta" data-i18n="sidebar.etlMeta">Nạp dữ liệu và ETL</span>
                 </span>
             {% if on_dashboard %}
             </button>
@@ -94,7 +94,7 @@
         </div>
 
         <div class="rail-group">
-            <span class="rail-group__label">Phân tích</span>
+            <span class="rail-group__label" data-i18n="sidebar.groupAnalytics">Phân tích</span>
             {% if on_dashboard %}
             <button class="nav-link{% if current == 'analysis' %} is-active{% endif %}" type="button" data-page="analysis">
             {% else %}
@@ -102,8 +102,8 @@
             {% endif %}
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-7"/></svg>
                 <span class="nav-link__copy">
-                    <span class="nav-link__title">Phân tích</span>
-                    <span class="nav-link__meta">Một điểm vào cho 5 dashboard</span>
+                    <span class="nav-link__title" data-i18n="sidebar.analysisTitle">Phân tích</span>
+                    <span class="nav-link__meta" data-i18n="sidebar.analysisMeta">Truy cập 5 báo cáo phân tích</span>
                 </span>
             {% if on_dashboard %}
             </button>
@@ -114,7 +114,7 @@
 
         {% if user.role == 'admin' or user.role == 'superadmin' %}
         <div class="rail-group">
-            <span class="rail-group__label">Quản trị</span>
+            <span class="rail-group__label" data-i18n="sidebar.groupAdmin">Quản trị</span>
             {% if user.role == 'admin' %}
                 {% if on_dashboard %}
                 <button class="nav-link{% if current == 'manage' %} is-active{% endif %}" type="button" data-page="manage">
@@ -123,8 +123,8 @@
                 {% endif %}
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                     <span class="nav-link__copy">
-                        <span class="nav-link__title">Quản lý tenant</span>
-                        <span class="nav-link__meta">User trong cửa hàng</span>
+                        <span class="nav-link__title" data-i18n="sidebar.manageTitle">Quản lý chi nhánh</span>
+                        <span class="nav-link__meta" data-i18n="sidebar.manageMeta">Người dùng theo chi nhánh</span>
                     </span>
                 {% if on_dashboard %}
                 </button>
@@ -141,8 +141,8 @@
                 {% endif %}
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                     <span class="nav-link__copy">
-                        <span class="nav-link__title">Quản trị hệ thống</span>
-                        <span class="nav-link__meta">Tenant, user, giám sát ETL</span>
+                        <span class="nav-link__title" data-i18n="sidebar.adminTitle">Quản trị hệ thống</span>
+                        <span class="nav-link__meta" data-i18n="sidebar.adminMeta">Chi nhánh, người dùng, giám sát ETL</span>
                     </span>
                 {% if on_dashboard %}
                 </button>
@@ -154,12 +154,12 @@
         {% endif %}
 
         <div class="rail-group">
-            <span class="rail-group__label">Tài khoản</span>
+            <span class="rail-group__label" data-i18n="sidebar.groupAccount">Tài khoản</span>
             <a class="nav-link{% if current == 'settings' %} is-active{% endif %}" href="/settings" {% if current == 'settings' %}aria-current="page"{% endif %}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <span class="nav-link__copy">
-                    <span class="nav-link__title">Cài đặt</span>
-                    <span class="nav-link__meta">Hồ sơ và bảo mật</span>
+                    <span class="nav-link__title" data-i18n="sidebar.settingsTitle">Thiết lập</span>
+                    <span class="nav-link__meta" data-i18n="sidebar.settingsMeta">Thông tin và bảo mật</span>
                 </span>
             </a>
         </div>
@@ -167,10 +167,10 @@
 
     <section class="rail-footer">
         <div id="healthIndicator">
-            <span class="status-pill status-pill--plain tone-neutral">Đang kiểm tra API</span>
+            <span class="status-pill status-pill--plain tone-neutral" data-i18n="sidebar.healthLoading">Đang kiểm tra kết nối API</span>
         </div>
         <button class="button button--secondary" type="button" id="logoutBtn">
-            <span>Đăng xuất</span>
+            <span data-i18n="sidebar.signOut">Đăng xuất</span>
         </button>
     </section>
 </aside>

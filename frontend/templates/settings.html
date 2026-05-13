@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Cài đặt | DWH Operations Console</title>
-    {% set asset_version = '20260511-polish1' %}
+    <title>Thiết lập tài khoản | DWH Operations Console</title>
+    {% set asset_version = '20260513-i18n1' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/shell.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css', v=asset_version) }}">
@@ -13,40 +13,48 @@
       data-user-role="{{ user.role }}"
       data-user-tenant="{{ user.tenant_id or '' }}"
       data-user-id="{{ user.user_id or '' }}"
-      data-access-token="{{ session.get('access_token', '') }}">
-    <a href="#mainContent" class="skip-link">Bỏ qua thanh điều hướng, tới nội dung chính</a>
+      data-access-token="{{ session.get('access_token', '') }}"
+      data-ui-lang="vi">
+    <a href="#mainContent" class="skip-link" data-i18n="page.skipLink">Bỏ qua điều hướng, chuyển tới nội dung chính</a>
 
     {% set sidebar_surface = 'settings' %}
     {% set sidebar_active = 'settings' %}
 
     <div class="app-shell">
         {% include 'partials/app_sidebar.html' %}
-        <button class="shell-scrim" type="button" id="shellScrim" aria-label="Đóng thanh điều hướng"></button>
+        <button class="shell-scrim" type="button" id="shellScrim" data-i18n-aria-label="page.closeNavigation"></button>
 
         <!-- ── Main ── -->
         <main class="app-main" id="mainContent">
             <header class="command-bar">
                 <div class="command-bar__start">
-                    <button class="icon-button command-toggle" type="button" id="toggleSidebar" aria-label="Thu gọn hoặc mở thanh điều hướng" aria-controls="sidebar" aria-expanded="true">
+                    <button class="icon-button command-toggle" type="button" id="toggleSidebar" data-i18n-aria-label="page.toggleNavigation" aria-controls="sidebar" aria-expanded="true">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                     </button>
                     <div class="command-copy">
-                        <span class="eyebrow">Tài khoản</span>
-                        <h1>Cài đặt & Hồ sơ</h1>
-                        <p>Quản lý thông tin cá nhân, ảnh đại diện và cài đặt bảo mật tài khoản của bạn.</p>
+                        <span class="eyebrow" data-i18n="page.eyebrow">Người dùng</span>
+                        <h1 data-i18n="page.title">Thiết lập tài khoản</h1>
+                        <p data-i18n="page.description">Quản trị hồ sơ người dùng, thông tin liên hệ và bảo mật truy cập của tài khoản đang đăng nhập.</p>
                     </div>
                 </div>
                 <div class="command-bar__meta">
                     <div class="context-chip">
-                        <span>Tài khoản</span>
-                        <strong id="headerUsername">—</strong>
+                        <span data-i18n="page.usernameChip">Tên đăng nhập</span>
+                        <strong id="headerUsername">Chưa xác định</strong>
+                    </div>
+                    <div class="context-chip context-chip--language">
+                        <span data-i18n="page.languageLabel">Ngôn ngữ</span>
+                        <select class="select context-chip__select" id="languageSelect" data-i18n-aria-label="page.languageSelectAria">
+                            <option value="vi" data-i18n="language.vietnamese">Tiếng Việt</option>
+                            <option value="en" data-i18n="language.english">English</option>
+                        </select>
                     </div>
                     <div class="context-chip">
-                        <span>Vai trò</span>
-                        <strong>
-                            {% if user.role == 'superadmin' %}Superadmin
-                            {% elif user.role == 'admin' %}Admin
-                            {% else %}Viewer{% endif %}
+                        <span data-i18n="page.roleChip">Vai trò</span>
+                        <strong id="headerRoleValue">
+                            {% if user.role == 'superadmin' %}Quản trị hệ thống
+                            {% elif user.role == 'admin' %}Quản trị chi nhánh
+                            {% else %}Người xem báo cáo{% endif %}
                         </strong>
                     </div>
                 </div>
@@ -55,121 +63,116 @@
             <div class="settings-page">
 
                 <!-- Tab navigation -->
-                <nav class="settings-tabs" role="tablist" aria-label="Phân mục cài đặt">
+                <nav class="settings-tabs" role="tablist" data-i18n-aria-label="page.tabsAria">
                     <button class="settings-tab-btn is-active" type="button" id="tab-profile-btn" role="tab" tabindex="0" aria-selected="true"
                             aria-controls="tab-profile" data-tab="profile">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        Hồ sơ cá nhân
+                        <span data-i18n="tabs.profile">Hồ sơ tài khoản</span>
                     </button>
                     <button class="settings-tab-btn" type="button" id="tab-security-btn" role="tab" tabindex="-1" aria-selected="false"
                             aria-controls="tab-security" data-tab="security">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                        Bảo mật
+                        <span data-i18n="tabs.security">Bảo mật truy cập</span>
                     </button>
                 </nav>
 
-                <!-- ═══════════════════════════════════════
-                     Tab 1: Hồ sơ cá nhân
-                ═══════════════════════════════════════ -->
                 <div class="tab-panel" id="tab-profile" role="tabpanel" aria-labelledby="tab-profile-btn">
-
-                    <!-- Avatar card -->
                     <div class="settings-card surface">
                         <div class="settings-card__head">
                             <div>
-                                <h2 class="settings-card__title">Ảnh đại diện</h2>
-                                <p class="settings-card__desc">Nhấn vào ảnh để tải lên ảnh mới. Hỗ trợ JPG, PNG, WEBP — tối đa 5 MB.</p>
+                                <h2 class="settings-card__title" data-i18n="profile.avatarTitle">Ảnh đại diện</h2>
+                                <p class="settings-card__desc" data-i18n="profile.avatarDesc">Cập nhật ảnh nhận diện dùng tại thanh điều hướng và các màn hình tài khoản. Hỗ trợ JPG, PNG, WEBP, dung lượng đầu vào tối đa 8 MB.</p>
                             </div>
                         </div>
 
                         <div class="avatar-editor">
                             <div class="avatar-editor__wrap">
-                                <div class="avatar-xl" id="avatarPreview" aria-label="Ảnh đại diện hiện tại">
+                                <div class="avatar-xl" id="avatarPreview" data-i18n-aria-label="profile.avatarPreviewAria">
                                     <span class="avatar-xl__initials" id="avatarInitials">{{ user.role[0].upper() }}</span>
-                                    <img class="avatar-xl__img is-hidden" id="avatarImg" alt="Ảnh đại diện">
+                                    <img class="avatar-xl__img is-hidden" id="avatarImg" data-i18n-alt="profile.avatarAlt">
                                 </div>
-                                <label class="avatar-upload-btn" for="avatarInput" title="Thay đổi ảnh đại diện">
+                                <label class="avatar-upload-btn" for="avatarInput" id="avatarUploadTrigger" data-i18n-title="profile.avatarUploadTitle">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                                 </label>
-                                <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/webp" hidden aria-label="Chọn file ảnh đại diện">
+                                <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/webp" hidden data-i18n-aria-label="profile.avatarInputAria">
                             </div>
 
                             <div class="avatar-editor__actions">
-                                <p class="avatar-editor__hint">Ảnh sẽ được thu nhỏ và lưu tối đa 200×200 px.</p>
+                                <p class="avatar-editor__hint" data-i18n="profile.avatarHint">Hệ thống tự động chuẩn hóa ảnh về kích thước tối đa 200×200 px trước khi lưu.</p>
                                 <button class="button button--danger" type="button" id="avatarRemoveBtn" hidden>
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-                                    Xóa ảnh đại diện
+                                    <span data-i18n="profile.avatarRemove">Xóa ảnh hiện hành</span>
                                 </button>
-                                <div class="alert alert--success is-hidden" id="avatarSuccessMsg" aria-live="polite">
-                                    Ảnh đại diện đã được cập nhật.
+                                <div class="alert alert--success is-hidden" id="avatarSuccessMsg" aria-live="polite" data-i18n="profile.avatarUpdated">
+                                    Đã cập nhật ảnh đại diện.
                                 </div>
                                 <div class="alert alert--danger is-hidden" id="avatarErrorMsg" aria-live="polite"></div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Profile info card -->
                     <div class="settings-card surface">
                         <div class="settings-card__head">
                             <div>
-                                <h2 class="settings-card__title">Thông tin cá nhân</h2>
-                                <p class="settings-card__desc">Cập nhật tên hiển thị, email và số điện thoại liên hệ.</p>
+                                <h2 class="settings-card__title" data-i18n="profile.infoTitle">Thông tin tài khoản</h2>
+                                <p class="settings-card__desc" data-i18n="profile.infoDesc">Cập nhật tên hiển thị và đầu mối liên hệ phục vụ trao đổi vận hành.</p>
                             </div>
                         </div>
 
-                        <!-- Readonly identity rows -->
                         <div class="settings-identity">
                             <div class="identity-row">
-                                <span class="identity-row__label">Tên đăng nhập</span>
-                                <span class="identity-row__value" id="identityUsername">—</span>
+                                <span class="identity-row__label" data-i18n="profile.usernameLabel">Tên đăng nhập</span>
+                                <span class="identity-row__value" id="identityUsername">Chưa xác định</span>
                             </div>
                             <div class="identity-row">
-                                <span class="identity-row__label">Vai trò</span>
+                                <span class="identity-row__label" data-i18n="profile.roleLabel">Vai trò</span>
                                 <span class="identity-row__value">
                                     {% if user.role == 'superadmin' %}
-                                        <span class="status-pill tone-warning">Superadmin</span>
+                                        <span class="status-pill tone-warning" id="identityRolePill">Quản trị hệ thống</span>
                                     {% elif user.role == 'admin' %}
-                                        <span class="status-pill tone-live">Admin</span>
+                                        <span class="status-pill tone-live" id="identityRolePill">Quản trị chi nhánh</span>
                                     {% else %}
-                                        <span class="status-pill tone-neutral">Viewer</span>
+                                        <span class="status-pill tone-neutral" id="identityRolePill">Người xem báo cáo</span>
                                     {% endif %}
                                 </span>
                             </div>
                             {% if user.tenant_id %}
                             <div class="identity-row">
-                                <span class="identity-row__label">Cửa hàng</span>
+                                <span class="identity-row__label" data-i18n="profile.tenantLabel">Chi nhánh</span>
                                 <span class="identity-row__value">
                                     <span class="status-pill tone-neutral">{{ user.tenant_id }}</span>
                                 </span>
                             </div>
                             {% endif %}
                             <div class="identity-row">
-                                <span class="identity-row__label">Thành viên từ</span>
-                                <span class="identity-row__value tabular" id="identityCreatedAt">—</span>
+                                <span class="identity-row__label" data-i18n="profile.createdAtLabel">Ngày tạo tài khoản</span>
+                                <span class="identity-row__value tabular" id="identityCreatedAt">Chưa xác định</span>
                             </div>
                         </div>
 
-                        <!-- Editable fields -->
                         <form id="profileForm" class="settings-form" novalidate>
                             <div class="settings-form__row">
                                 <div class="field">
-                                    <label for="displayName">Tên hiển thị</label>
+                                    <label for="displayName" data-i18n="profile.displayNameLabel">Tên hiển thị</label>
                                     <input class="input" type="text" id="displayName" name="display_name"
-                                           maxlength="200" placeholder="Nhập tên đầy đủ của bạn..."
+                                           maxlength="200"
+                                           data-i18n-placeholder="profile.displayNamePlaceholder"
                                            autocomplete="name" aria-describedby="displayNameHint">
-                                    <span class="field-hint" id="displayNameHint">Hiển thị trong giao diện và báo cáo.</span>
+                                    <span class="field-hint" id="displayNameHint" data-i18n="profile.displayNameHint">Hiển thị tại thanh điều hướng và các màn hình báo cáo.</span>
                                 </div>
                                 <div class="field">
-                                    <label for="email">Email</label>
+                                    <label for="email" data-i18n="profile.emailLabel">Email</label>
                                     <input class="input" type="email" id="email" name="email"
-                                           maxlength="255" placeholder="example@company.com"
+                                           maxlength="255"
+                                           data-i18n-placeholder="profile.emailPlaceholder"
                                            autocomplete="email">
                                 </div>
                             </div>
                             <div class="field field--compact">
-                                <label for="phone">Số điện thoại</label>
+                                <label for="phone" data-i18n="profile.phoneLabel">Số điện thoại liên hệ</label>
                                 <input class="input" type="tel" id="phone" name="phone"
-                                       maxlength="30" placeholder="0900 000 000"
+                                       maxlength="30"
+                                       data-i18n-placeholder="profile.phonePlaceholder"
                                        autocomplete="tel">
                             </div>
 
@@ -179,59 +182,52 @@
                             <div class="settings-form__footer">
                                 <button class="button button--primary" type="submit" id="profileSaveBtn">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                                    <span class="button__label">Lưu thay đổi</span>
+                                    <span class="button__label" data-i18n="profile.save">Lưu cập nhật</span>
                                 </button>
                                 <button class="button button--secondary" type="button" id="profileResetBtn">
-                                    Đặt lại
+                                    <span data-i18n="profile.reset">Khôi phục</span>
                                 </button>
                             </div>
                         </form>
                     </div>
+                </div>
 
-                </div><!-- /tab-profile -->
-
-                <!-- ═══════════════════════════════════════
-                     Tab 2: Bảo mật
-                ═══════════════════════════════════════ -->
                 <div class="tab-panel is-hidden" id="tab-security" role="tabpanel" aria-labelledby="tab-security-btn">
-
-                    <!-- Change password card -->
                     <div class="settings-card surface">
                         <div class="settings-card__head">
                             <div>
-                                <h2 class="settings-card__title">Đổi mật khẩu</h2>
-                                <p class="settings-card__desc">Dùng mật khẩu mạnh với ít nhất 6 ký tự. Ưu tiên kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt.</p>
+                                <h2 class="settings-card__title" data-i18n="security.title">Cập nhật mật khẩu</h2>
+                                <p class="settings-card__desc" data-i18n="security.desc">Thiết lập mật khẩu mới cho tài khoản đăng nhập. Mật khẩu nên có tối thiểu 6 ký tự và bao gồm nhiều nhóm ký tự.</p>
                             </div>
                         </div>
 
                         <form id="passwordForm" class="settings-form" novalidate>
                             <div class="field">
-                                <label for="currentPassword">Mật khẩu hiện tại</label>
+                                <label for="currentPassword" data-i18n="security.currentPasswordLabel">Mật khẩu hiện hành</label>
                                 <div class="password-shell">
                                     <input class="input" type="password" id="currentPassword"
                                            name="current_password" autocomplete="current-password"
-                                           placeholder="Nhập mật khẩu hiện tại" required>
+                                           data-i18n-placeholder="security.currentPasswordPlaceholder" required>
                                     <button class="password-toggle" type="button"
                                             data-toggle-password data-target="currentPassword"
-                                            aria-label="Hiện hoặc ẩn mật khẩu" aria-pressed="false">
+                                            data-i18n-aria-label="security.togglePasswordAria" aria-pressed="false">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                     </button>
                                 </div>
                             </div>
 
                             <div class="field">
-                                <label for="newPassword">Mật khẩu mới</label>
+                                <label for="newPassword" data-i18n="security.newPasswordLabel">Mật khẩu mới</label>
                                 <div class="password-shell">
                                     <input class="input" type="password" id="newPassword"
                                            name="new_password" autocomplete="new-password"
-                                           placeholder="Ít nhất 6 ký tự" required minlength="6">
+                                           data-i18n-placeholder="security.newPasswordPlaceholder" required minlength="6">
                                     <button class="password-toggle" type="button"
                                             data-toggle-password data-target="newPassword"
-                                            aria-label="Hiện hoặc ẩn mật khẩu" aria-pressed="false">
+                                            data-i18n-aria-label="security.togglePasswordAria" aria-pressed="false">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                     </button>
                                 </div>
-                                <!-- Password strength -->
                                 <div class="pwd-strength" id="pwdStrength" aria-live="polite" hidden>
                                     <div class="pwd-strength__track">
                                         <div class="pwd-strength__fill" id="pwdStrengthFill"></div>
@@ -241,14 +237,14 @@
                             </div>
 
                             <div class="field">
-                                <label for="confirmPassword">Xác nhận mật khẩu mới</label>
+                                <label for="confirmPassword" data-i18n="security.confirmPasswordLabel">Xác nhận mật khẩu mới</label>
                                 <div class="password-shell">
                                     <input class="input" type="password" id="confirmPassword"
                                            name="confirm_password" autocomplete="new-password"
-                                           placeholder="Nhập lại mật khẩu mới" required>
+                                           data-i18n-placeholder="security.confirmPasswordPlaceholder" required>
                                     <button class="password-toggle" type="button"
                                             data-toggle-password data-target="confirmPassword"
-                                            aria-label="Hiện hoặc ẩn mật khẩu" aria-pressed="false">
+                                            data-i18n-aria-label="security.togglePasswordAria" aria-pressed="false">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                     </button>
                                 </div>
@@ -261,22 +257,21 @@
                             <div class="settings-form__footer">
                                 <button class="button button--primary" type="submit" id="passwordSaveBtn">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                    <span class="button__label">Đổi mật khẩu</span>
+                                    <span class="button__label" data-i18n="security.save">Lưu mật khẩu mới</span>
                                 </button>
                             </div>
                         </form>
                     </div>
 
-                    <!-- Login history card -->
                     <div class="settings-card surface">
                         <div class="settings-card__head">
                             <div>
-                                <h2 class="settings-card__title">Lịch sử đăng nhập</h2>
-                                <p class="settings-card__desc">20 phiên gần nhất — kiểm tra nếu bạn nghi ngờ truy cập trái phép.</p>
+                                <h2 class="settings-card__title" data-i18n="history.title">Nhật ký đăng nhập</h2>
+                                <p class="settings-card__desc" data-i18n="history.desc">Theo dõi 20 phiên gần nhất để đối soát hoạt động truy cập tài khoản.</p>
                             </div>
                             <button class="button button--secondary" type="button" id="refreshHistoryBtn">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                                Tải lại
+                                <span data-i18n="history.refresh">Làm mới</span>
                             </button>
                         </div>
 
@@ -284,17 +279,17 @@
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Thời gian</th>
-                                        <th>Địa chỉ IP</th>
-                                        <th>Trình duyệt / Thiết bị</th>
-                                        <th>Trạng thái</th>
+                                        <th data-i18n="history.time">Thời điểm</th>
+                                        <th data-i18n="history.ip">IP truy cập</th>
+                                        <th data-i18n="history.device">Thiết bị / Trình duyệt</th>
+                                        <th data-i18n="history.result">Kết quả</th>
                                     </tr>
                                 </thead>
                                 <tbody id="loginHistoryBody">
                                     <tr>
                                         <td colspan="4">
                                             <div class="empty-state">
-                                                <span class="text-faint">Đang tải lịch sử đăng nhập...</span>
+                                                <span class="text-faint" data-i18n="history.loading">Đang tải nhật ký đăng nhập...</span>
                                             </div>
                                         </td>
                                     </tr>
@@ -302,12 +297,10 @@
                             </table>
                         </div>
                     </div>
-
-                </div><!-- /tab-security -->
-
-            </div><!-- /settings-page -->
+                </div>
+            </div>
         </main>
-    </div><!-- /app-shell -->
+    </div>
 
     <script src="{{ url_for('static', filename='js/settings.js', v=asset_version) }}" defer></script>
 </body>

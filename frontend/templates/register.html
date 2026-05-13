@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Đăng ký User | DWH Operations Console</title>
-    {% set asset_version = '20260511-polish1' %}
+    {% set asset_version = '20260513-i18n1' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css', v=asset_version) }}">
 </head>
-<body class="auth-body">
-    <a href="#authMain" class="skip-link">Bỏ qua giới thiệu, tới biểu mẫu đăng ký</a>
+<body class="auth-body" data-auth-page="register" data-ui-lang="vi">
+    <a href="#authMain" class="skip-link" data-i18n="page.register.skipLink">Bỏ qua giới thiệu, tới biểu mẫu đăng ký</a>
 
     <div class="auth-shell">
         <aside class="auth-aside">
@@ -26,38 +26,38 @@
                     </div>
                     <div class="auth-brand__copy">
                         <span class="auth-brand__name">DWH Operations Console</span>
-                        <span class="auth-brand__meta">Đăng ký truy cập theo tenant cho nền tảng dữ liệu bán lẻ</span>
+                        <span class="auth-brand__meta" data-i18n="page.register.brandMeta">Đăng ký truy cập theo tenant cho nền tảng dữ liệu bán lẻ</span>
                     </div>
                 </div>
 
                 <div class="auth-hero">
-                    <span class="eyebrow">Khởi tạo truy cập</span>
-                    <h1>Tạo tài khoản để nhận quyền truy cập dữ liệu.</h1>
-                    <p>Self-signup này tạo tài khoản User với quyền xem dashboard và dữ liệu trong tenant được chỉ định.</p>
+                    <span class="eyebrow" data-i18n="page.register.heroEyebrow">Khởi tạo truy cập</span>
+                    <h1 data-i18n="page.register.heroTitle">Tạo tài khoản để nhận quyền truy cập dữ liệu.</h1>
+                    <p data-i18n="page.register.heroDescription">Self-signup này tạo tài khoản User với quyền xem dashboard và dữ liệu trong tenant được chỉ định.</p>
                 </div>
 
-                <div class="auth-status-cluster" aria-label="Tín hiệu hệ thống và phân quyền">
+                <div class="auth-status-cluster" data-i18n-aria-label="page.register.statusAria" aria-label="Tín hiệu hệ thống và phân quyền">
                     <section class="auth-signal">
-                        <span class="auth-signal__title">Kiểm soát truy cập</span>
+                        <span class="auth-signal__title" data-i18n="page.register.signalAccessTitle">Kiểm soát truy cập</span>
                         <div class="auth-signal__row">
-                            <span>Auth Gateway</span>
-                            <strong data-auth-health-label data-state="checking">Đang kiểm tra</strong>
+                            <span data-i18n="page.register.signalGatewayLabel">Auth Gateway</span>
+                            <strong data-auth-health-label data-state="checking" data-i18n="trust.checking.label">Đang kiểm tra</strong>
                         </div>
                         <div class="auth-signal__row">
-                            <span>Chính sách vai trò</span>
-                            <strong>User mặc định khi self-signup</strong>
+                            <span data-i18n="page.register.signalRoleLabel">Chính sách vai trò</span>
+                            <strong data-i18n="page.register.signalRoleValue">User mặc định khi self-signup</strong>
                         </div>
                     </section>
 
                     <section class="auth-signal">
-                        <span class="auth-signal__title">Trạng thái dữ liệu</span>
+                        <span class="auth-signal__title" data-i18n="page.register.signalDataTitle">Trạng thái dữ liệu</span>
                         <div class="auth-signal__row">
-                            <span>Phạm vi dashboard</span>
-                            <strong>Theo tenant đã chọn</strong>
+                            <span data-i18n="page.register.signalDashboardLabel">Phạm vi dashboard</span>
+                            <strong data-i18n="page.register.signalDashboardValue">Theo tenant đã chọn</strong>
                         </div>
                         <div class="auth-signal__row">
-                            <span>Truy cập dữ liệu</span>
-                            <strong>Kích hoạt sau xác thực</strong>
+                            <span data-i18n="page.register.signalDataLabel">Truy cập dữ liệu</span>
+                            <strong data-i18n="page.register.signalDataValue">Kích hoạt sau xác thực</strong>
                         </div>
                     </section>
                 </div>
@@ -67,23 +67,32 @@
         <main class="auth-panel" id="authMain">
             <section class="auth-card">
                 <div class="auth-card__head">
-                    <span class="eyebrow">Đăng ký</span>
-                    <h2>Tạo tài khoản User</h2>
-                    <p>Dùng mã tenant do admin cung cấp hoặc chọn tenant được phép self-signup. Quyền xem dữ liệu sẽ được áp tự động theo chính sách tenant.</p>
+                    <div class="auth-card__toolbar">
+                        <span class="eyebrow" data-i18n="page.register.cardEyebrow">Đăng ký</span>
+                        <div class="auth-locale">
+                            <label for="languageSelect" data-i18n="page.languageLabel">Ngôn ngữ</label>
+                            <select class="select auth-locale__select" id="languageSelect" data-i18n-aria-label="page.languageSelectAria">
+                                <option value="vi" data-i18n="language.vietnamese">Tiếng Việt</option>
+                                <option value="en" data-i18n="language.english">English</option>
+                            </select>
+                        </div>
+                    </div>
+                    <h2 data-i18n="page.register.cardTitle">Tạo tài khoản User</h2>
+                    <p data-i18n="page.register.cardDescription">Dùng mã tenant do admin cung cấp hoặc chọn tenant được phép self-signup. Quyền xem dữ liệu sẽ được áp tự động theo chính sách tenant.</p>
                 </div>
 
                 <form id="registerForm" class="auth-form" novalidate>
                     <div class="field">
-                        <label for="username">Tên đăng nhập</label>
-                        <input class="input" type="text" id="username" name="username" placeholder="ví dụ: user_hn" autocomplete="username" aria-describedby="usernameError" maxlength="100" required>
+                        <label for="username" data-i18n="page.register.usernameLabel">Tên đăng nhập</label>
+                        <input class="input" type="text" id="username" name="username" data-i18n-placeholder="page.register.usernamePlaceholder" placeholder="ví dụ: user_hn" autocomplete="username" aria-describedby="usernameError" maxlength="100" required>
                         <span class="field-error" id="usernameError" data-input="username"></span>
                     </div>
 
                     <div class="field">
-                        <label for="password">Mật khẩu</label>
+                        <label for="password" data-i18n="page.register.passwordLabel">Mật khẩu</label>
                         <div class="password-shell">
-                            <input class="input" type="password" id="password" name="password" placeholder="Ít nhất 6 ký tự" autocomplete="new-password" aria-describedby="passwordStrength passwordError" minlength="6" required>
-                            <button class="password-toggle" type="button" data-toggle-password data-target="password" aria-label="Hiện hoặc ẩn mật khẩu" aria-pressed="false">
+                            <input class="input" type="password" id="password" name="password" data-i18n-placeholder="page.register.passwordPlaceholder" placeholder="Ít nhất 6 ký tự" autocomplete="new-password" aria-describedby="passwordStrength passwordError" minlength="6" required>
+                            <button class="password-toggle" type="button" data-toggle-password data-target="password" data-i18n-aria-label="page.register.passwordToggleAria" aria-label="Hiện hoặc ẩn mật khẩu" aria-pressed="false">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                                     <circle cx="12" cy="12" r="3"/>
@@ -97,16 +106,16 @@
                                 <span data-strength-bar></span>
                                 <span data-strength-bar></span>
                             </div>
-                            <div class="password-strength__label">Rất yếu</div>
+                            <div class="password-strength__label" data-i18n="strength.veryWeak">Rất yếu</div>
                         </div>
                         <span class="field-error" id="passwordError" data-input="password"></span>
                     </div>
 
                     <div class="field">
-                        <label for="confirmPassword">Xác nhận mật khẩu</label>
+                        <label for="confirmPassword" data-i18n="page.register.confirmLabel">Xác nhận mật khẩu</label>
                         <div class="password-shell">
-                            <input class="input" type="password" id="confirmPassword" name="confirmPassword" placeholder="Nhập lại mật khẩu" autocomplete="new-password" aria-describedby="confirmError" required>
-                            <button class="password-toggle" type="button" data-toggle-password data-target="confirmPassword" aria-label="Hiện hoặc ẩn mật khẩu xác nhận" aria-pressed="false">
+                            <input class="input" type="password" id="confirmPassword" name="confirmPassword" data-i18n-placeholder="page.register.confirmPlaceholder" placeholder="Nhập lại mật khẩu" autocomplete="new-password" aria-describedby="confirmError" required>
+                            <button class="password-toggle" type="button" data-toggle-password data-target="confirmPassword" data-i18n-aria-label="page.register.confirmToggleAria" aria-label="Hiện hoặc ẩn mật khẩu xác nhận" aria-pressed="false">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                                     <circle cx="12" cy="12" r="3"/>
@@ -119,47 +128,48 @@
                     <input type="hidden" id="role" name="role" value="user">
 
                     <div class="field">
-                        <label for="tenant_id">Tenant</label>
+                        <label for="tenant_id" data-i18n="page.register.tenantLabel">Tenant</label>
                         <select class="select" id="tenant_id" name="tenant_id" aria-describedby="tenantHint tenantError" disabled>
-                            <option value="">Đang tải danh sách tenant...</option>
+                            <option value="" data-i18n="tenant.loading">Đang tải danh sách tenant...</option>
                         </select>
                         <div class="field auth-tenant-fallback" id="tenantManualWrapper">
-                            <label for="tenant_id_manual">Nhập mã tenant thủ công</label>
-                            <input class="input" type="text" id="tenant_id_manual" aria-describedby="tenantHint tenantError" placeholder="ví dụ: STORE_HN">
+                            <label for="tenant_id_manual" data-i18n="tenant.manualLabel">Nhập mã tenant thủ công</label>
+                            <input class="input" type="text" id="tenant_id_manual" aria-describedby="tenantHint tenantError" data-i18n-placeholder="tenant.manualPlaceholder" placeholder="ví dụ: STORE_HN">
                         </div>
-                        <p class="field-hint" id="tenantHint">Đang kiểm tra khả năng tải danh sách tenant từ hệ thống.</p>
+                        <p class="field-hint" id="tenantHint" data-i18n="tenant.loadingHint">Đang kiểm tra khả năng tải danh sách tenant từ hệ thống.</p>
                         <span class="field-error" id="tenantError" data-input="tenant_id"></span>
                     </div>
 
                     <div class="auth-scope" aria-labelledby="authScopeTitle">
                         <div class="auth-scope__meta">
-                            <span class="auth-scope__eyebrow">Phạm vi mặc định</span>
-                            <span class="status-pill tone-neutral">Theo tenant</span>
+                            <span class="auth-scope__eyebrow" data-i18n="page.register.scopeEyebrow">Phạm vi mặc định</span>
+                            <span class="status-pill tone-neutral" data-i18n="page.register.scopePill">Theo tenant</span>
                         </div>
-                        <h3 id="authScopeTitle">User</h3>
-                        <p>Self-signup chỉ cấp quyền xem dashboard và dữ liệu trong tenant đã chọn. Mọi quyền mở rộng sẽ do admin quản trị sau.</p>
+                        <h3 id="authScopeTitle" data-i18n="page.register.scopeTitle">User</h3>
+                        <p data-i18n="page.register.scopeDescription">Self-signup chỉ cấp quyền xem dashboard và dữ liệu trong tenant đã chọn. Mọi quyền mở rộng sẽ do admin quản trị sau.</p>
                     </div>
 
                     <div class="alert alert--danger" id="registerAlert" aria-live="polite"></div>
 
                     <button id="registerBtn" class="button button--primary" type="submit">
-                        <span class="button__label">Tạo tài khoản User</span>
+                        <span class="button__label" data-i18n="page.register.submit">Tạo tài khoản User</span>
                     </button>
 
                     <div class="auth-trust-strip">
                         <span class="auth-trust-strip__dot is-checking" data-auth-trust-dot aria-hidden="true"></span>
-                        <span data-auth-trust-message>Đang kiểm tra lớp xác thực trước khi tạo tài khoản mới.</span>
+                        <span data-auth-trust-message data-i18n="trust.checking.registerMessage">Đang kiểm tra lớp xác thực trước khi tạo tài khoản mới.</span>
                     </div>
                 </form>
 
                 <div class="auth-footer">
-                    <span>Đã có tài khoản? <a class="auth-link" href="/login">Quay lại đăng nhập</a></span>
-                    <span>Self-signup chỉ áp dụng cho lớp truy cập User của hệ thống.</span>
+                    <span><span data-i18n="page.register.footerPrompt">Đã có tài khoản?</span> <a class="auth-link" href="/login" data-i18n="page.register.footerLink">Quay lại đăng nhập</a></span>
+                    <span data-i18n="page.register.footerNote">Self-signup chỉ áp dụng cho lớp truy cập User của hệ thống.</span>
                 </div>
             </section>
         </main>
     </div>
 
+    <script src="{{ url_for('static', filename='js/i18n.js', v=asset_version) }}" defer></script>
     <script src="{{ url_for('static', filename='js/auth.js', v=asset_version) }}" defer></script>
 </body>
 </html>

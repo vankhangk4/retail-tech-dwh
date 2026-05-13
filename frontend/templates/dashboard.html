@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>DWH Operations Console</title>
-    {% set asset_version = '20260511-polish1' %}
+    {% set asset_version = '20260513-i18n1' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/shell.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css', v=asset_version) }}">
@@ -33,20 +33,21 @@
       data-default-analysis="revenue"
       data-dashboard-token="{{ dashboard_token or '' }}"
       data-superset-url="{{ SUPERSET_URL }}"
-      data-access-token="{{ session.get('access_token', '') }}">
-    <a href="#mainContent" class="skip-link">Bỏ qua thanh điều hướng, tới nội dung chính</a>
+      data-access-token="{{ session.get('access_token', '') }}"
+      data-ui-lang="vi">
+    <a href="#mainContent" class="skip-link" data-i18n="page.skipLink">Bỏ qua thanh điều hướng, tới nội dung chính</a>
 
     {% set sidebar_surface = 'dashboard' %}
     {% set sidebar_active = default_dashboard_page %}
 
     <div class="app-shell">
         {% include 'partials/app_sidebar.html' %}
-        <button class="shell-scrim" type="button" id="shellScrim" aria-label="Đóng thanh điều hướng"></button>
+        <button class="shell-scrim" type="button" id="shellScrim" data-i18n-aria-label="page.closeNavigation" aria-label="Đóng thanh điều hướng"></button>
 
         <main class="app-main" id="mainContent">
             <header class="command-bar">
                 <div class="command-bar__start">
-                    <button class="icon-button command-toggle" type="button" id="toggleSidebar" aria-label="Thu gọn hoặc mở thanh điều hướng" aria-controls="sidebar" aria-expanded="true">
+                    <button class="icon-button command-toggle" type="button" id="toggleSidebar" data-i18n-aria-label="page.toggleNavigation" aria-label="Thu gọn hoặc mở thanh điều hướng" aria-controls="sidebar" aria-expanded="true">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                     </button>
                     <div class="command-copy">
@@ -57,60 +58,67 @@
                 </div>
                 <div class="command-bar__meta">
                     <div class="context-chip">
-                        <span>Phạm vi</span>
+                        <span data-i18n="page.scopeChip">Phạm vi</span>
                         <strong id="sessionScope">{% if user.tenant_id %}{{ user.tenant_id }}{% else %}Toàn hệ thống{% endif %}</strong>
                     </div>
+                    <div class="context-chip context-chip--language">
+                        <span data-i18n="page.languageLabel">Ngôn ngữ</span>
+                        <select class="select context-chip__select" id="languageSelect" data-i18n-aria-label="page.languageSelectAria">
+                            <option value="vi" data-i18n="language.vietnamese">Tiếng Việt</option>
+                            <option value="en" data-i18n="language.english">English</option>
+                        </select>
+                    </div>
                     <div class="context-chip">
-                        <span>Quyền</span>
+                        <span data-i18n="page.roleChip">Quyền</span>
                         <strong id="sessionRole">
                             {% if user.role == 'superadmin' %}Superadmin{% elif user.role == 'admin' %}Admin{% else %}Viewer{% endif %}
                         </strong>
                     </div>
                     <div class="context-chip">
-                        <span>Thời điểm</span>
-                        <strong id="overviewTimestamp">Đang cập nhật...</strong>
+                        <span data-i18n="page.timestampChip">Thời điểm</span>
+                        <strong id="overviewTimestamp" data-i18n="page.timestampLoading">Đang cập nhật...</strong>
                     </div>
                 </div>
             </header>
 
             <div class="shell-alert alert alert--danger is-hidden" id="shellAlert" aria-live="polite"></div>
 
-            <section class="page{% if default_dashboard_page == 'overview' %} is-active{% endif %}" id="page-overview" data-page="overview" data-page-title="Tổng quan điều hành" data-page-subtitle="Đọc tín hiệu hệ thống trước, sau đó đi sâu vào phân tích hoặc quản trị." data-page-eyebrow="Điều hành">
+            <section class="page{% if default_dashboard_page == 'overview' %} is-active{% endif %}" id="page-overview" data-page="overview" data-page-title-key="pages.overview.title" data-page-subtitle-key="pages.overview.subtitle" data-page-eyebrow-key="pages.overview.eyebrow">
                 <div class="mission-brief">
                     <div class="mission-brief__copy">
-                        <span class="eyebrow">Nhịp điều hành</span>
-                        <h2>Hệ thống Phân tích Dữ liệu Bán lẻ.</h2>
-                        <p>Nền tảng hỗ trợ theo dõi hiệu năng hệ thống, giám sát luồng dữ liệu (pipeline) và phân tích chỉ số kinh doanh đa chi nhánh (multi-tenant).</p>
+                        <span class="eyebrow" data-i18n="overview.mission.eyebrow">Nhịp điều hành</span>
+                        <h2 data-i18n="overview.mission.title">Hệ thống Phân tích Dữ liệu Bán lẻ.</h2>
+                        <p data-i18n="overview.mission.description">Nền tảng hỗ trợ theo dõi hiệu năng hệ thống, giám sát luồng dữ liệu (pipeline) và phân tích chỉ số kinh doanh đa chi nhánh (multi-tenant).</p>
                         <div class="inline-actions">
-                            <button class="button button--primary" type="button" data-open-page="analysis">Mở phân tích</button>
-                            <button class="button button--secondary" type="button" data-open-page="etl">Giám sát ETL</button>
+                            <button class="button button--primary" type="button" data-open-page="analysis" data-i18n="overview.actions.openAnalysis">Mở phân tích</button>
+                            <button class="button button--secondary" type="button" data-open-page="etl" data-i18n="overview.actions.openEtl">Giám sát ETL</button>
                             {% if user.role == 'superadmin' %}
-                            <button class="button button--secondary" type="button" data-open-page="admin">Quản trị hệ thống</button>
+                            <button class="button button--secondary" type="button" data-open-page="admin" data-i18n="overview.actions.openAdmin">Quản trị hệ thống</button>
                             {% elif user.role == 'admin' %}
-                            <button class="button button--secondary" type="button" data-open-page="manage">Quản trị hệ thống</button>
+                            <button class="button button--secondary" type="button" data-open-page="manage" data-i18n="overview.actions.openManage">Quản trị hệ thống</button>
                             {% endif %}
                         </div>
                     </div>
                     <div class="mission-brief__aside">
                         <div class="status-box">
-                            <span class="eyebrow">Tuyến vận hành</span>
-                            <strong id="overviewHealthLabel">Đang kiểm tra Auth Gateway</strong>
-                            <p id="overviewHealthCopy">Hệ thống đang nạp tín hiệu vận hành ban đầu.</p>
+                            <span class="eyebrow" data-i18n="overview.health.eyebrow">Tuyến vận hành</span>
+                            <strong id="overviewHealthLabel" data-i18n="overview.health.loadingLabel">Đang kiểm tra Auth Gateway</strong>
+                            <p id="overviewHealthCopy" data-i18n="overview.health.loadingCopy">Hệ thống đang nạp tín hiệu vận hành ban đầu.</p>
                         </div>
                         <div class="status-box">
-                            <span class="eyebrow">Phiên hiện tại</span>
+                            <span class="eyebrow" data-i18n="overview.session.eyebrow">Phiên hiện tại</span>
                             <dl>
                                 <div>
-                                    <dt>Phạm vi dữ liệu</dt>
+                                    <dt data-i18n="overview.session.scopeLabel">Phạm vi dữ liệu</dt>
                                     <dd>{% if user.tenant_id %}{{ user.tenant_id }}{% else %}Toàn hệ thống{% endif %}</dd>
                                 </div>
                                 <div>
-                                    <dt>Tài khoản đang dùng</dt>
+                                    <dt data-i18n="overview.session.userLabel">Tài khoản đang dùng</dt>
                                     <dd>{{ user.user_id }}</dd>
                                 </div>
                                 <div>
-                                    <dt>Lần cập nhật giao diện</dt>
-                                    <dd id="lastSyncTime">Đang chờ log ETL</dd>
+                                    <dt data-i18n="overview.session.lastSyncLabel">Lần cập nhật giao diện</dt>
+                                    <dd id="lastSyncTime" data-i18n="overview.session.lastSyncWaiting">Đang chờ log ETL</dd>
                                 </div>
                             </dl>
                         </div>
@@ -119,24 +127,24 @@
 
                 <div class="signal-strip">
                     <article class="signal-metric">
-                        <span class="signal-metric__label">Tổng doanh thu</span>
+                        <span class="signal-metric__label" data-i18n="overview.kpi.revenueLabel">Tổng doanh thu</span>
                         <strong class="signal-metric__value metric-number" id="kpi-revenue">—</strong>
-                        <span class="signal-metric__meta" id="kpi-revenue-change">Đang nạp chỉ số doanh thu.</span>
+                        <span class="signal-metric__meta" id="kpi-revenue-change" data-i18n="overview.kpi.revenueLoading">Đang nạp chỉ số doanh thu.</span>
                     </article>
                     <article class="signal-metric">
-                        <span class="signal-metric__label">Lợi nhuận gộp</span>
+                        <span class="signal-metric__label" data-i18n="overview.kpi.profitLabel">Lợi nhuận gộp</span>
                         <strong class="signal-metric__value metric-number" id="kpi-profit">—</strong>
-                        <span class="signal-metric__meta" id="kpi-profit-change">Đang nạp biên lợi nhuận.</span>
+                        <span class="signal-metric__meta" id="kpi-profit-change" data-i18n="overview.kpi.profitLoading">Đang nạp biên lợi nhuận.</span>
                     </article>
                     <article class="signal-metric">
-                        <span class="signal-metric__label">Đơn hàng</span>
+                        <span class="signal-metric__label" data-i18n="overview.kpi.ordersLabel">Đơn hàng</span>
                         <strong class="signal-metric__value metric-number" id="kpi-orders">—</strong>
-                        <span class="signal-metric__meta" id="kpi-orders-change">Đang nạp tín hiệu vận hành đơn hàng.</span>
+                        <span class="signal-metric__meta" id="kpi-orders-change" data-i18n="overview.kpi.ordersLoading">Đang nạp tín hiệu vận hành đơn hàng.</span>
                     </article>
                     <article class="signal-metric">
-                        <span class="signal-metric__label">Khách hàng</span>
+                        <span class="signal-metric__label" data-i18n="overview.kpi.customersLabel">Khách hàng</span>
                         <strong class="signal-metric__value metric-number" id="kpi-customers">—</strong>
-                        <span class="signal-metric__meta" id="kpi-customers-change">Đang nạp độ phủ khách hàng.</span>
+                        <span class="signal-metric__meta" id="kpi-customers-change" data-i18n="overview.kpi.customersLoading">Đang nạp độ phủ khách hàng.</span>
                     </article>
                 </div>
 
@@ -144,8 +152,8 @@
                     <section class="panel panel--span-8">
                         <div class="panel-head">
                             <div>
-                                <h3>Cần xử lý ngay</h3>
-                                <p>Chỉ giữ lại các tín hiệu có thể làm yếu buổi demo hoặc ảnh hưởng tính tin cậy của dashboard.</p>
+                                <h3 data-i18n="overview.attention.title">Cần xử lý ngay</h3>
+                                <p data-i18n="overview.attention.description">Chỉ giữ lại các tín hiệu có thể làm yếu buổi demo hoặc ảnh hưởng tính tin cậy của dashboard.</p>
                             </div>
                         </div>
                         <div class="attention-list" id="tenantAttentionList"></div>
@@ -154,47 +162,47 @@
                     <section class="panel panel--span-4">
                         <div class="panel-head">
                             <div>
-                                <h3>Lộ trình phiên này</h3>
-                                <p>Đọc nhanh dữ liệu có đủ tin cậy không, rồi chọn đúng bề mặt để kể chuyện.</p>
+                                <h3 data-i18n="overview.roadmap.title">Lộ trình phiên này</h3>
+                                <p data-i18n="overview.roadmap.description">Đọc nhanh dữ liệu có đủ tin cậy không, rồi chọn đúng bề mặt để kể chuyện.</p>
                             </div>
                         </div>
                         <div class="stack">
-                            <span class="status-pill tone-neutral" id="freshnessTone">Đang tính toán độ tươi dữ liệu</span>
-                            <p class="section-copy" id="freshnessCaption">Khi log ETL xuất hiện, hệ thống sẽ nhắc thời điểm đồng bộ gần nhất ở đây.</p>
+                            <span class="status-pill tone-neutral" id="freshnessTone" data-i18n="overview.freshness.loadingLabel">Đang tính toán độ tươi dữ liệu</span>
+                            <p class="section-copy" id="freshnessCaption" data-i18n="overview.freshness.loadingCaption">Khi log ETL xuất hiện, hệ thống sẽ nhắc thời điểm đồng bộ gần nhất ở đây.</p>
                             <div class="status-box">
-                                <span class="eyebrow">Bước tiếp theo</span>
-                                <strong id="nextActionText">Đang xây dựng gợi ý cho bước demo tiếp theo.</strong>
+                                <span class="eyebrow" data-i18n="overview.nextAction.eyebrow">Bước tiếp theo</span>
+                                <strong id="nextActionText" data-i18n="overview.nextAction.loading">Đang xây dựng gợi ý cho bước demo tiếp theo.</strong>
                             </div>
                             <div class="focus-actions">
                                 <button type="button" class="focus-action" data-open-page="analysis">
                                     <span class="focus-action__copy">
-                                        <strong>Đi vào phân tích</strong>
-                                        <span>Một điểm vào cho toàn bộ dashboard nghiệp vụ.</span>
+                                        <strong data-i18n="overview.focus.analysis.title">Đi vào phân tích</strong>
+                                        <span data-i18n="overview.focus.analysis.description">Một điểm vào cho toàn bộ dashboard nghiệp vụ.</span>
                                     </span>
-                                    <span class="focus-action__meta">5 góc nhìn</span>
+                                    <span class="focus-action__meta" data-i18n="overview.focus.analysis.meta">5 góc nhìn</span>
                                 </button>
                                 <button type="button" class="focus-action" data-open-page="etl">
                                     <span class="focus-action__copy">
-                                        <strong>Kiểm tra ETL</strong>
-                                        <span>Dùng khi cần chứng minh dữ liệu vừa được nạp và log đang sạch.</span>
+                                        <strong data-i18n="overview.focus.etl.title">Kiểm tra ETL</strong>
+                                        <span data-i18n="overview.focus.etl.description">Dùng khi cần chứng minh dữ liệu vừa được nạp và log đang sạch.</span>
                                     </span>
-                                    <span class="focus-action__meta">Pipeline</span>
+                                    <span class="focus-action__meta" data-i18n="overview.focus.etl.meta">Pipeline</span>
                                 </button>
                                 {% if user.role == 'superadmin' %}
                                 <button type="button" class="focus-action" data-open-page="admin">
                                     <span class="focus-action__copy">
-                                        <strong>Mở quản trị hệ thống</strong>
-                                        <span>Kiểm tra tenant, user và log ETL từ cùng một control surface.</span>
+                                        <strong data-i18n="overview.focus.admin.title">Mở quản trị hệ thống</strong>
+                                        <span data-i18n="overview.focus.admin.description">Kiểm tra tenant, user và log ETL từ cùng một giao diện điều hành.</span>
                                     </span>
-                                    <span class="focus-action__meta">Governance</span>
+                                    <span class="focus-action__meta" data-i18n="overview.focus.admin.meta">Governance</span>
                                 </button>
                                 {% elif user.role == 'admin' %}
                                 <button type="button" class="focus-action" data-open-page="manage">
                                     <span class="focus-action__copy">
-                                        <strong>Mở quản trị tenant</strong>
-                                        <span>Đi thẳng vào user trong cửa hàng hiện tại khi cần giải thích phân quyền.</span>
+                                        <strong data-i18n="overview.focus.manage.title">Mở quản trị tenant</strong>
+                                        <span data-i18n="overview.focus.manage.description">Đi thẳng vào user trong cửa hàng hiện tại khi cần giải thích phân quyền.</span>
                                     </span>
-                                    <span class="focus-action__meta">Tenant</span>
+                                    <span class="focus-action__meta" data-i18n="overview.focus.manage.meta">Tenant</span>
                                 </button>
                                 {% endif %}
                             </div>
@@ -204,74 +212,74 @@
                     <section class="panel panel--span-12">
                         <div class="panel-head">
                             <div>
-                                <h3>Tình trạng nền</h3>
-                                <p>Gom tenant, user và lỗi ETL về một hàng để biết hệ thống đang ở trạng thái nào trước khi đi sâu hơn.</p>
+                                <h3 data-i18n="overview.foundation.title">Tình trạng nền</h3>
+                                <p data-i18n="overview.foundation.description">Gom tenant, user và lỗi ETL về một hàng để biết hệ thống đang ở trạng thái nào trước khi đi sâu hơn.</p>
                             </div>
                         </div>
                         <div class="mini-stat-grid">
                             <article class="mini-stat">
-                                <span class="eyebrow">Tenant</span>
+                                <span class="eyebrow" data-i18n="overview.foundation.tenantLabel">Tenant</span>
                                 <strong class="mini-stat__value metric-number" id="tenantInventoryCount">0</strong>
-                                <p id="tenantInventoryNote">Đang nạp danh sách tenant.</p>
+                                <p id="tenantInventoryNote" data-i18n="overview.foundation.tenantLoading">Đang nạp danh sách tenant.</p>
                             </article>
                             <article class="mini-stat">
-                                <span class="eyebrow">User</span>
+                                <span class="eyebrow" data-i18n="overview.foundation.userLabel">User</span>
                                 <strong class="mini-stat__value metric-number" id="userInventoryCount">0</strong>
-                                <p id="userInventoryNote">Đang nạp danh sách user.</p>
+                                <p id="userInventoryNote" data-i18n="overview.foundation.userLoading">Đang nạp danh sách user.</p>
                             </article>
                             <article class="mini-stat">
-                                <span class="eyebrow">Lỗi ETL</span>
+                                <span class="eyebrow" data-i18n="overview.foundation.issueLabel">Lỗi ETL</span>
                                 <strong class="mini-stat__value metric-number" id="etlIssueCount">0</strong>
-                                <p id="etlIssueNote">Đang kiểm tra log ETL lỗi.</p>
+                                <p id="etlIssueNote" data-i18n="overview.foundation.issueLoading">Đang kiểm tra log ETL lỗi.</p>
                             </article>
                         </div>
                     </section>
                 </div>
             </section>
 
-            <section class="page{% if default_dashboard_page == 'analysis' %} is-active{% endif %}" id="page-analysis" data-page="analysis" data-page-title="Phòng phân tích" data-page-subtitle="Chọn đúng câu chuyện trước, rồi mở dashboard tương ứng trong cùng một bề mặt." data-page-eyebrow="Phân tích">
+            <section class="page{% if default_dashboard_page == 'analysis' %} is-active{% endif %}" id="page-analysis" data-page="analysis" data-page-title-key="pages.analysis.title" data-page-subtitle-key="pages.analysis.subtitle" data-page-eyebrow-key="pages.analysis.eyebrow">
                 <div class="analysis-shell">
                     <section class="analysis-picker">
                         <div class="panel-head">
                             <div>
-                                <h3>Góc nhìn phân tích</h3>
-                                <p>Chỉ chọn một trục kể chuyện tại một thời điểm để tránh mở quá nhiều dashboard song song.</p>
+                                <h3 data-i18n="analysis.picker.title">Góc nhìn phân tích</h3>
+                                <p data-i18n="analysis.picker.description">Chỉ chọn một trục kể chuyện tại một thời điểm để tránh mở quá nhiều dashboard song song.</p>
                             </div>
                         </div>
                         <div class="analysis-option-list">
                             <button type="button" class="analysis-option is-active" data-dashboard-key="revenue">
                                 <span class="analysis-option__index">01</span>
                                 <span class="analysis-option__body">
-                                    <strong>Doanh thu</strong>
-                                    <p>Toàn cảnh doanh thu, cùng kỳ và chênh lệch giữa các tenant.</p>
+                                    <strong data-i18n="analysis.options.revenue.label">Doanh thu</strong>
+                                    <p data-i18n="analysis.options.revenue.summary">Toàn cảnh doanh thu, cùng kỳ và chênh lệch giữa các tenant.</p>
                                 </span>
                             </button>
                             <button type="button" class="analysis-option" data-dashboard-key="products">
                                 <span class="analysis-option__index">02</span>
                                 <span class="analysis-option__body">
-                                    <strong>Sản phẩm</strong>
-                                    <p>Sản phẩm bán chạy, biên lợi nhuận và danh mục tạo sức kéo.</p>
+                                    <strong data-i18n="analysis.options.products.label">Sản phẩm</strong>
+                                    <p data-i18n="analysis.options.products.summary">Sản phẩm bán chạy, biên lợi nhuận và danh mục chủ lực.</p>
                                 </span>
                             </button>
                             <button type="button" class="analysis-option" data-dashboard-key="inventory">
                                 <span class="analysis-option__index">03</span>
                                 <span class="analysis-option__body">
-                                    <strong>Tồn kho</strong>
-                                    <p>Thiếu hàng, lệch tồn và rủi ro ảnh hưởng doanh thu.</p>
+                                    <strong data-i18n="analysis.options.inventory.label">Tồn kho</strong>
+                                    <p data-i18n="analysis.options.inventory.summary">Thiếu hàng, lệch tồn và rủi ro ảnh hưởng doanh thu.</p>
                                 </span>
                             </button>
                             <button type="button" class="analysis-option" data-dashboard-key="customers">
                                 <span class="analysis-option__index">04</span>
                                 <span class="analysis-option__body">
-                                    <strong>Khách hàng</strong>
-                                    <p>Phân khúc, hành vi mua và chân dung khách hàng trong DWH.</p>
+                                    <strong data-i18n="analysis.options.customers.label">Khách hàng</strong>
+                                    <p data-i18n="analysis.options.customers.summary">Phân khúc, hành vi mua và chân dung khách hàng trong DWH.</p>
                                 </span>
                             </button>
                             <button type="button" class="analysis-option" data-dashboard-key="employees">
                                 <span class="analysis-option__index">05</span>
                                 <span class="analysis-option__body">
-                                    <strong>Nhân viên</strong>
-                                    <p>Hiệu suất bán hàng và mức đóng góp theo đội ngũ.</p>
+                                    <strong data-i18n="analysis.options.employees.label">Nhân viên</strong>
+                                    <p data-i18n="analysis.options.employees.summary">Hiệu suất bán hàng và mức đóng góp theo đội ngũ.</p>
                                 </span>
                             </button>
                         </div>
@@ -280,58 +288,57 @@
                     <section class="analysis-stage">
                         <div class="analysis-stage__head">
                             <div class="analysis-stage__copy">
-                                <span class="eyebrow">Trục phân tích</span>
-                                <h2 id="analysisTitle">Phòng phân tích doanh thu</h2>
-                                <p id="analysisDescription">Dùng khi cần chứng minh toàn cảnh doanh thu, theo thời gian, theo tenant hoặc theo danh mục.</p>
+                                <span class="eyebrow" data-i18n="analysis.stage.eyebrow">Trục phân tích</span>
+                                <h2 id="analysisTitle" data-i18n="analysis.dashboard.revenue.title">Phòng phân tích doanh thu</h2>
                             </div>
                             <div class="inline-actions">
-                                <span class="status-pill tone-neutral">Nhúng từ Superset</span>
-                                <button class="button button--secondary" type="button" id="analysisOpenModalBtn" data-open-dashboard="1">Mở dạng tập trung</button>
+                                <span class="status-pill tone-neutral" data-i18n="analysis.stage.embedPill">Nhúng từ Superset</span>
+                                <button class="button button--secondary" type="button" id="analysisOpenModalBtn" data-open-dashboard="1" data-i18n="analysis.stage.openModal">Mở dạng tập trung</button>
                             </div>
                         </div>
                         <div class="room-frame">
                             <div class="room-frame__meta">
-                                <span class="status-pill tone-live" id="analysisContextPill">Trục đang xem: Doanh thu</span>
-                                <span class="microcopy" id="frameState-analysis">Đang chuẩn bị dựng dashboard nhúng.</span>
+                                <span class="status-pill tone-live" id="analysisContextPill" data-i18n="analysis.stage.contextLoading">Trục đang xem: Doanh thu</span>
+                                <span class="microcopy" id="frameState-analysis" data-i18n="analysis.stage.frameLoading">Đang chuẩn bị dựng dashboard nhúng.</span>
                             </div>
-                            <iframe id="iframe-analysis" class="embed-frame" title="Dashboard phân tích"></iframe>
+                            <iframe id="iframe-analysis" class="embed-frame" data-i18n-title="analysis.stage.iframeTitle" title="Dashboard phân tích"></iframe>
                             <div class="embed-fallback is-hidden" id="frameFallback-analysis" role="status" aria-live="polite"></div>
                         </div>
                     </section>
                 </div>
             </section>
 
-            <section class="page{% if default_dashboard_page == 'etl' %} is-active{% endif %}" id="page-etl" data-page="etl" data-page-title="Vận hành ETL" data-page-subtitle="Tải file, kích hoạt pipeline và kiểm tra lịch sử upload trong cùng một luồng." data-page-eyebrow="Vận hành">
+            <section class="page{% if default_dashboard_page == 'etl' %} is-active{% endif %}" id="page-etl" data-page="etl" data-page-title-key="pages.etl.title" data-page-subtitle-key="pages.etl.subtitle" data-page-eyebrow-key="pages.etl.eyebrow">
                 <div class="etl-stage">
                     <article class="etl-hero">
                         <div class="etl-hero__head">
                             <div>
-                                <span class="eyebrow">Nạp vào staging</span>
-                                <h2>Kéo file nguồn vào đúng tenant rồi kích hoạt pipeline.</h2>
-                                <p>ETL screen này ưu tiên thao tác vận hành trước. Chọn phạm vi, nạp file, rồi xác minh ngay staging đang chứa đúng dữ liệu cho lần chạy kế tiếp.</p>
+                                <span class="eyebrow" data-i18n="etl.hero.eyebrow">Nạp vào staging</span>
+                                <h2 data-i18n="etl.hero.title">Kéo file nguồn vào đúng tenant rồi kích hoạt pipeline.</h2>
+                                <p data-i18n="etl.hero.description">Màn hình ETL ưu tiên thao tác vận hành trước. Chọn phạm vi, nạp file, rồi xác minh staging đang chứa đúng dữ liệu cho lần chạy kế tiếp.</p>
                             </div>
                         </div>
                         <div class="etl-scope">
                             {% if not user.tenant_id %}
                             <div class="field etl-scope__field">
-                                <label for="etlTenantSelect">Tenant đang vận hành</label>
+                                <label for="etlTenantSelect" data-i18n="etl.scope.label">Tenant đang vận hành</label>
                                 <select class="select" id="etlTenantSelect">
-                                    <option value="">Đang tải tenant...</option>
+                                    <option value="" data-i18n="etl.scope.loading">Đang tải tenant...</option>
                                 </select>
                             </div>
                             {% else %}
-                            <span class="status-pill status-pill--plain tone-neutral etl-scope__pill">Tenant hiện tại: {{ user.tenant_id }}</span>
+                            <span class="status-pill status-pill--plain tone-neutral etl-scope__pill" id="etlCurrentTenantPill">Tenant hiện tại: {{ user.tenant_id }}</span>
                             {% endif %}
                         </div>
 
                         <div class="workflow-stack">
                             <div class="upload-zone" id="uploadZone">
-                                <span class="eyebrow">Upload source</span>
-                                <h3 class="section-title">Kéo thả file nguồn hoặc chọn thủ công.</h3>
-                                <p class="section-copy">Chấp nhận `.xlsx`, `.xls` và `.csv`. Sau khi nạp, lịch sử file gần đây sẽ được cập nhật ngay ở phía dưới để bạn xác minh lại staging.</p>
+                                <span class="eyebrow" data-i18n="etl.upload.eyebrow">Upload source</span>
+                                <h3 class="section-title" data-i18n="etl.upload.title">Kéo thả file nguồn hoặc chọn thủ công.</h3>
+                                <p class="section-copy" data-i18n="etl.upload.description">Chấp nhận `.xlsx`, `.xls` và `.csv`. Sau khi nạp, lịch sử file gần đây sẽ được cập nhật ngay ở phía dưới để bạn xác minh lại staging.</p>
                                 <div class="upload-zone__actions">
-                                    <label class="button button--primary" for="fileInput">Chọn file nguồn</label>
-                                    <button class="button button--secondary" type="button" data-run-etl-current>Chạy ETL ngay</button>
+                                    <label class="button button--primary" for="fileInput" data-i18n="etl.upload.chooseFiles">Chọn file nguồn</label>
+                                    <button class="button button--secondary" type="button" data-run-etl-current data-i18n="etl.upload.runNow">Chạy ETL ngay</button>
                                 </div>
                                 <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" multiple hidden>
                             </div>
@@ -343,15 +350,15 @@
                     <aside class="etl-guide">
                         <div class="etl-guide__head">
                             <div>
-                                <h3>Hướng dẫn file nguồn</h3>
-                                <p>Giữ nhịp đặt tên ổn định để ETL phân loại nhanh và để lúc demo bạn giải thích nguồn dữ liệu không bị khựng.</p>
+                                <h3 data-i18n="etl.guide.title">Hướng dẫn file nguồn</h3>
+                                <p data-i18n="etl.guide.description">Giữ nhịp đặt tên ổn định để ETL phân loại nhanh và để lúc demo bạn giải thích nguồn dữ liệu không bị khựng.</p>
                             </div>
                         </div>
                         <ol class="workflow-guide">
-                            <li><strong>Doanh thu</strong><p class="microcopy">Ví dụ: `BaoCaoDoanhThu_HN_20260101.xlsx`</p></li>
-                            <li><strong>Tồn kho</strong><p class="microcopy">Ví dụ: `QuanLyKho_HCM_20260101.xlsx`</p></li>
-                            <li><strong>Danh mục</strong><p class="microcopy">Dùng `DanhMucSanPham.csv`, `DanhMucKhachHang.csv`, `DanhMucNhaCungCap.csv`.</p></li>
-                            <li><strong>Nhập hàng</strong><p class="microcopy">Dùng `PhieuNhapHang.csv` cho luồng nhập kho và nhà cung cấp.</p></li>
+                            <li><strong data-i18n="etl.guide.revenueLabel">Doanh thu</strong><p class="microcopy" data-i18n="etl.guide.revenueExample">Ví dụ: `BaoCaoDoanhThu_HN_20260101.xlsx`</p></li>
+                            <li><strong data-i18n="etl.guide.inventoryLabel">Tồn kho</strong><p class="microcopy" data-i18n="etl.guide.inventoryExample">Ví dụ: `QuanLyKho_HCM_20260101.xlsx`</p></li>
+                            <li><strong data-i18n="etl.guide.catalogLabel">Danh mục</strong><p class="microcopy" data-i18n="etl.guide.catalogExample">Dùng `DanhMucSanPham.csv`, `DanhMucKhachHang.csv`, `DanhMucNhaCungCap.csv`.</p></li>
+                            <li><strong data-i18n="etl.guide.inboundLabel">Nhập hàng</strong><p class="microcopy" data-i18n="etl.guide.inboundExample">Dùng `PhieuNhapHang.csv` cho luồng nhập kho và nhà cung cấp.</p></li>
                         </ol>
                         <div class="workflow-status" id="uploadStatus" hidden>
                             <div class="workflow-status__header">
@@ -366,38 +373,38 @@
                 <article class="etl-library">
                     <div class="workspace-card__head">
                         <div>
-                            <h3>File đã nạp gần đây</h3>
-                            <p>Dùng để xác minh nhanh staging đang chứa đúng nguồn dữ liệu cho tenant đang vận hành.</p>
+                            <h3 data-i18n="etl.library.title">File đã nạp gần đây</h3>
+                            <p data-i18n="etl.library.description">Dùng để xác minh nhanh staging đang chứa đúng nguồn dữ liệu cho tenant đang vận hành.</p>
                         </div>
                     </div>
                     <div class="files-shell" id="uploadedFilesList">
                         <div class="empty-state">
-                            <strong>Đang tải lịch sử upload.</strong>
+                            <strong data-i18n="etl.library.loading">Đang tải lịch sử upload.</strong>
                         </div>
                     </div>
                 </article>
             </section>
 
             {% if user.role == 'admin' %}
-            <section class="page" id="page-manage" data-page="manage" data-page-title="Quản lý tenant" data-page-subtitle="Tạo user mới và kiểm soát người dùng trong tenant hiện tại." data-page-eyebrow="Governance">
+            <section class="page" id="page-manage" data-page="manage" data-page-title-key="pages.manage.title" data-page-subtitle-key="pages.manage.subtitle" data-page-eyebrow-key="pages.manage.eyebrow">
                 <div class="workspace-grid">
                     <article class="workspace-card workspace-card--span-4">
                         <div class="workspace-card__head">
                             <div>
-                                <h3>Tạo user trong tenant</h3>
-                                <p>Dùng cho manager hoặc viewer mới trong tenant {{ user.tenant_id }}.</p>
+                                <h3 data-i18n="manage.create.title">Tạo user trong tenant</h3>
+                                <p id="tenantCreateUserDescription">Dùng cho manager hoặc viewer mới trong tenant {{ user.tenant_id }}.</p>
                             </div>
                         </div>
                         <form id="formCreateTenantUser" class="stack">
                             <div class="field">
-                                <label for="tenantNewUserUsername">Tên đăng nhập</label>
-                                <input class="input" type="text" id="tenantNewUserUsername" maxlength="100" placeholder="ví dụ: manager_cn1" required>
+                                <label for="tenantNewUserUsername" data-i18n="manage.form.usernameLabel">Tên đăng nhập</label>
+                                <input class="input" type="text" id="tenantNewUserUsername" maxlength="100" data-i18n-placeholder="manage.form.usernamePlaceholder" placeholder="ví dụ: manager_cn1" required>
                             </div>
                             <div class="field">
-                                <label for="tenantNewUserPassword">Mật khẩu</label>
-                                <input class="input" type="password" id="tenantNewUserPassword" minlength="6" placeholder="Ít nhất 6 ký tự" required>
+                                <label for="tenantNewUserPassword" data-i18n="manage.form.passwordLabel">Mật khẩu</label>
+                                <input class="input" type="password" id="tenantNewUserPassword" minlength="6" data-i18n-placeholder="manage.form.passwordPlaceholder" placeholder="Ít nhất 6 ký tự" required>
                             </div>
-                            <button class="button button--primary" type="submit">Tạo user tenant</button>
+                            <button class="button button--primary" type="submit" data-i18n="manage.form.submit">Tạo user tenant</button>
                             <span class="microcopy form-msg" id="tenantUserCreateMsg"></span>
                         </form>
                     </article>
@@ -405,8 +412,8 @@
                     <article class="workspace-card workspace-card--span-8">
                         <div class="workspace-card__head">
                             <div>
-                                <h3>User trong tenant {{ user.tenant_id }}</h3>
-                                <p>Danh sách này giúp kiểm soát trạng thái truy cập trong phạm vi cửa hàng hiện tại.</p>
+                                <h3 id="tenantUsersTitle">User trong tenant {{ user.tenant_id }}</h3>
+                                <p data-i18n="manage.users.description">Danh sách này giúp kiểm soát trạng thái truy cập trong phạm vi cửa hàng hiện tại.</p>
                             </div>
                         </div>
                         <div class="table-shell">
@@ -414,14 +421,14 @@
                                 <thead>
                                     <tr>
                                         <th>Username</th>
-                                        <th>Vai trò</th>
-                                        <th>Trạng thái</th>
-                                        <th>Ngày tạo</th>
-                                        <th>Thao tác</th>
+                                        <th data-i18n="manage.users.roleHeader">Vai trò</th>
+                                        <th data-i18n="manage.users.statusHeader">Trạng thái</th>
+                                        <th data-i18n="manage.users.createdAtHeader">Ngày tạo</th>
+                                        <th data-i18n="manage.users.actionsHeader">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tenant-user-list">
-                                    <tr><td colspan="5">Đang tải danh sách user...</td></tr>
+                                    <tr><td colspan="5" data-i18n="manage.users.loading">Đang tải danh sách user...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -431,35 +438,35 @@
             {% endif %}
 
             {% if user.role == 'superadmin' %}
-            <section class="page" id="page-admin" data-page="admin" data-page-title="Quản trị hệ thống" data-page-subtitle="Quản lý tenant, user và log ETL trong cùng một bề mặt điều hành." data-page-eyebrow="Quản trị">
+            <section class="page" id="page-admin" data-page="admin" data-page-title-key="pages.admin.title" data-page-subtitle-key="pages.admin.subtitle" data-page-eyebrow-key="pages.admin.eyebrow">
                 <div class="workspace-grid">
                     <article class="workspace-card workspace-card--span-6">
                         <div class="workspace-card__head">
                             <div>
-                                <h3>Tạo tenant mới</h3>
-                                <p>Thiết lập tenant, đường dẫn dữ liệu và thời hạn hiệu lực cho hệ thống multi-tenant.</p>
+                                <h3 data-i18n="admin.createTenant.title">Tạo tenant mới</h3>
+                                <p data-i18n="admin.createTenant.description">Thiết lập tenant, đường dẫn dữ liệu và thời hạn hiệu lực cho hệ thống multi-tenant.</p>
                             </div>
                         </div>
                         <form id="formCreateTenant" class="stack">
                             <div class="form-grid">
                                 <div class="field">
-                                    <label for="newTenantId">Mã tenant</label>
-                                    <input class="input" type="text" id="newTenantId" maxlength="20" placeholder="ví dụ: STORE_DN" required>
+                                    <label for="newTenantId" data-i18n="admin.createTenant.idLabel">Mã tenant</label>
+                                    <input class="input" type="text" id="newTenantId" maxlength="20" data-i18n-placeholder="admin.createTenant.idPlaceholder" placeholder="ví dụ: STORE_DN" required>
                                 </div>
                                 <div class="field">
-                                    <label for="newTenantName">Tên tenant</label>
-                                    <input class="input" type="text" id="newTenantName" maxlength="200" placeholder="ví dụ: Cửa hàng Đà Nẵng" required>
+                                    <label for="newTenantName" data-i18n="admin.createTenant.nameLabel">Tên tenant</label>
+                                    <input class="input" type="text" id="newTenantName" maxlength="200" data-i18n-placeholder="admin.createTenant.namePlaceholder" placeholder="ví dụ: Cửa hàng Đà Nẵng" required>
                                 </div>
                             </div>
                             <div class="field">
-                                <label for="newTenantFilePath">Đường dẫn dữ liệu</label>
+                                <label for="newTenantFilePath" data-i18n="admin.createTenant.pathLabel">Đường dẫn dữ liệu</label>
                                 <input class="input" type="text" id="newTenantFilePath" readonly>
                             </div>
                             <div class="field">
-                                <label for="newTenantExpiresAt">Ngày hết hạn</label>
+                                <label for="newTenantExpiresAt" data-i18n="admin.createTenant.expiresAtLabel">Ngày hết hạn</label>
                                 <input class="input" type="datetime-local" id="newTenantExpiresAt">
                             </div>
-                            <button class="button button--primary" type="submit">Tạo tenant</button>
+                            <button class="button button--primary" type="submit" data-i18n="admin.createTenant.submit">Tạo tenant</button>
                             <span class="microcopy form-msg" id="tenantCreateMsg"></span>
                         </form>
                     </article>
@@ -467,37 +474,37 @@
                     <article class="workspace-card workspace-card--span-6">
                         <div class="workspace-card__head">
                             <div>
-                                <h3>Tạo user hệ thống</h3>
-                                <p>Gắn user với tenant cụ thể hoặc để trống khi cần cấp quyền rộng hơn trong hệ thống.</p>
+                                <h3 data-i18n="admin.createUser.title">Tạo user hệ thống</h3>
+                                <p data-i18n="admin.createUser.description">Gắn user với tenant cụ thể hoặc để trống khi cần cấp quyền rộng hơn trong hệ thống.</p>
                             </div>
                         </div>
                         <form id="formCreateAdminUser" class="stack">
                             <div class="form-grid">
                                 <div class="field">
-                                    <label for="adminNewUserUsername">Tên đăng nhập</label>
-                                    <input class="input" type="text" id="adminNewUserUsername" maxlength="100" placeholder="ví dụ: manager_dn" required>
+                                    <label for="adminNewUserUsername" data-i18n="admin.createUser.usernameLabel">Tên đăng nhập</label>
+                                    <input class="input" type="text" id="adminNewUserUsername" maxlength="100" data-i18n-placeholder="admin.createUser.usernamePlaceholder" placeholder="ví dụ: manager_dn" required>
                                 </div>
                                 <div class="field">
-                                    <label for="adminNewUserPassword">Mật khẩu</label>
-                                    <input class="input" type="password" id="adminNewUserPassword" minlength="6" placeholder="Nhập mật khẩu" required>
+                                    <label for="adminNewUserPassword" data-i18n="admin.createUser.passwordLabel">Mật khẩu</label>
+                                    <input class="input" type="password" id="adminNewUserPassword" minlength="6" data-i18n-placeholder="admin.createUser.passwordPlaceholder" placeholder="Nhập mật khẩu" required>
                                 </div>
                             </div>
                             <div class="form-grid">
                                 <div class="field">
-                                    <label for="adminNewUserTenant">Tenant</label>
+                                    <label for="adminNewUserTenant" data-i18n="admin.createUser.tenantLabel">Tenant</label>
                                     <select class="select" id="adminNewUserTenant">
-                                        <option value="">Toàn hệ thống</option>
+                                        <option value="" data-i18n="common.systemWide">Toàn hệ thống</option>
                                     </select>
                                 </div>
                                 <div class="field">
-                                    <label for="adminNewUserRole">Vai trò</label>
+                                    <label for="adminNewUserRole" data-i18n="admin.createUser.roleLabel">Vai trò</label>
                                     <select class="select" id="adminNewUserRole">
-                                        <option value="viewer">Viewer</option>
-                                        <option value="admin">Admin</option>
+                                        <option value="viewer" data-i18n="admin.createUser.roleViewer">Viewer</option>
+                                        <option value="admin" data-i18n="admin.createUser.roleAdmin">Admin</option>
                                     </select>
                                 </div>
                             </div>
-                            <button class="button button--primary" type="submit">Tạo user</button>
+                            <button class="button button--primary" type="submit" data-i18n="admin.createUser.submit">Tạo user</button>
                             <span class="microcopy form-msg" id="adminUserCreateMsg"></span>
                         </form>
                     </article>
@@ -505,24 +512,24 @@
                     <article class="workspace-card workspace-card--span-6">
                         <div class="workspace-card__head">
                             <div>
-                                <h3>Danh sách tenant</h3>
-                                <p>Kiểm tra hiệu lực, trạng thái và đường dẫn dữ liệu của từng tenant.</p>
+                                <h3 data-i18n="admin.tenants.title">Danh sách tenant</h3>
+                                <p data-i18n="admin.tenants.description">Kiểm tra hiệu lực, trạng thái và đường dẫn dữ liệu của từng tenant.</p>
                             </div>
                         </div>
                         <div class="table-shell">
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Mã</th>
-                                        <th>Tên</th>
-                                        <th>Đường dẫn</th>
-                                        <th>Trạng thái</th>
-                                        <th>Hiệu lực</th>
-                                        <th>Thao tác</th>
+                                        <th data-i18n="admin.tenants.idHeader">Mã</th>
+                                        <th data-i18n="admin.tenants.nameHeader">Tên</th>
+                                        <th data-i18n="admin.tenants.pathHeader">Đường dẫn</th>
+                                        <th data-i18n="admin.tenants.statusHeader">Trạng thái</th>
+                                        <th data-i18n="admin.tenants.expiresAtHeader">Hiệu lực</th>
+                                        <th data-i18n="admin.tenants.actionsHeader">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tenant-list">
-                                    <tr><td colspan="6">Đang tải tenant...</td></tr>
+                                    <tr><td colspan="6" data-i18n="admin.tenants.loading">Đang tải tenant...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -531,8 +538,8 @@
                     <article class="workspace-card workspace-card--span-6">
                         <div class="workspace-card__head">
                             <div>
-                                <h3>Danh sách user</h3>
-                                <p>Kiểm soát quyền và phạm vi truy cập của toàn bộ user trong hệ thống.</p>
+                                <h3 data-i18n="admin.users.title">Danh sách user</h3>
+                                <p data-i18n="admin.users.description">Kiểm soát quyền và phạm vi truy cập của toàn bộ user trong hệ thống.</p>
                             </div>
                         </div>
                         <div class="table-shell">
@@ -540,14 +547,14 @@
                                 <thead>
                                     <tr>
                                         <th>Username</th>
-                                        <th>Tenant</th>
-                                        <th>Vai trò</th>
-                                        <th>Trạng thái</th>
-                                        <th>Thao tác</th>
+                                        <th data-i18n="admin.users.tenantHeader">Tenant</th>
+                                        <th data-i18n="admin.users.roleHeader">Vai trò</th>
+                                        <th data-i18n="admin.users.statusHeader">Trạng thái</th>
+                                        <th data-i18n="admin.users.actionsHeader">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody id="user-list">
-                                    <tr><td colspan="5">Đang tải user...</td></tr>
+                                    <tr><td colspan="5" data-i18n="admin.users.loading">Đang tải user...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -556,12 +563,12 @@
                     <article class="workspace-card workspace-card--span-12">
                         <div class="workspace-card__head">
                             <div>
-                                <h3>Giám sát ETL gần đây</h3>
-                                <p>Dùng để giải thích độ tươi dữ liệu, tình trạng pipeline và khả năng truy vết của hệ thống.</p>
+                                <h3 data-i18n="admin.etl.title">Giám sát ETL gần đây</h3>
+                                <p data-i18n="admin.etl.description">Dùng để giải thích độ tươi dữ liệu, tình trạng pipeline và khả năng truy vết của hệ thống.</p>
                             </div>
                         </div>
                         <div id="etl-logs">
-                            <div class="empty-state"><strong>Đang tải log ETL...</strong></div>
+                            <div class="empty-state"><strong data-i18n="admin.etl.loading">Đang tải log ETL...</strong></div>
                         </div>
                     </article>
                 </div>
@@ -574,37 +581,37 @@
         <div class="modal-card">
             <div class="modal-head">
                 <div>
-                    <div class="eyebrow">Chỉnh tenant</div>
-                    <div class="modal-title" id="editTenantTitle">Chỉnh tenant</div>
+                    <div class="eyebrow" data-i18n="modals.editTenant.eyebrow">Chỉnh tenant</div>
+                    <div class="modal-title" id="editTenantTitle" data-i18n="modals.editTenant.title">Chỉnh tenant</div>
                 </div>
-                <button class="icon-button" type="button" data-close-modal="edit-tenant" aria-label="Đóng modal chỉnh tenant">
+                <button class="icon-button" type="button" data-close-modal="edit-tenant" data-i18n-aria-label="modals.editTenant.closeAria" aria-label="Đóng modal chỉnh tenant">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
             <form id="formEditTenant" class="stack">
                 <input type="hidden" id="editTenantId">
                 <div class="field">
-                    <label for="editTenantName">Tên tenant</label>
+                    <label for="editTenantName" data-i18n="modals.editTenant.nameLabel">Tên tenant</label>
                     <input class="input" type="text" id="editTenantName" maxlength="200" required>
                 </div>
                 <div class="field">
-                    <label for="editTenantFilePath">Đường dẫn dữ liệu</label>
+                    <label for="editTenantFilePath" data-i18n="modals.editTenant.pathLabel">Đường dẫn dữ liệu</label>
                     <input class="input" type="text" id="editTenantFilePath">
                 </div>
                 <div class="field">
-                    <label for="editTenantExpiresAt">Ngày hết hạn</label>
+                    <label for="editTenantExpiresAt" data-i18n="modals.editTenant.expiresAtLabel">Ngày hết hạn</label>
                     <input class="input" type="datetime-local" id="editTenantExpiresAt">
                 </div>
                 <div class="field">
-                    <label for="editTenantActive">Trạng thái</label>
+                    <label for="editTenantActive" data-i18n="modals.editTenant.statusLabel">Trạng thái</label>
                     <select class="select" id="editTenantActive">
-                        <option value="1">Hoạt động</option>
-                        <option value="0">Tắt</option>
+                        <option value="1" data-i18n="common.active">Hoạt động</option>
+                        <option value="0" data-i18n="common.inactive">Tắt</option>
                     </select>
                 </div>
                 <div class="inline-actions">
-                    <button class="button button--secondary" type="button" data-close-modal="edit-tenant">Giữ nguyên</button>
-                    <button class="button button--primary" type="submit">Lưu thay đổi tenant</button>
+                    <button class="button button--secondary" type="button" data-close-modal="edit-tenant" data-i18n="common.keepCurrent">Giữ nguyên</button>
+                    <button class="button button--primary" type="submit" data-i18n="modals.editTenant.submit">Lưu thay đổi tenant</button>
                 </div>
                 <span class="microcopy form-msg" id="editTenantMsg"></span>
             </form>
@@ -615,10 +622,10 @@
         <div class="modal-card">
             <div class="modal-head">
                 <div>
-                    <div class="eyebrow">Chỉnh user</div>
-                    <div class="modal-title" id="editUserTitle">Chỉnh user</div>
+                    <div class="eyebrow" data-i18n="modals.editUser.eyebrow">Chỉnh user</div>
+                    <div class="modal-title" id="editUserTitle" data-i18n="modals.editUser.title">Chỉnh user</div>
                 </div>
-                <button class="icon-button" type="button" data-close-modal="edit-user" aria-label="Đóng modal chỉnh user">
+                <button class="icon-button" type="button" data-close-modal="edit-user" data-i18n-aria-label="modals.editUser.closeAria" aria-label="Đóng modal chỉnh user">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
@@ -629,32 +636,32 @@
                     <input class="input" type="text" id="editUserUsername" disabled>
                 </div>
                 <div class="field">
-                    <label for="editUserPassword">Mật khẩu mới</label>
-                    <input class="input" type="password" id="editUserPassword" minlength="6" placeholder="Để trống nếu không đổi">
+                    <label for="editUserPassword" data-i18n="modals.editUser.passwordLabel">Mật khẩu mới</label>
+                    <input class="input" type="password" id="editUserPassword" minlength="6" data-i18n-placeholder="modals.editUser.passwordPlaceholder" placeholder="Để trống nếu không đổi">
                 </div>
                 <div class="field">
-                    <label for="editUserTenant">Tenant</label>
+                    <label for="editUserTenant" data-i18n="modals.editUser.tenantLabel">Tenant</label>
                     <select class="select" id="editUserTenant">
-                        <option value="">Toàn hệ thống</option>
+                        <option value="" data-i18n="common.systemWide">Toàn hệ thống</option>
                     </select>
                 </div>
                 <div class="field">
-                    <label for="editUserRole">Vai trò</label>
+                    <label for="editUserRole" data-i18n="modals.editUser.roleLabel">Vai trò</label>
                     <select class="select" id="editUserRole">
-                        <option value="viewer">Viewer</option>
-                        <option value="admin">Admin</option>
+                        <option value="viewer" data-i18n="modals.editUser.roleViewer">Viewer</option>
+                        <option value="admin" data-i18n="modals.editUser.roleAdmin">Admin</option>
                     </select>
                 </div>
                 <div class="field">
-                    <label for="editUserActive">Trạng thái</label>
+                    <label for="editUserActive" data-i18n="modals.editUser.statusLabel">Trạng thái</label>
                     <select class="select" id="editUserActive">
-                        <option value="1">Hoạt động</option>
-                        <option value="0">Tắt</option>
+                        <option value="1" data-i18n="common.active">Hoạt động</option>
+                        <option value="0" data-i18n="common.inactive">Tắt</option>
                     </select>
                 </div>
                 <div class="inline-actions">
-                    <button class="button button--secondary" type="button" data-close-modal="edit-user">Giữ nguyên</button>
-                    <button class="button button--primary" type="submit">Lưu thay đổi user</button>
+                    <button class="button button--secondary" type="button" data-close-modal="edit-user" data-i18n="common.keepCurrent">Giữ nguyên</button>
+                    <button class="button button--primary" type="submit" data-i18n="modals.editUser.submit">Lưu thay đổi user</button>
                 </div>
                 <span class="microcopy form-msg" id="editUserMsg"></span>
             </form>
@@ -665,14 +672,14 @@
         <div class="modal-card modal-card--wide">
             <div class="modal-head">
                 <div>
-                    <div class="eyebrow">Chế độ tập trung</div>
-                    <div class="modal-title" id="modalTitle">Bảng phân tích tập trung</div>
+                    <div class="eyebrow" data-i18n="modals.focus.eyebrow">Chế độ tập trung</div>
+                    <div class="modal-title" id="modalTitle" data-i18n="modals.focus.title">Bảng phân tích tập trung</div>
                 </div>
-                <button class="icon-button" type="button" data-close-modal="dashboard" aria-label="Đóng modal bảng phân tích">
+                <button class="icon-button" type="button" data-close-modal="dashboard" data-i18n-aria-label="modals.focus.closeAria" aria-label="Đóng modal bảng phân tích">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
-            <iframe id="modalIframe" class="modal-iframe" title="Bảng phân tích Superset"></iframe>
+            <iframe id="modalIframe" class="modal-iframe" data-i18n-title="modals.focus.iframeTitle" title="Bảng phân tích Superset"></iframe>
             <div class="embed-fallback is-hidden" id="modalFallback" role="status" aria-live="polite"></div>
         </div>
     </div>
@@ -681,23 +688,24 @@
         <div class="modal-card">
             <div class="modal-head">
                 <div>
-                    <div class="eyebrow">Xác nhận</div>
-                    <div class="modal-title" id="confirmTitle">Xác nhận thao tác</div>
+                    <div class="eyebrow" data-i18n="modals.confirm.eyebrow">Xác nhận</div>
+                    <div class="modal-title" id="confirmTitle" data-i18n="modals.confirm.title">Xác nhận thao tác</div>
                 </div>
-                <button class="icon-button" type="button" data-close-modal="confirm" aria-label="Đóng hộp thoại xác nhận">
+                <button class="icon-button" type="button" data-close-modal="confirm" data-i18n-aria-label="modals.confirm.closeAria" aria-label="Đóng hộp thoại xác nhận">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
             <div class="confirm-copy">
-                <p id="confirmDetail">Thao tác này không thể hoàn tác.</p>
+                <p id="confirmDetail" data-i18n="modals.confirm.detail">Thao tác này không thể hoàn tác.</p>
             </div>
             <div class="inline-actions">
-                <button class="button button--secondary" type="button" id="confirmCancelBtn">Quay lại</button>
-                <button class="button button--danger" type="button" id="confirmActionBtn">Xác nhận</button>
+                <button class="button button--secondary" type="button" id="confirmCancelBtn" data-i18n="common.back">Quay lại</button>
+                <button class="button button--danger" type="button" id="confirmActionBtn" data-i18n="common.confirm">Xác nhận</button>
             </div>
         </div>
     </div>
 
+    <script src="{{ url_for('static', filename='js/i18n.js', v=asset_version) }}" defer></script>
     <script src="{{ url_for('static', filename='js/dashboard.js', v=asset_version) }}" defer></script>
 </body>
 </html>
