@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>DWH Operations Console</title>
-    {% set asset_version = '20260513-motion2' %}
+    {% set asset_version = '20260513-avatar1' %}
     <script>
         (function () {
             try {
@@ -786,6 +786,7 @@
 
     <script src="{{ url_for('static', filename='js/i18n.js', v=asset_version) }}" defer></script>
     <script src="{{ url_for('static', filename='js/theme.js', v=asset_version) }}" defer></script>
+    <script src="{{ url_for('static', filename='js/sidebar-user.js', v=asset_version) }}" defer></script>
     <script src="{{ url_for('static', filename='js/dashboard.js', v=asset_version) }}" defer></script>
 </body>
 </html>
