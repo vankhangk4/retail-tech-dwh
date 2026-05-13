@@ -26,6 +26,9 @@ DATA_ROOT = PROJECT_ROOT / 'data'
 
 ALLOWED_EXTENSIONS = {'.xlsx', '.xls', '.csv'}
 MAX_FILE_SIZE_MB = 50
+LANDING_DIR_NAME = '1_landing'
+ARCHIVE_DIR_NAME = '2_archive'
+ERROR_DIR_NAME = '3_error'
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix='/api', tags=['Upload'])
@@ -82,10 +85,23 @@ def validate_tenant(tenant_id: str) -> dict:
     return row
 
 
+def ensure_tenant_stage_dirs(tenant_id: str) -> dict[str, Path]:
+    tenant_root = DATA_ROOT / tenant_id
+    stage_dirs = {
+        'root': tenant_root,
+        'landing': tenant_root / LANDING_DIR_NAME,
+        'archive': tenant_root / ARCHIVE_DIR_NAME,
+        'error': tenant_root / ERROR_DIR_NAME,
+        'logs': tenant_root / 'logs',
+    }
+    for path in stage_dirs.values():
+        path.mkdir(parents=True, exist_ok=True)
+    return stage_dirs
+
+
 def get_tenant_data_dir(tenant_id: str) -> Path:
-    data_dir = PROJECT_ROOT / 'data' / tenant_id
-    data_dir.mkdir(parents=True, exist_ok=True)
-    return data_dir
+    """Return the only directory ETL should scan for new, unprocessed files."""
+    return ensure_tenant_stage_dirs(tenant_id)['landing']
 
 
 def ensure_tenant_access(payload: dict, tenant_id: str) -> None:
@@ -222,7 +238,7 @@ async def upload_files(
 ):
     """
     Upload NHIEU FILE cung luc cho tenant.
-    File duoc luu vao: data/{tenant_id}/
+    File duoc luu vao: data/{tenant_id}/1_landing/
     KHONG tu dong trigger ETL — dung endpoint /upload/{tenant_id}/etl rieng.
     """
     payload = require_auth(authorization)
@@ -383,7 +399,7 @@ def list_uploaded_files(
     tenant_id: str,
     authorization: str = Header(...),
 ):
-    """Danh sach file da upload cho tenant."""
+    """Danh sach file moi dang cho xu ly ETL trong 1_landing."""
     payload = require_auth(authorization)
 
     ensure_tenant_access(payload, tenant_id)

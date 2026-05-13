@@ -3,10 +3,12 @@ body.shell-body {
 }
 
 .app-shell {
+    --sidebar-w: 18.75rem;
     display: grid;
-    grid-template-columns: 18.75rem minmax(0, 1fr);
+    grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
     min-height: 100vh;
     position: relative;
+    transition: grid-template-columns var(--dur-slow) var(--ease-snap);
 }
 
 .app-rail {
@@ -19,6 +21,33 @@ body.shell-body {
     padding: 1.25rem;
     background: linear-gradient(180deg, oklch(98.6% 0.005 210) 0%, oklch(96.4% 0.008 210) 100%);
     border-right: 1px solid var(--line-soft);
+    overflow: hidden;
+    transition:
+        opacity var(--dur-base) var(--ease-snap),
+        background-color var(--dur-theme) var(--ease-snap),
+        border-color var(--dur-theme) var(--ease-snap);
+}
+
+/* ── Desktop sidebar collapse ──
+   Activated by JS toggling body.sidebar-collapsed. Pre-paint inline
+   script inside <body> sets it before first frame to avoid flash. */
+body.sidebar-collapsed .app-shell {
+    --sidebar-w: 0px;
+}
+
+body.sidebar-collapsed .app-rail {
+    opacity: 0;
+    pointer-events: none;
+    border-right-color: transparent;
+}
+
+.app-rail > * {
+    transition: transform var(--dur-slow) var(--ease-out);
+}
+
+body.sidebar-collapsed .app-rail > * {
+    transform: translateX(-12px);
+    transition: transform var(--dur-base) var(--ease-snap);
 }
 
 .rail-brand,
@@ -271,7 +300,25 @@ body.shell-body {
 
 .command-toggle {
     flex: 0 0 auto;
-    display: none;
+    display: inline-flex;
+    transition:
+        background-color var(--dur-base) var(--ease-snap),
+        color var(--dur-base) var(--ease-snap),
+        border-color var(--dur-base) var(--ease-snap),
+        transform var(--dur-base) var(--ease-out);
+}
+
+.command-toggle svg {
+    transition: transform var(--dur-slow) var(--ease-soft);
+}
+
+body.sidebar-collapsed .command-toggle {
+    color: var(--accent-strong);
+    border-color: var(--accent);
+}
+
+body.sidebar-collapsed .command-toggle svg {
+    transform: rotate(180deg);
 }
 
 .command-copy {
@@ -348,10 +395,6 @@ body.shell-body {
 }
 
 @media (max-width: 1024px) {
-    .command-toggle {
-        display: inline-flex;
-    }
-
     body.sidebar-open {
         overflow: hidden;
     }

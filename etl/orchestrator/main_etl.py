@@ -7,6 +7,8 @@ import os
 import sys
 import logging
 import glob
+import shutil
+import pandas as pd
 import pymssql
 from datetime import date, datetime
 from email.mime.text import MIMEText
@@ -40,6 +42,11 @@ ALERT_FROM     = os.environ.get('ALERT_FROM_EMAIL', 'etl@company.com')
 ALERT_TO       = os.environ.get('ALERT_TO_EMAIL', 'admin@company.com')
 SLACK_WEBHOOK  = os.environ.get('SLACK_WEBHOOK_URL', '')
 
+LANDING_DIR_NAME = '1_landing'
+ARCHIVE_DIR_NAME = '2_archive'
+ERROR_DIR_NAME = '3_error'
+STAGE_DIR_NAMES = {LANDING_DIR_NAME, ARCHIVE_DIR_NAME, ERROR_DIR_NAME}
+
 # ---- Logging ----
 logging.basicConfig(
     level=logging.INFO,
@@ -48,6 +55,45 @@ logging.basicConfig(
     force=True
 )
 logger = logging.getLogger(__name__)
+
+
+def resolve_tenant_root(data_dir: str) -> str:
+    """Normalize legacy tenant paths and return the tenant root folder."""
+    normalized = os.path.normpath(data_dir)
+    if os.path.basename(normalized) in STAGE_DIR_NAMES:
+        return os.path.dirname(normalized)
+    return normalized
+
+
+def ensure_tenant_stage_dirs(data_dir: str) -> dict:
+    tenant_root = resolve_tenant_root(data_dir)
+    stage_dirs = {
+        'root': tenant_root,
+        'landing': os.path.join(tenant_root, LANDING_DIR_NAME),
+        'archive': os.path.join(tenant_root, ARCHIVE_DIR_NAME),
+        'error': os.path.join(tenant_root, ERROR_DIR_NAME),
+        'logs': os.path.join(tenant_root, 'logs'),
+    }
+    for path in stage_dirs.values():
+        os.makedirs(path, exist_ok=True)
+    return stage_dirs
+
+
+def unique_destination(dest_dir: str, filename: str) -> str:
+    candidate = os.path.join(dest_dir, filename)
+    if not os.path.exists(candidate):
+        return candidate
+
+    stem, ext = os.path.splitext(filename)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    return os.path.join(dest_dir, f'{stem}_{timestamp}{ext}')
+
+
+def move_processed_file(file_path: str, dest_dir: str) -> str:
+    os.makedirs(dest_dir, exist_ok=True)
+    destination = unique_destination(dest_dir, os.path.basename(file_path))
+    shutil.move(file_path, destination)
+    return destination
 
 
 def setup_tenant_logging(tenant_id: str, log_dir: str):
@@ -215,7 +261,7 @@ def classify_file(filename: str) -> dict:
     """
     Phân loại file dựa trên tên file (case-insensitive).
     Returns dict: { 'type': str, 'sheet': str or None }
-    Types: 'sales' | 'inventory' | 'customer' | 'product' | 'purchase'
+    Types: 'sales' | 'inventory' | 'customer' | 'product' | 'purchase' | 'supplier'
     Returns None if file is not a known type.
     """
     fn = filename.lower()
@@ -229,6 +275,8 @@ def classify_file(filename: str) -> dict:
         return {'type': 'product', 'sheet': None}
     if 'phieunhaphang' in fn:
         return {'type': 'purchase', 'sheet': None}
+    if 'danhmucnhacungcap' in fn or 'nhacungcap' in fn or 'supplier' in fn:
+        return {'type': 'supplier', 'sheet': None}
     return None
 
 
@@ -336,6 +384,85 @@ def process_csv_file(conn, tenant_id: str, file_path: str, file_type: str,
     return result
 
 
+def get_table_columns(conn, table_name: str) -> set:
+    cursor = conn.cursor()
+    cursor.execute(
+        'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = %s',
+        (table_name,)
+    )
+    return {row[0] for row in cursor.fetchall()}
+
+
+def supplier_value(row, *columns, default=''):
+    for column in columns:
+        if column in row and pd.notna(row[column]):
+            return str(row[column]).strip()
+    return default
+
+
+def process_supplier_file(conn, tenant_id: str, file_path: str, batch_date: date) -> dict:
+    """Load supplier catalog directly into DimSupplier because there is no STG supplier table."""
+    start = datetime.now()
+    try:
+        df = pd.read_csv(file_path, encoding='utf-8-sig')
+    except Exception:
+        df = pd.read_csv(file_path, encoding='utf-8')
+
+    df.columns = df.columns.str.strip()
+    if 'Mã NCC' not in df.columns or 'Tên NCC' not in df.columns:
+        raise ValueError('Supplier CSV missing required columns: Mã NCC, Tên NCC')
+
+    dim_columns = get_table_columns(conn, 'DimSupplier')
+    supplier_key_col = 'SupplierID' if 'SupplierID' in dim_columns else 'SupplierCode'
+    optional_columns = {
+        'Country': lambda row: supplier_value(row, 'Quốc gia', 'Country', default=''),
+        'Phone': lambda row: supplier_value(row, 'Số điện thoại', 'Phone'),
+        'Email': lambda row: supplier_value(row, 'Email'),
+        'PaymentTerm_Days': lambda row: int(float(supplier_value(row, 'Điều khoản TT (ngày)', 'PaymentTerm_Days', default='0') or 0)),
+        'ContactName': lambda row: supplier_value(row, 'Người liên hệ', 'ContactName'),
+        'ContactPerson': lambda row: supplier_value(row, 'Người liên hệ', 'ContactPerson'),
+        'City': lambda row: supplier_value(row, 'Thành phố', 'Quốc gia', 'City'),
+    }
+    updatable_columns = [col for col in optional_columns if col in dim_columns]
+
+    cursor = conn.cursor()
+    inserted = 0
+    for _, row in df.iterrows():
+        supplier_code = supplier_value(row, 'Mã NCC').upper()
+        supplier_name = supplier_value(row, 'Tên NCC')
+        if not supplier_code or not supplier_name:
+            continue
+
+        insert_columns = [supplier_key_col, 'SupplierName', *updatable_columns]
+        insert_values = [supplier_code, supplier_name, *[optional_columns[col](row) for col in updatable_columns]]
+        update_assignments = ['target.SupplierName = source.SupplierName'] + [
+            f'target.{col} = source.{col}' for col in updatable_columns
+        ]
+        source_columns = [f'%s AS {col}' for col in insert_columns]
+
+        sql = f"""
+            MERGE INTO DimSupplier AS target
+            USING (SELECT {", ".join(source_columns)}) AS source
+            ON target.{supplier_key_col} = source.{supplier_key_col}
+            WHEN MATCHED THEN
+                UPDATE SET {", ".join(update_assignments)}
+            WHEN NOT MATCHED THEN
+                INSERT ({", ".join(insert_columns)})
+                VALUES ({", ".join(f"source.{col}" for col in insert_columns)});
+        """
+        cursor.execute(sql, insert_values)
+        inserted += 1
+
+    conn.commit()
+    duration = (datetime.now() - start).total_seconds()
+    write_etl_log(conn, tenant_id, 'DimSupplier', 'Extract', 'SUCCESS',
+                  rows_processed=inserted,
+                  rows_inserted=inserted,
+                  rows_rejected=0,
+                  duration_sec=duration)
+    return {'rows_extracted': inserted, 'rows_inserted': inserted, 'rows_rejected': 0}
+
+
 # =============================================================================
 # Main ETL per tenant
 # =============================================================================
@@ -345,7 +472,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
     Chạy ETL pipeline đầy đủ cho 1 tenant.
 
     Pipeline:
-      PHASE 1: SCAN      — Tìm tất cả file trong thư mục data
+      PHASE 1: SCAN      — Tìm tất cả file mới trong thư mục 1_landing
       PHASE 2: EXTRACT   — Đọc từng file theo loại, load vào staging
       PHASE 3: TRANSFORM — Chuẩn hóa, làm sạch (Python) — Sales only
       PHASE 4: LOAD DIMS  — Nạp Dimension (SP)
@@ -360,14 +487,16 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
         batch_date = date.today()
 
     batch_str = batch_date.strftime('%Y-%m-%d')
+    stage_dirs = ensure_tenant_stage_dirs(data_dir)
+    landing_dir = stage_dirs['landing']
 
     # Setup per-tenant log file inside the tenant's logs folder
-    log_dir = os.path.join(data_dir, 'logs')
+    log_dir = stage_dirs['logs']
     log_file = setup_tenant_logging(tenant_id, log_dir)
     logger.info(f'ETL log file: {log_file}')
 
     logger.info(f'=' * 60)
-    logger.info(f'ETL START: {tenant_id} | BatchDate={batch_str} | Dir={data_dir}')
+    logger.info(f'ETL START: {tenant_id} | BatchDate={batch_str} | LandingDir={landing_dir}')
     logger.info(f'=' * 60)
 
     conn = None
@@ -375,19 +504,33 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
         conn = get_conn()
 
         # ---- PHASE 1: SCAN files ----
-        logger.info(f'[PHASE 1] SCAN — {tenant_id} @ {data_dir}')
-        xlsx_files = glob.glob(os.path.join(data_dir, '*.xlsx')) + \
-                     glob.glob(os.path.join(data_dir, '*.xls'))
-        csv_files  = glob.glob(os.path.join(data_dir, '*.csv'))
+        logger.info(f'[PHASE 1] SCAN — {tenant_id} @ {landing_dir}')
+        xlsx_files = glob.glob(os.path.join(landing_dir, '*.xlsx')) + \
+                     glob.glob(os.path.join(landing_dir, '*.xls'))
+        csv_files  = glob.glob(os.path.join(landing_dir, '*.csv'))
 
         all_files = []
+        failed_files = []
+        unrecognized_files = []
         for f in xlsx_files + csv_files:
             info = classify_file(os.path.basename(f))
             if info:
                 all_files.append({'path': f, **info})
+            else:
+                unrecognized_files.append(f)
 
-        if not all_files:
-            logger.warning(f'[{tenant_id}] No recognizable data files found in {data_dir}')
+        for f in unrecognized_files:
+            fname = os.path.basename(f)
+            failed_files.append(fname)
+            logger.error(f'[{tenant_id}] Unrecognized source file moved to error: {fname}')
+            write_etl_log(
+                conn, tenant_id, 'SourceFile', 'Classify', 'FAILED',
+                error_msg=f'Unrecognized source file: {fname}'
+            )
+            move_processed_file(f, stage_dirs['error'])
+
+        if not all_files and not failed_files:
+            logger.warning(f'[{tenant_id}] No recognizable data files found in {landing_dir}')
             return True
 
         logger.info(
@@ -402,6 +545,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
             'customer':   {'extracted': 0, 'inserted': 0},
             'product':    {'extracted': 0, 'inserted': 0},
             'purchase':   {'extracted': 0, 'inserted': 0},
+            'supplier':   {'extracted': 0, 'inserted': 0},
         }
 
         # ---- PHASE 2: EXTRACT per file ----
@@ -429,12 +573,29 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                     total_stats[ftype]['extracted'] += stats['rows_extracted']
                     total_stats[ftype]['inserted']   += stats['rows_inserted']
 
+                elif ftype == 'supplier':
+                    stats = process_supplier_file(conn, tenant_id, fpath, batch_date)
+                    total_stats['supplier']['extracted'] += stats['rows_extracted']
+                    total_stats['supplier']['inserted']   += stats['rows_inserted']
+
+                archive_path = move_processed_file(fpath, stage_dirs['archive'])
+                logger.info(f'  [{tenant_id}] Archived processed file: {fname} -> {archive_path}')
+
             except Exception as ex:
+                failed_files.append(fname)
                 logger.error(f'  [{tenant_id}] Failed to process {fname}: {ex}')
+                log_table = 'DimSupplier' if ftype == 'supplier' else (
+                    f'STG_{ftype.title()}Raw' if ftype != 'product' else 'STG_ProductRaw'
+                )
                 write_etl_log(
-                    conn, tenant_id, f'STG_{ftype.title()}Raw' if ftype != 'product' else 'STG_ProductRaw',
+                    conn, tenant_id, log_table,
                     'Extract', 'FAILED', error_msg=str(ex)
                 )
+                try:
+                    error_path = move_processed_file(fpath, stage_dirs['error'])
+                    logger.info(f'  [{tenant_id}] Moved failed file to error: {fname} -> {error_path}')
+                except Exception as move_ex:
+                    logger.error(f'  [{tenant_id}] Could not move failed file {fname}: {move_ex}')
                 # Continue with other files — don't abort the whole tenant
 
         # ---- PHASE 3: TRANSFORM (Python — already done per-file for Sales) ----
@@ -758,17 +919,24 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                 update_watermark(conn, tenant_id, wm_table, 'SUCCESS')
 
         total_rows = sum(v['extracted'] for v in total_stats.values())
+        final_status = 'FAILED' if failed_files else 'SUCCESS'
+        final_error = f'Failed source files: {", ".join(failed_files)}' if failed_files else None
         write_etl_log(
-            conn, tenant_id, 'ETL_AllFiles', 'PipelineComplete', 'SUCCESS',
+            conn, tenant_id, 'ETL_AllFiles', 'PipelineComplete', final_status,
             rows_processed=total_rows,
             rows_inserted=sum(v['inserted'] for v in total_stats.values()),
             duration_sec=0,
+            error_msg=final_error,
         )
 
-        logger.info(f'[{tenant_id}] ETL SUCCESS — Stats: {total_stats}')
-        logger.info(f'ETL SUCCESS: {tenant_id} | {batch_str}')
+        if failed_files:
+            logger.error(f'[{tenant_id}] ETL COMPLETED WITH FILE ERRORS — {failed_files}')
+            logger.error(f'ETL FAILED: {tenant_id} | {batch_str}')
+        else:
+            logger.info(f'[{tenant_id}] ETL SUCCESS — Stats: {total_stats}')
+            logger.info(f'ETL SUCCESS: {tenant_id} | {batch_str}')
         conn.close()
-        return True
+        return not failed_files
 
     except Exception as ex:
         logger.error(f'ETL FAILED: {tenant_id} — {ex}', exc_info=True)
@@ -861,11 +1029,13 @@ if __name__ == '__main__':
             sys.exit(1)
 
         data_dir = tenant_info['file_path'] or f'./data/{args.tenant}/'
-        if not os.path.isdir(data_dir):
-            logger.error(f'Data directory not found: {data_dir}')
+        stage_dirs = ensure_tenant_stage_dirs(data_dir)
+        if not os.path.isdir(stage_dirs['landing']):
+            logger.error(f'Landing directory not found: {stage_dirs["landing"]}')
             sys.exit(1)
 
-        run_etl_for_tenant(args.tenant, data_dir, batch_date)
+        success = run_etl_for_tenant(args.tenant, data_dir, batch_date)
+        sys.exit(0 if success else 1)
     else:
         results = run_all_etl(batch_date)
         success_count = sum(1 for v in results.values() if v is True)

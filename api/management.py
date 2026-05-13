@@ -28,6 +28,7 @@ ALGORITHM = 'HS256'
 
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 DATA_ROOT = PROJECT_ROOT / 'data'
+TENANT_STAGE_DIRS = ('1_landing', '2_archive', '3_error', 'logs')
 TENANT_ID_RE = re.compile(r'^[A-Za-z0-9_]{1,20}$')
 USERNAME_RE = re.compile(r'^[A-Za-z0-9_]{3,100}$')
 AUTO_TENANT_PREFIX = os.environ.get('AUTO_TENANT_PREFIX', 'tenant').strip() or 'tenant'
@@ -121,9 +122,10 @@ def parse_expires_at(expires_at: Optional[str]) -> Optional[datetime]:
 
 
 def ensure_tenant_dirs(tenant_id: str) -> None:
-    tenant_dir = DATA_ROOT / tenant_id / 'logs'
-    tenant_dir.mkdir(parents=True, exist_ok=True)
-    logger.info(f'[ADMIN] Ensured ETL logs directory: {tenant_dir}')
+    tenant_root = DATA_ROOT / tenant_id
+    for dir_name in TENANT_STAGE_DIRS:
+        (tenant_root / dir_name).mkdir(parents=True, exist_ok=True)
+    logger.info(f'[ADMIN] Ensured tenant data directories: {tenant_root}')
 
 
 def generate_tenant_id(cursor) -> str:
