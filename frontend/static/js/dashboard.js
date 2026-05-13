@@ -1194,6 +1194,56 @@ function fetchEtlLogs(options = {}) {
     return fetchCollection('/api/etl/logs', 'etlLogs', 'etlLogs', { ...options, responseKey: 'logs' });
 }
 
+function delay(ms) {
+    return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function mergeEtlLogs(logs) {
+    if (!Array.isArray(logs) || !logs.length) return;
+    const byKey = new Map();
+    [...logs, ...appState.etlLogs].forEach((log) => {
+        const key = log.log_id || [
+            log.tenant_id,
+            log.source_table,
+            log.step_name,
+            log.start_time,
+            log.status,
+        ].join('|');
+        byKey.set(key, log);
+    });
+    appState.etlLogs = sortLogs([...byKey.values()]);
+}
+
+async function refreshEtlLogs({ force = true, renderTable = true } = {}) {
+    try {
+        await fetchEtlLogs({ force });
+    } catch (error) {
+        showShellAlert(error.message, 'danger', 5000);
+    }
+    if (renderTable) {
+        renderETLLogs(appState.etlLogs);
+    }
+    renderOverviewIntel();
+}
+
+async function pollEtlStatus(tenant) {
+    const waits = [1200, 2200, 3600];
+    for (const waitMs of waits) {
+        await delay(waitMs);
+        try {
+            const response = await authFetch(`/api/upload/${tenant}/etl/status`);
+            if (!response.ok) continue;
+            const data = await response.json();
+            mergeEtlLogs(data.recent_logs || []);
+            renderETLLogs(appState.etlLogs);
+            renderOverviewIntel();
+            if ((data.recent_logs || []).length) return;
+        } catch (error) {}
+    }
+
+    await refreshEtlLogs({ force: true });
+}
+
 async function fetchUserDetail(userId, { force = false } = {}) {
     if (!force && appState.userDetailCache[userId]) {
         return appState.userDetailCache[userId];
@@ -2261,7 +2311,11 @@ async function triggerETL(tenant) {
 
         if (APP_CONTEXT.userRole === 'superadmin') {
             await loadAdminData({ force: true });
+        } else if (APP_CONTEXT.userRole === 'admin') {
+            await refreshEtlLogs({ force: true });
         }
+
+        pollEtlStatus(tenant);
     } catch (error) {
         setUploadStatus({ kind: 'etl-error', message: error.message });
     }
@@ -2934,7 +2988,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         await loadAdminData();
     }
     if (APP_CONTEXT.userRole === 'admin') {
-        await loadTenantUsers();
+        await Promise.allSettled([
+            loadTenantUsers(),
+            refreshEtlLogs({ force: true, renderTable: false }),
+        ]);
     }
 
     renderLocaleState();

@@ -543,12 +543,18 @@ def api_etl_logs():
     if 'access_token' not in session:
         return jsonify({'error': 'Chua dang nhap'}), 401
     try:
+        params = {}
+        if session.get('role') == 'admin' and session.get('tenant_id'):
+            params['tenant_id'] = session.get('tenant_id')
         r = requests.get(f'{API_BASE_URL}/api/etl/logs',
+            params=params,
             headers={'Authorization': f'Bearer {session["access_token"]}'},
             timeout=10)
         return jsonify(r.json()), r.status_code
-    except:
-        return jsonify({'logs': []}), 200
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'Khong ket noi duoc Auth Gateway'}), 503
+    except Exception as exc:
+        return jsonify({'error': f'Loi lay ETL logs: {str(exc)}'}), 500
 
 
 # ---- Upload Proxy Endpoints ----
