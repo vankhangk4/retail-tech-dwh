@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>DWH Operations Console</title>
-    {% set asset_version = '20260513-analytics-scope1' %}
+    {% set asset_version = '20260513-admin-search1' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/shell.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css', v=asset_version) }}">
@@ -31,7 +31,6 @@
       data-user-id="{{ user.user_id or '' }}"
       data-default-page="{{ default_dashboard_page }}"
       data-default-analysis="revenue"
-      data-dashboard-token="{{ dashboard_token or '' }}"
       data-superset-url="{{ SUPERSET_URL }}"
       data-access-token="{{ session.get('access_token', '') }}"
       data-ui-lang="vi">
@@ -524,6 +523,12 @@
                                 <h3 data-i18n="admin.tenants.title">Danh sách tenant</h3>
                                 <p data-i18n="admin.tenants.description">Kiểm tra hiệu lực, trạng thái và đường dẫn dữ liệu của từng tenant.</p>
                             </div>
+                            <div class="workspace-card__tools">
+                                <div class="field table-search-field">
+                                    <label class="visually-hidden" for="tenantSearchInput" data-i18n="admin.tenants.searchLabel">Tìm tenant</label>
+                                    <input class="input table-search-input" type="search" id="tenantSearchInput" data-i18n-placeholder="admin.tenants.searchPlaceholder" placeholder="Tìm theo mã, tên hoặc đường dẫn">
+                                </div>
+                            </div>
                         </div>
                         <div class="table-shell">
                             <table class="data-table">
@@ -549,6 +554,12 @@
                             <div>
                                 <h3 data-i18n="admin.users.title">Danh sách user</h3>
                                 <p data-i18n="admin.users.description">Kiểm soát quyền và phạm vi truy cập của toàn bộ user trong hệ thống.</p>
+                            </div>
+                            <div class="workspace-card__tools">
+                                <div class="field table-search-field">
+                                    <label class="visually-hidden" for="userSearchInput" data-i18n="admin.users.searchLabel">Tìm user</label>
+                                    <input class="input table-search-input" type="search" id="userSearchInput" data-i18n-placeholder="admin.users.searchPlaceholder" placeholder="Tìm theo username, tenant hoặc vai trò">
+                                </div>
                             </div>
                         </div>
                         <div class="table-shell">
@@ -674,6 +685,30 @@
                 </div>
                 <span class="microcopy form-msg" id="editUserMsg"></span>
             </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalViewUser">
+        <div class="modal-card">
+            <div class="modal-head">
+                <div>
+                    <div class="eyebrow" data-i18n="modals.viewUser.eyebrow">Thông tin user</div>
+                    <div class="modal-title" id="viewUserTitle" data-i18n="modals.viewUser.title">Thông tin user</div>
+                </div>
+                <button class="icon-button" type="button" data-close-modal="view-user" data-i18n-aria-label="modals.viewUser.closeAria" aria-label="Đóng modal thông tin user">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="stack">
+                <div class="detail-grid" id="viewUserDetails">
+                    <div class="detail-row">
+                        <span class="detail-label" data-i18n="modals.viewUser.loading">Đang tải thông tin user...</span>
+                    </div>
+                </div>
+                <div class="inline-actions">
+                    <button class="button button--secondary" type="button" data-close-modal="view-user" data-i18n="common.close">Đóng</button>
+                </div>
+            </div>
         </div>
     </div>
 

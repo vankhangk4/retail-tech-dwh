@@ -535,6 +535,18 @@ body.shell-body {
     margin-bottom: 1.15rem;
 }
 
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .panel-head > div,
 .workspace-card__head > div,
 .room-head > div,
@@ -562,6 +574,59 @@ body.shell-body {
     font-size: 0.84rem;
     line-height: 1.65;
     margin-top: 0.35rem;
+}
+
+.workspace-card__tools {
+    flex: 0 0 auto;
+    width: min(100%, 18rem);
+}
+
+.table-search-field {
+    gap: 0;
+}
+
+.table-search-input {
+    min-height: 2.75rem;
+}
+
+.table-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.detail-row {
+    display: grid;
+    gap: 0.24rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    background: oklch(98.9% 0.004 210);
+}
+
+.detail-label {
+    color: var(--text-faint);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.detail-value {
+    color: var(--text-strong);
+    font-size: 0.94rem;
+    line-height: 1.55;
+    word-break: break-word;
+}
+
+.detail-grid .empty-state {
+    grid-column: 1 / -1;
 }
 
 .attention-list,
@@ -1269,9 +1334,15 @@ body.shell-body {
     }
 
     .analysis-scope-control,
-    .analysis-scope-select {
+    .analysis-scope-select,
+    .workspace-card__tools,
+    .table-search-field {
         width: 100%;
         min-width: 0;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
     }
 
     .signal-strip {

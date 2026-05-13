@@ -5,7 +5,6 @@ const APP_CONTEXT = {
     userId: APP_DATASET.userId || '',
     defaultPage: APP_DATASET.defaultPage || 'overview',
     defaultAnalysis: APP_DATASET.defaultAnalysis || 'revenue',
-    dashboardToken: APP_DATASET.dashboardToken || '',
     supersetUrl: APP_DATASET.supersetUrl || '',
     accessToken: APP_DATASET.accessToken || '',
 };
@@ -281,6 +280,8 @@ const COPY = {
             tenants: {
                 title: 'Danh sách tenant',
                 description: 'Kiểm tra hiệu lực, trạng thái và đường dẫn dữ liệu của từng tenant.',
+                searchLabel: 'Tìm tenant',
+                searchPlaceholder: 'Tìm theo mã, tên hoặc đường dẫn',
                 idHeader: 'Mã',
                 nameHeader: 'Tên',
                 pathHeader: 'Đường dẫn',
@@ -292,6 +293,8 @@ const COPY = {
             users: {
                 title: 'Danh sách user',
                 description: 'Kiểm soát quyền và phạm vi truy cập của toàn bộ user trong hệ thống.',
+                searchLabel: 'Tìm user',
+                searchPlaceholder: 'Tìm theo username, tenant hoặc vai trò',
                 tenantHeader: 'Tenant',
                 roleHeader: 'Vai trò',
                 statusHeader: 'Trạng thái',
@@ -327,6 +330,20 @@ const COPY = {
                 roleAdmin: 'Admin',
                 statusLabel: 'Trạng thái',
                 submit: 'Lưu thay đổi user',
+            },
+            viewUser: {
+                eyebrow: 'Thông tin user',
+                title: 'Thông tin user',
+                closeAria: 'Đóng modal thông tin user',
+                loading: 'Đang tải thông tin user...',
+                usernameLabel: 'Tên đăng nhập',
+                displayNameLabel: 'Tên hiển thị',
+                emailLabel: 'Email',
+                phoneLabel: 'Số điện thoại',
+                tenantLabel: 'Tenant',
+                roleLabel: 'Vai trò',
+                statusLabel: 'Trạng thái',
+                createdAtLabel: 'Ngày tạo',
             },
             focus: {
                 eyebrow: 'Chế độ tập trung',
@@ -402,7 +419,9 @@ const COPY = {
             },
             tables: {
                 emptyTenants: 'Chưa có tenant nào trong hệ thống.',
+                emptyTenantsFiltered: 'Không có tenant phù hợp với bộ lọc hiện tại.',
                 emptyUsers: 'Chưa có user nào trong hệ thống.',
+                emptyUsersFiltered: 'Không có user phù hợp với bộ lọc hiện tại.',
                 emptyTenantUsers: 'Tenant này chưa có user nào.',
                 emptyLogs: 'Chưa có log ETL.',
                 emptyLogsDetail: 'Khi pipeline chạy, các bản ghi gần nhất sẽ xuất hiện ở đây.',
@@ -439,6 +458,7 @@ const COPY = {
                 fileSizeLabel: 'Kích thước',
                 uploadedAtLabel: 'Thời điểm',
                 editTenant: 'Chỉnh tenant',
+                viewUser: 'Xem thông tin',
                 editUser: 'Chỉnh user',
                 deleteFile: 'Xóa file',
                 unknownType: 'Chưa rõ',
@@ -488,6 +508,7 @@ const COPY = {
                 userSaved: 'Đã lưu thay đổi user.',
                 saveTenantUpdateError: 'Không thể lưu tenant',
                 saveUserUpdateError: 'Không thể lưu user',
+                loadUserDetailError: 'Không tải được thông tin user',
                 editTenantTitle: 'Chỉnh tenant {tenant}',
                 editUserTitle: 'Chỉnh user {username}',
             },
@@ -766,6 +787,8 @@ const COPY = {
             tenants: {
                 title: 'Branch list',
                 description: 'Review validity, status, and data paths for each branch.',
+                searchLabel: 'Search branches',
+                searchPlaceholder: 'Search by code, name, or path',
                 idHeader: 'Code',
                 nameHeader: 'Name',
                 pathHeader: 'Path',
@@ -777,6 +800,8 @@ const COPY = {
             users: {
                 title: 'User list',
                 description: 'Control rights and access scope for all users across the platform.',
+                searchLabel: 'Search users',
+                searchPlaceholder: 'Search by username, branch, or role',
                 tenantHeader: 'Branch',
                 roleHeader: 'Role',
                 statusHeader: 'Status',
@@ -812,6 +837,20 @@ const COPY = {
                 roleAdmin: 'Admin',
                 statusLabel: 'Status',
                 submit: 'Save user changes',
+            },
+            viewUser: {
+                eyebrow: 'User details',
+                title: 'User details',
+                closeAria: 'Close the user details modal',
+                loading: 'Loading user details...',
+                usernameLabel: 'Username',
+                displayNameLabel: 'Display name',
+                emailLabel: 'Email',
+                phoneLabel: 'Phone number',
+                tenantLabel: 'Branch',
+                roleLabel: 'Role',
+                statusLabel: 'Status',
+                createdAtLabel: 'Created on',
             },
             focus: {
                 eyebrow: 'Focus mode',
@@ -887,7 +926,9 @@ const COPY = {
             },
             tables: {
                 emptyTenants: 'No branches are available in the platform.',
+                emptyTenantsFiltered: 'No branches match the current filter.',
                 emptyUsers: 'No users are available in the platform.',
+                emptyUsersFiltered: 'No users match the current filter.',
                 emptyTenantUsers: 'This branch has no users yet.',
                 emptyLogs: 'No ETL logs are available.',
                 emptyLogsDetail: 'Recent records will appear here when the pipeline runs.',
@@ -924,6 +965,7 @@ const COPY = {
                 fileSizeLabel: 'Size',
                 uploadedAtLabel: 'Uploaded at',
                 editTenant: 'Edit branch',
+                viewUser: 'View details',
                 editUser: 'Edit user',
                 deleteFile: 'Delete file',
                 unknownType: 'Unknown',
@@ -973,6 +1015,7 @@ const COPY = {
                 userSaved: 'User changes have been saved.',
                 saveTenantUpdateError: 'Unable to save the branch',
                 saveUserUpdateError: 'Unable to save the user',
+                loadUserDetailError: 'Unable to load the user details',
                 editTenantTitle: 'Edit branch {tenant}',
                 editUserTitle: 'Edit user {username}',
             },
@@ -1035,6 +1078,8 @@ const appState = {
     etlLogs: [],
     tenantUsers: [],
     analysisTenantId: initialAnalysisTenantId,
+    tenantSearchTerm: '',
+    userSearchTerm: '',
     uploadedFiles: [],
     uploadedFilesTenant: APP_CONTEXT.userTenant || '',
     uploadedFilesError: '',
@@ -1043,10 +1088,20 @@ const appState = {
     uploadStatus: null,
     editingTenantId: '',
     editingUserName: '',
+    viewingUser: null,
+    viewingUserName: '',
+    viewingUserError: '',
+    userDetailCache: {},
     confirmDialog: null,
 };
 
 let confirmResolver = null;
+const pendingRequests = {
+    tenants: null,
+    users: null,
+    etlLogs: null,
+};
+let activeEmbedController = null;
 
 function byId(id) {
     return document.getElementById(id);
@@ -1101,6 +1156,59 @@ function getAnalysisScopeLabel() {
     return tenantId;
 }
 
+function normalizeSearchTerm(value) {
+    return String(value || '').trim().toLowerCase();
+}
+
+function includesSearch(haystack, needle) {
+    return normalizeSearchTerm(haystack).includes(needle);
+}
+
+function tenantSearchIndex(tenant) {
+    return [
+        tenant.tenant_id,
+        tenant.tenant_name,
+        tenant.file_path,
+        tenant.is_active ? t('common.active') : t('common.inactive'),
+    ].join(' ');
+}
+
+function userSearchIndex(user) {
+    return [
+        user.username,
+        user.tenant_id || t('common.systemWide'),
+        i18n.roleLabel(user.role === 'superadmin' ? 'superadmin' : user.role === 'admin' ? 'admin' : 'viewer'),
+        user.is_active ? t('common.active') : t('common.inactive'),
+    ].join(' ');
+}
+
+function fetchTenants(options = {}) {
+    return fetchCollection('/api/tenants', 'tenants', 'tenants', options);
+}
+
+function fetchUsers(options = {}) {
+    return fetchCollection('/api/users', 'users', 'users', options);
+}
+
+function fetchEtlLogs(options = {}) {
+    return fetchCollection('/api/etl/logs', 'etlLogs', 'etlLogs', { ...options, responseKey: 'logs' });
+}
+
+async function fetchUserDetail(userId, { force = false } = {}) {
+    if (!force && appState.userDetailCache[userId]) {
+        return appState.userDetailCache[userId];
+    }
+
+    const response = await authFetch(`/api/users/${userId}`);
+    const data = await response.json();
+    if (!response.ok || !data.user) {
+        throw new Error(data.detail || data.error || t('runtime.forms.loadUserDetailError'));
+    }
+
+    appState.userDetailCache[userId] = data.user;
+    return data.user;
+}
+
 function formatCurrency(value) {
     return i18n.formatCurrency(value);
 }
@@ -1143,6 +1251,32 @@ function authFetch(url, options = {}) {
         headers.Authorization = `Bearer ${APP_CONTEXT.accessToken}`;
     }
     return fetch(url, { ...options, headers });
+}
+
+async function fetchCollection(url, stateKey, pendingKey, { force = false, fallback = [], responseKey = stateKey } = {}) {
+    if (!force && pendingRequests[pendingKey]) {
+        return pendingRequests[pendingKey];
+    }
+
+    if (!force && Array.isArray(appState[stateKey]) && appState[stateKey].length) {
+        return appState[stateKey];
+    }
+
+    pendingRequests[pendingKey] = (async () => {
+        const response = await authFetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        const data = await response.json();
+        appState[stateKey] = Array.isArray(data[responseKey]) ? data[responseKey] : fallback;
+        return appState[stateKey];
+    })();
+
+    try {
+        return await pendingRequests[pendingKey];
+    } finally {
+        pendingRequests[pendingKey] = null;
+    }
 }
 
 function setFormMessage(element, toneClass, translationKey = '', params = {}, fallbackMessage = '') {
@@ -1442,10 +1576,16 @@ async function loadSupersetIframe(dashboardKey, { iframeId = 'iframe-analysis', 
     const iframe = byId(iframeId);
     if (!config || !iframe) return;
 
-    iframe.src = 'about:blank';
     setEmbedFallback({ iframeId, fallbackId: iframeId === 'modalIframe' ? 'modalFallback' : 'frameFallback-analysis' });
     const frameState = byId(frameStateId);
     if (frameState) frameState.textContent = t('runtime.analysis.tokenLoading');
+
+    if (activeEmbedController) {
+        activeEmbedController.abort();
+    }
+
+    const controller = new AbortController();
+    activeEmbedController = controller;
 
     try {
         const params = new URLSearchParams({ dashboard_id: String(config.id) });
@@ -1454,18 +1594,26 @@ async function loadSupersetIframe(dashboardKey, { iframeId = 'iframe-analysis', 
             params.set('tenant_id', analysisTenantId);
         }
 
-        const response = await fetch(`/api/dashboard-token?${params.toString()}`);
+        const response = await fetch(`/api/dashboard-token?${params.toString()}`, { signal: controller.signal });
         if (!response.ok) throw new Error('Token error');
         const data = await response.json();
+        if (activeEmbedController !== controller) return;
         renderEmbeddedDashboard(iframe, data);
         if (frameState) frameState.textContent = t('runtime.analysis.frameReady');
     } catch (error) {
+        if (error?.name === 'AbortError') {
+            return;
+        }
         setEmbedFallback({
             iframeId,
             fallbackId: iframeId === 'modalIframe' ? 'modalFallback' : 'frameFallback-analysis',
             message: t('runtime.analysis.frameFallback'),
         });
         if (frameState) frameState.textContent = t('runtime.analysis.frameError');
+    } finally {
+        if (activeEmbedController === controller) {
+            activeEmbedController = null;
+        }
     }
 }
 
@@ -1756,12 +1904,20 @@ function tableEmpty(message, colspan) {
 function renderTenants(tenants) {
     const container = byId('tenant-list');
     if (!container) return;
-    if (!tenants.length) {
-        container.innerHTML = tableEmpty(t('runtime.tables.emptyTenants'), 6);
+    const searchTerm = normalizeSearchTerm(appState.tenantSearchTerm);
+    const filteredTenants = searchTerm
+        ? tenants.filter((tenant) => includesSearch(tenantSearchIndex(tenant), searchTerm))
+        : tenants;
+
+    if (!filteredTenants.length) {
+        container.innerHTML = tableEmpty(
+            t(searchTerm ? 'runtime.tables.emptyTenantsFiltered' : 'runtime.tables.emptyTenants'),
+            6
+        );
         return;
     }
     const now = new Date();
-    container.innerHTML = tenants.map((tenant) => {
+    container.innerHTML = filteredTenants.map((tenant) => {
         const expired = tenant.expires_at && new Date(tenant.expires_at) < now;
         return `
             <tr>
@@ -1775,7 +1931,9 @@ function renderTenants(tenants) {
                     </span>
                 </td>
                 <td data-label="${escapeHtml(t('runtime.tables.actionsLabel'))}">
-                    <button class="button button--secondary button--compact" type="button" data-edit-tenant="${escapeHtml(tenant.tenant_id)}">${escapeHtml(t('runtime.tables.editTenant'))}</button>
+                    <div class="table-actions">
+                        <button class="button button--secondary button--compact" type="button" data-edit-tenant="${escapeHtml(tenant.tenant_id)}">${escapeHtml(t('runtime.tables.editTenant'))}</button>
+                    </div>
                 </td>
             </tr>
         `;
@@ -1785,11 +1943,19 @@ function renderTenants(tenants) {
 function renderUsers(users) {
     const container = byId('user-list');
     if (!container) return;
-    if (!users.length) {
-        container.innerHTML = tableEmpty(t('runtime.tables.emptyUsers'), 5);
+    const searchTerm = normalizeSearchTerm(appState.userSearchTerm);
+    const filteredUsers = searchTerm
+        ? users.filter((user) => includesSearch(userSearchIndex(user), searchTerm))
+        : users;
+
+    if (!filteredUsers.length) {
+        container.innerHTML = tableEmpty(
+            t(searchTerm ? 'runtime.tables.emptyUsersFiltered' : 'runtime.tables.emptyUsers'),
+            5
+        );
         return;
     }
-    container.innerHTML = users.map((user) => {
+    container.innerHTML = filteredUsers.map((user) => {
         return `
         <tr>
             <td data-label="${escapeHtml(t('runtime.tables.usernameLabel'))}"><strong>${escapeHtml(user.username)}</strong></td>
@@ -1797,7 +1963,10 @@ function renderUsers(users) {
             <td data-label="${escapeHtml(t('runtime.tables.roleLabel'))}"><span class="status-pill ${user.role === 'admin' ? 'tone-warning' : 'tone-neutral'}">${escapeHtml(i18n.roleLabel(user.role === 'superadmin' ? 'superadmin' : user.role === 'admin' ? 'admin' : 'viewer'))}</span></td>
             <td data-label="${escapeHtml(t('runtime.tables.statusLabel'))}"><span class="status-pill ${statusToneByBool(user.is_active)}">${user.is_active ? t('common.active') : t('common.inactive')}</span></td>
             <td data-label="${escapeHtml(t('runtime.tables.actionsLabel'))}">
-                <button class="button button--secondary button--compact" type="button" data-edit-user data-user-id="${Number(user.user_id)}" data-username="${escapeHtml(user.username || '')}" data-tenant="${escapeHtml(user.tenant_id || '')}" data-role="${escapeHtml(user.role || 'viewer')}" data-active="${Boolean(user.is_active)}">${escapeHtml(t('runtime.tables.editUser'))}</button>
+                <div class="table-actions">
+                    <button class="button button--quiet button--compact" type="button" data-view-user data-user-id="${Number(user.user_id)}" data-username="${escapeHtml(user.username || '')}">${escapeHtml(t('runtime.tables.viewUser'))}</button>
+                    <button class="button button--secondary button--compact" type="button" data-edit-user data-user-id="${Number(user.user_id)}" data-username="${escapeHtml(user.username || '')}" data-tenant="${escapeHtml(user.tenant_id || '')}" data-role="${escapeHtml(user.role || 'viewer')}" data-active="${Boolean(user.is_active)}">${escapeHtml(t('runtime.tables.editUser'))}</button>
+                </div>
             </td>
         </tr>
     `;
@@ -1840,39 +2009,25 @@ function renderETLLogs(logs) {
     `;
 }
 
-async function loadAdminData() {
-    await populateTenantDropdown();
+async function loadAdminData({ force = false } = {}) {
+    if (force) {
+        appState.userDetailCache = {};
+    }
 
-    try {
-        const tenantResponse = await authFetch('/api/tenants');
-        if (tenantResponse.ok) {
-            const data = await tenantResponse.json();
-            appState.tenants = data.tenants || [];
-            renderTenants(appState.tenants);
-            renderAnalysisScope();
-        }
-    } catch (error) {}
+    await Promise.allSettled([
+        fetchTenants({ force }),
+        fetchUsers({ force }),
+        fetchEtlLogs({ force }),
+    ]);
 
-    try {
-        const userResponse = await authFetch('/api/users');
-        if (userResponse.ok) {
-            const data = await userResponse.json();
-            appState.users = data.users || [];
-            renderUsers(appState.users);
-        }
-    } catch (error) {}
-
-    try {
-        const logResponse = await authFetch('/api/etl/logs');
-        if (logResponse.ok) {
-            const data = await logResponse.json();
-            appState.etlLogs = data.logs || [];
-            renderETLLogs(appState.etlLogs);
-        }
-    } catch (error) {}
+    renderTenants(appState.tenants);
+    renderUsers(appState.users);
+    renderETLLogs(appState.etlLogs);
+    populateTenantDropdown();
+    populateETLTenantSelect();
+    renderAnalysisScope();
 
     renderOverviewIntel();
-    renderAnalysisScope();
 }
 
 function renderUploadStatus() {
@@ -1955,11 +2110,11 @@ async function populateETLTenantSelect() {
     const select = byId('etlTenantSelect');
     if (!select) return;
     try {
-        const response = await authFetch('/api/tenants');
-        if (!response.ok) return;
-        const data = await response.json();
-        const tenants = data.tenants || [];
+        const tenants = await fetchTenants();
+        if (!tenants.length) return;
+        const selectedValue = select.value || '';
         select.innerHTML = tenants.map((tenant) => `<option value="${tenant.tenant_id}">${tenant.tenant_id} — ${tenant.tenant_name}</option>`).join('');
+        select.value = selectedValue || tenants[0].tenant_id;
     } catch (error) {}
 }
 
@@ -2053,7 +2208,7 @@ async function triggerETL(tenant) {
         });
 
         if (APP_CONTEXT.userRole === 'superadmin') {
-            await loadAdminData();
+            await loadAdminData({ force: true });
         }
     } catch (error) {
         setUploadStatus({ kind: 'etl-error', message: error.message });
@@ -2173,14 +2328,9 @@ async function populateTenantDropdown() {
     const select = byId('adminNewUserTenant');
     if (!select) return;
     try {
-        if (!appState.tenants.length) {
-            const response = await authFetch('/api/tenants');
-            if (!response.ok) return;
-            const data = await response.json();
-            appState.tenants = data.tenants || [];
-        }
+        const tenants = await fetchTenants();
         const selectedValue = select.value || '';
-        select.innerHTML = tenantOptionsMarkup(appState.tenants);
+        select.innerHTML = tenantOptionsMarkup(tenants);
         select.value = selectedValue;
     } catch (error) {}
 }
@@ -2221,7 +2371,7 @@ async function createTenant(event) {
         ['newTenantId', 'newTenantName', 'newTenantFilePath', 'newTenantExpiresAt'].forEach((id) => {
             byId(id).value = '';
         });
-        await loadAdminData();
+        await loadAdminData({ force: true });
     } catch (error) {
         setFormMessage(message, 'is-error', '', {}, error.message);
     }
@@ -2255,7 +2405,7 @@ async function createUser(event) {
         byId('adminNewUserUsername').value = '';
         byId('adminNewUserPassword').value = '';
         byId('adminNewUserTenant').value = '';
-        await loadAdminData();
+        await loadAdminData({ force: true });
     } catch (error) {
         setFormMessage(message, 'is-error', '', {}, error.message);
     }
@@ -2337,6 +2487,53 @@ function renderEditUserTitle() {
     }
 }
 
+function renderViewUserModal() {
+    const container = byId('viewUserDetails');
+    const title = byId('viewUserTitle');
+    if (!container || !title) return;
+
+    title.textContent = appState.viewingUserName
+        ? `${t('modals.viewUser.title')} · ${appState.viewingUserName}`
+        : t('modals.viewUser.title');
+
+    if (appState.viewingUserError) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <strong>${escapeHtml(appState.viewingUserError)}</strong>
+            </div>
+        `;
+        return;
+    }
+
+    if (!appState.viewingUser) {
+        container.innerHTML = `
+            <div class="detail-row">
+                <span class="detail-label">${escapeHtml(t('modals.viewUser.loading'))}</span>
+            </div>
+        `;
+        return;
+    }
+
+    const user = appState.viewingUser;
+    const detailRows = [
+        ['modals.viewUser.usernameLabel', user.username],
+        ['modals.viewUser.displayNameLabel', user.display_name || t('common.notAvailable')],
+        ['modals.viewUser.emailLabel', user.email || t('common.notAvailable')],
+        ['modals.viewUser.phoneLabel', user.phone || t('common.notAvailable')],
+        ['modals.viewUser.tenantLabel', user.tenant_id || t('common.systemWide')],
+        ['modals.viewUser.roleLabel', i18n.roleLabel(user.role === 'superadmin' ? 'superadmin' : user.role === 'admin' ? 'admin' : 'viewer')],
+        ['modals.viewUser.statusLabel', user.is_active ? t('common.active') : t('common.inactive')],
+        ['modals.viewUser.createdAtLabel', user.created_at ? formatDateTime(user.created_at) : t('common.notAvailable')],
+    ];
+
+    container.innerHTML = detailRows.map(([labelKey, value]) => `
+        <div class="detail-row">
+            <span class="detail-label">${escapeHtml(t(labelKey))}</span>
+            <strong class="detail-value">${escapeHtml(value)}</strong>
+        </div>
+    `).join('');
+}
+
 function openEditTenant(tenantId) {
     const tenant = appState.tenants.find((item) => item.tenant_id === tenantId);
     if (!tenant) return;
@@ -2383,7 +2580,7 @@ async function submitEditTenant(event) {
         if (!response.ok || !data.success) throw new Error(data.detail || data.message || t('runtime.forms.saveTenantUpdateError'));
 
         setFormMessage(message, 'is-success', 'runtime.forms.tenantSaved');
-        await loadAdminData();
+        await loadAdminData({ force: true });
         window.setTimeout(closeEditTenantModal, 700);
     } catch (error) {
         setFormMessage(message, 'is-error', '', {}, error.message);
@@ -2403,13 +2600,7 @@ async function openEditUser(userId, username, tenantId, role, isActive) {
     const select = byId('editUserTenant');
     select.innerHTML = tenantOptionsMarkup(appState.tenants);
     try {
-        if (!appState.tenants.length) {
-            const response = await authFetch('/api/tenants');
-            if (response.ok) {
-                const data = await response.json();
-                appState.tenants = data.tenants || [];
-            }
-        }
+        await fetchTenants();
         select.innerHTML = tenantOptionsMarkup(appState.tenants);
     } catch (error) {}
     select.value = tenantId || '';
@@ -2419,6 +2610,29 @@ async function openEditUser(userId, username, tenantId, role, isActive) {
 function closeEditUserModal() {
     appState.editingUserName = '';
     toggleModal('modalEditUser', false);
+}
+
+async function openViewUser(userId, username) {
+    appState.viewingUserName = username || '';
+    appState.viewingUser = null;
+    appState.viewingUserError = '';
+    renderViewUserModal();
+    toggleModal('modalViewUser', true);
+
+    try {
+        appState.viewingUser = await fetchUserDetail(userId);
+    } catch (error) {
+        appState.viewingUserError = error.message || t('runtime.forms.loadUserDetailError');
+    }
+
+    renderViewUserModal();
+}
+
+function closeViewUserModal() {
+    appState.viewingUser = null;
+    appState.viewingUserName = '';
+    appState.viewingUserError = '';
+    toggleModal('modalViewUser', false);
 }
 
 async function submitEditUser(event) {
@@ -2448,7 +2662,7 @@ async function submitEditUser(event) {
 
         setFormMessage(message, 'is-success', 'runtime.forms.userSaved');
         if (APP_CONTEXT.userRole === 'superadmin') {
-            await loadAdminData();
+            await loadAdminData({ force: true });
         } else if (APP_CONTEXT.userRole === 'admin') {
             await loadTenantUsers();
         }
@@ -2475,6 +2689,9 @@ function bindGlobalEvents() {
     byId('modalEditUser')?.addEventListener('click', (event) => {
         if (event.target.id === 'modalEditUser') closeEditUserModal();
     });
+    byId('modalViewUser')?.addEventListener('click', (event) => {
+        if (event.target.id === 'modalViewUser') closeViewUserModal();
+    });
     byId('modalConfirm')?.addEventListener('click', (event) => {
         if (event.target.id === 'modalConfirm') closeConfirmModal();
     });
@@ -2493,6 +2710,7 @@ function bindGlobalEvents() {
             const modal = closeButton.dataset.closeModal;
             if (modal === 'edit-tenant') closeEditTenantModal();
             if (modal === 'edit-user') closeEditUserModal();
+            if (modal === 'view-user') closeViewUserModal();
             if (modal === 'dashboard') closeModal();
             if (modal === 'confirm') closeConfirmModal();
             return;
@@ -2516,6 +2734,15 @@ function bindGlobalEvents() {
             return;
         }
 
+        const viewUserButton = event.target.closest('[data-view-user]');
+        if (viewUserButton) {
+            openViewUser(
+                Number(viewUserButton.dataset.userId),
+                viewUserButton.dataset.username || ''
+            );
+            return;
+        }
+
         const deleteFileButton = event.target.closest('[data-delete-file]');
         if (deleteFileButton) {
             deleteFile(deleteFileButton.dataset.tenant || '', deleteFileButton.dataset.filename || '');
@@ -2524,6 +2751,14 @@ function bindGlobalEvents() {
 
     byId('fileInput')?.addEventListener('change', showFilePreview);
     byId('etlTenantSelect')?.addEventListener('change', loadUploadedFiles);
+    byId('tenantSearchInput')?.addEventListener('input', (event) => {
+        appState.tenantSearchTerm = event.target.value || '';
+        renderTenants(appState.tenants);
+    });
+    byId('userSearchInput')?.addEventListener('input', (event) => {
+        appState.userSearchTerm = event.target.value || '';
+        renderUsers(appState.users);
+    });
     byId('analysisTenantSelect')?.addEventListener('change', async (event) => {
         appState.analysisTenantId = event.target.value || '';
         window.sessionStorage.setItem('dashboardAnalysisTenant', appState.analysisTenantId);
@@ -2586,6 +2821,7 @@ function renderLocaleState() {
     renderUploadStatus();
     renderEditTenantTitle();
     renderEditUserTitle();
+    renderViewUserModal();
     renderConfirmDialog();
     populateTenantDropdown();
 
@@ -2636,6 +2872,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 window.openEditTenant = openEditTenant;
 window.openEditUser = openEditUser;
+window.closeViewUserModal = closeViewUserModal;
 window.closeModal = closeModal;
 window.closeConfirmModal = closeConfirmModal;
 window.closeEditTenantModal = closeEditTenantModal;

@@ -534,6 +534,48 @@ def create_user(data: UserCreate, payload=Depends(require_admin)):
     }
 
 
+@router.get('/users/{user_id}')
+def get_user_detail(user_id: int, payload=Depends(require_admin)):
+    """
+    Chi tiết user.
+    - superadmin: xem bất kỳ user nào
+    - admin: chỉ xem user thuộc tenant của mình
+    """
+    conn = get_mssql_conn()
+    cursor = conn.cursor(as_dict=True)
+    try:
+        cursor.execute(
+            'SELECT UserID, Username, DisplayName, Email, Phone, TenantID, Role, IsActive, CreatedAt '
+            'FROM AppUsers WHERE UserID = %s',
+            (user_id,)
+        )
+        row = cursor.fetchone()
+    finally:
+        conn.close()
+
+    if not row:
+        raise HTTPException(404, detail='User khong ton tai')
+
+    if not is_superadmin(payload):
+        my_tenant = payload.get('tenant_id')
+        if my_tenant != row['TenantID']:
+            raise HTTPException(403, detail='Admin chi co quyen xem user thuoc tenant cua minh')
+
+    return {
+        'user': {
+            'user_id': row['UserID'],
+            'username': row['Username'],
+            'display_name': row['DisplayName'],
+            'email': row['Email'],
+            'phone': row['Phone'],
+            'tenant_id': row['TenantID'],
+            'role': row['Role'],
+            'is_active': bool(row['IsActive']),
+            'created_at': row['CreatedAt'].isoformat() if row['CreatedAt'] else None,
+        }
+    }
+
+
 @router.put('/users/{user_id}')
 def update_user(user_id: int, data: UserUpdate, payload=Depends(require_admin)):
     """

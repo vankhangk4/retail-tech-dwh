@@ -378,19 +378,6 @@ def dashboard():
     if 'access_token' not in session:
         return redirect(url_for('login'))
 
-    # Lấy dashboard token từ Auth Gateway
-    dashboard_token = None
-    try:
-        r = requests.get(
-            f'{API_BASE_URL}/api/dashboard-token',
-            headers={'Authorization': f'Bearer {session["access_token"]}'},
-            timeout=10
-        )
-        if r.status_code == 200:
-            dashboard_token = r.json().get('guest_token')
-    except:
-        pass
-
     return render_template(
         'dashboard.html',
         user={
@@ -398,7 +385,6 @@ def dashboard():
             'tenant_id': session.get('tenant_id'),
             'user_id': session.get('user_id'),
         },
-        dashboard_token=dashboard_token,
         SUPERSET_URL=SUPERSET_PUBLIC_URL,
     )
 
@@ -493,6 +479,21 @@ def api_create_user():
         return jsonify(r.json()), r.status_code
     except:
         return jsonify({'error': 'Loi tao user'}), 500
+
+
+@app.route('/api/users/<int:user_id>', methods=['GET'])
+def api_user_detail(user_id):
+    if 'access_token' not in session:
+        return jsonify({'error': 'Chua dang nhap'}), 401
+    try:
+        r = requests.get(
+            f'{API_BASE_URL}/api/users/{user_id}',
+            headers={'Authorization': f'Bearer {session["access_token"]}'},
+            timeout=10
+        )
+        return jsonify(r.json()), r.status_code
+    except:
+        return jsonify({'error': 'Loi tai chi tiet user'}), 500
 
 
 @app.route('/api/tenants/<tenant_id>', methods=['PUT'])
