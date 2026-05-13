@@ -46,6 +46,7 @@
             tabs: {
                 profile: 'Hồ sơ tài khoản',
                 security: 'Bảo mật truy cập',
+                drive: 'Kết nối Google Drive',
             },
             profile: {
                 avatarTitle: 'Ảnh đại diện',
@@ -121,6 +122,31 @@
                 currentSession: 'Phiên hiện tại',
                 unknownClient: 'Chưa xác định',
             },
+            drive: {
+                title: 'Kết nối Google Drive',
+                desc: 'Liên kết thư mục Google Drive chứa file Excel nguồn để chuẩn bị nạp dữ liệu và chạy ETL theo lịch vận hành.',
+                statusDisconnected: 'Chưa kết nối',
+                providerTitle: 'Google Drive Workspace',
+                providerDesc: 'Dùng OAuth để cấp quyền đọc thư mục nguồn, không lưu mật khẩu Google trong hệ thống.',
+                connect: 'Kết nối Google Drive',
+                disconnect: 'Ngắt kết nối',
+                folderLabel: 'ID thư mục nguồn',
+                folderPlaceholder: 'Ví dụ: 1AbC...',
+                folderHint: 'Thư mục chứa file Excel theo từng chi nhánh hoặc kỳ dữ liệu.',
+                scopeLabel: 'Phạm vi đồng bộ',
+                scopeCurrent: 'Chi nhánh hiện tại',
+                scopeAll: 'Toàn hệ thống',
+                patternLabel: 'Quy ước file Excel',
+                patternPlaceholder: 'BaoCaoDoanhThu_*.xlsx',
+                scheduleLabel: 'Giờ chạy ETL cuối ngày',
+                policyEyebrow: 'Quy trình đề xuất',
+                policyUpload: 'Google Drive nhận file Excel trong ngày.',
+                policySync: 'Hệ thống đồng bộ file nguồn vào staging theo chi nhánh.',
+                policyEtl: 'ETL tự động chạy cuối ngày và ghi log để đối soát.',
+                save: 'Lưu cấu hình kết nối',
+                oauthUnavailable: 'Chưa có endpoint OAuth Google Drive. Cần cấu hình Google Cloud Client ID, Client Secret và callback URL trước khi kết nối.',
+                configSaved: 'Đã lưu cấu hình giao diện. Kết nối thật sẽ hoạt động sau khi backend Google Drive được cấu hình.',
+            },
             sidebar: {
                 brandMeta: 'Trung tâm vận hành cho hệ thống Data Warehouse đa chi nhánh',
                 scopePrefix: 'Phạm vi dữ liệu',
@@ -180,6 +206,7 @@
             tabs: {
                 profile: 'Account Profile',
                 security: 'Access Security',
+                drive: 'Google Drive Connection',
             },
             profile: {
                 avatarTitle: 'Avatar',
@@ -254,6 +281,31 @@
                 failure: 'Unsuccessful',
                 currentSession: 'Current Session',
                 unknownClient: 'Not identified',
+            },
+            drive: {
+                title: 'Google Drive Connection',
+                desc: 'Link the Google Drive folder that stores source Excel files for data loading and scheduled ETL operations.',
+                statusDisconnected: 'Not Connected',
+                providerTitle: 'Google Drive Workspace',
+                providerDesc: 'Use OAuth to grant read access to the source folder. Google passwords are not stored in the system.',
+                connect: 'Connect Google Drive',
+                disconnect: 'Disconnect',
+                folderLabel: 'Source Folder ID',
+                folderPlaceholder: 'Example: 1AbC...',
+                folderHint: 'Folder containing Excel files by branch or data period.',
+                scopeLabel: 'Sync Scope',
+                scopeCurrent: 'Current Branch',
+                scopeAll: 'System-wide',
+                patternLabel: 'Excel File Pattern',
+                patternPlaceholder: 'RevenueReport_*.xlsx',
+                scheduleLabel: 'End-of-day ETL Time',
+                policyEyebrow: 'Recommended Workflow',
+                policyUpload: 'Google Drive receives the daily Excel files.',
+                policySync: 'The system syncs source files into branch-level staging.',
+                policyEtl: 'ETL runs automatically at the end of day and records logs for reconciliation.',
+                save: 'Save Connection Settings',
+                oauthUnavailable: 'Google Drive OAuth endpoints are not configured yet. Configure Google Cloud Client ID, Client Secret, and callback URL before connecting.',
+                configSaved: 'Interface settings saved. The live connection will work after the Google Drive backend is configured.',
             },
             sidebar: {
                 brandMeta: 'Operations hub for the multi-branch Data Warehouse platform',
@@ -590,6 +642,23 @@
             buttons[nextIndex].focus();
             buttons[nextIndex].click();
         });
+    });
+
+    // Google Drive tab is UI-ready; backend OAuth endpoints will be wired separately.
+    const driveConnectBtn = document.getElementById('driveConnectBtn');
+    const driveConfigForm = document.getElementById('driveConfigForm');
+    const driveErrorAlert = document.getElementById('driveErrorAlert');
+    const driveSuccessAlert = document.getElementById('driveSuccessAlert');
+
+    driveConnectBtn?.addEventListener('click', () => {
+        hideAlert(driveSuccessAlert);
+        showAlert(driveErrorAlert, '', 'danger', 0, 'drive.oauthUnavailable');
+    });
+
+    driveConfigForm?.addEventListener('submit', event => {
+        event.preventDefault();
+        hideAlert(driveErrorAlert);
+        showAlert(driveSuccessAlert, '', 'success', 4000, 'drive.configSaved');
     });
 
     // ── Password toggle (show/hide) ───────────────────────────

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Thiết lập tài khoản | DWH Operations Console</title>
-    {% set asset_version = '20260513-i18n1' %}
+    {% set asset_version = '20260513-drive-tab1' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/shell.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css', v=asset_version) }}">
@@ -73,6 +73,11 @@
                             aria-controls="tab-security" data-tab="security">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                         <span data-i18n="tabs.security">Bảo mật truy cập</span>
+                    </button>
+                    <button class="settings-tab-btn" type="button" id="tab-drive-btn" role="tab" tabindex="-1" aria-selected="false"
+                            aria-controls="tab-drive" data-tab="drive">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7.5 3h9L22 13l-4.5 8h-11L2 13 7.5 3Z"/><path d="M7.5 3 12 13l-5.5 8"/><path d="M16.5 3 12 13l5.5 8"/><path d="M2 13h20"/></svg>
+                        <span data-i18n="tabs.drive">Kết nối Google Drive</span>
                     </button>
                 </nav>
 
@@ -295,6 +300,92 @@
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-panel is-hidden" id="tab-drive" role="tabpanel" aria-labelledby="tab-drive-btn">
+                    <div class="settings-card surface">
+                        <div class="settings-card__head">
+                            <div>
+                                <h2 class="settings-card__title" data-i18n="drive.title">Kết nối Google Drive</h2>
+                                <p class="settings-card__desc" data-i18n="drive.desc">Liên kết thư mục Google Drive chứa file Excel nguồn để chuẩn bị nạp dữ liệu và chạy ETL theo lịch vận hành.</p>
+                            </div>
+                            <span class="status-pill tone-neutral" id="driveConnectionStatus" data-i18n="drive.statusDisconnected">Chưa kết nối</span>
+                        </div>
+
+                        <div class="drive-layout">
+                            <section class="drive-connection-panel">
+                                <div class="drive-provider">
+                                    <span class="drive-provider__mark">G</span>
+                                    <div>
+                                        <strong data-i18n="drive.providerTitle">Google Drive Workspace</strong>
+                                        <p data-i18n="drive.providerDesc">Dùng OAuth để cấp quyền đọc thư mục nguồn, không lưu mật khẩu Google trong hệ thống.</p>
+                                    </div>
+                                </div>
+
+                                <div class="drive-action-row">
+                                    <button class="button button--primary" type="button" id="driveConnectBtn">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+                                        <span data-i18n="drive.connect">Kết nối Google Drive</span>
+                                    </button>
+                                    <button class="button button--secondary" type="button" id="driveDisconnectBtn" disabled>
+                                        <span data-i18n="drive.disconnect">Ngắt kết nối</span>
+                                    </button>
+                                </div>
+
+                                <div class="alert alert--danger is-hidden" id="driveErrorAlert" aria-live="polite"></div>
+                                <div class="alert alert--success is-hidden" id="driveSuccessAlert" aria-live="polite"></div>
+                            </section>
+
+                            <form class="settings-form drive-config-form" id="driveConfigForm">
+                                <div class="settings-form__row">
+                                    <div class="field">
+                                        <label for="driveFolderId" data-i18n="drive.folderLabel">ID thư mục nguồn</label>
+                                        <input class="input" type="text" id="driveFolderId"
+                                               data-i18n-placeholder="drive.folderPlaceholder"
+                                               placeholder="Ví dụ: 1AbC...">
+                                        <span class="field-hint" data-i18n="drive.folderHint">Thư mục chứa file Excel theo từng chi nhánh hoặc kỳ dữ liệu.</span>
+                                    </div>
+                                    <div class="field">
+                                        <label for="driveTenantScope" data-i18n="drive.scopeLabel">Phạm vi đồng bộ</label>
+                                        <select class="select" id="driveTenantScope">
+                                            <option value="current" data-i18n="drive.scopeCurrent">Chi nhánh hiện tại</option>
+                                            {% if user.role == 'superadmin' %}
+                                            <option value="all" data-i18n="drive.scopeAll">Toàn hệ thống</option>
+                                            {% endif %}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="settings-form__row">
+                                    <div class="field">
+                                        <label for="driveFilePattern" data-i18n="drive.patternLabel">Quy ước file Excel</label>
+                                        <input class="input" type="text" id="driveFilePattern"
+                                               data-i18n-placeholder="drive.patternPlaceholder"
+                                               placeholder="BaoCaoDoanhThu_*.xlsx">
+                                    </div>
+                                    <div class="field">
+                                        <label for="driveScheduleTime" data-i18n="drive.scheduleLabel">Giờ chạy ETL cuối ngày</label>
+                                        <input class="input" type="time" id="driveScheduleTime" value="23:30">
+                                    </div>
+                                </div>
+
+                                <div class="drive-policy">
+                                    <span class="eyebrow" data-i18n="drive.policyEyebrow">Quy trình đề xuất</span>
+                                    <ol>
+                                        <li data-i18n="drive.policyUpload">Google Drive nhận file Excel trong ngày.</li>
+                                        <li data-i18n="drive.policySync">Hệ thống đồng bộ file nguồn vào staging theo chi nhánh.</li>
+                                        <li data-i18n="drive.policyEtl">ETL tự động chạy cuối ngày và ghi log để đối soát.</li>
+                                    </ol>
+                                </div>
+
+                                <div class="settings-form__footer">
+                                    <button class="button button--primary" type="submit" id="driveSaveBtn">
+                                        <span data-i18n="drive.save">Lưu cấu hình kết nối</span>
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
