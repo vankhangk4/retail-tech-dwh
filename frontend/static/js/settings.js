@@ -47,6 +47,18 @@
                 profile: 'Hồ sơ tài khoản',
                 security: 'Bảo mật truy cập',
                 drive: 'Kết nối Google Drive',
+                appearance: 'Giao diện',
+            },
+            appearance: {
+                title: 'Giao diện',
+                desc: 'Chọn chế độ hiển thị phù hợp với môi trường làm việc của bạn. Lựa chọn được lưu cho từng trình duyệt và áp dụng ngay lập tức trên toàn bộ ứng dụng.',
+                light: 'Sáng',
+                dark: 'Tối',
+                auto: 'Theo hệ thống',
+                hint: '"Theo hệ thống" sẽ tự động chuyển sáng/tối theo cài đặt của máy tính. Lưu trữ cục bộ, không đồng bộ giữa các thiết bị.',
+                effectiveLight: 'Đang dùng: Sáng',
+                effectiveDark: 'Đang dùng: Tối',
+                ariaGroup: 'Chọn giao diện sáng, tối hoặc theo hệ thống',
             },
             profile: {
                 avatarTitle: 'Ảnh đại diện',
@@ -238,6 +250,18 @@
                 profile: 'Account Profile',
                 security: 'Access Security',
                 drive: 'Google Drive Connection',
+                appearance: 'Appearance',
+            },
+            appearance: {
+                title: 'Appearance',
+                desc: 'Pick the display mode that fits your environment. The choice is stored per browser and applied immediately across the application.',
+                light: 'Light',
+                dark: 'Dark',
+                auto: 'Match system',
+                hint: '"Match system" follows your operating system\'s light/dark setting. Stored locally, not synced across devices.',
+                effectiveLight: 'Active: Light',
+                effectiveDark: 'Active: Dark',
+                ariaGroup: 'Choose light, dark, or system theme',
             },
             profile: {
                 avatarTitle: 'Avatar',
@@ -711,6 +735,50 @@
             buttons[nextIndex].click();
         });
     });
+
+    // ── Theme picker (Light / Dark / Auto) ─────────────────────
+    const themePicker = document.getElementById('themePicker');
+    const themeBadge = document.getElementById('appearanceEffectiveBadge');
+
+    function syncThemeBadge() {
+        if (!themeBadge || !window.DWHTheme) return;
+        const eff = window.DWHTheme.effective();
+        const key = eff === 'dark' ? 'appearance.effectiveDark' : 'appearance.effectiveLight';
+        themeBadge.dataset.i18n = key;
+        themeBadge.textContent = t(key);
+        themeBadge.classList.remove('tone-neutral', 'tone-live', 'tone-warning');
+        themeBadge.classList.add(eff === 'dark' ? 'tone-warning' : 'tone-live');
+    }
+
+    function syncThemePicker() {
+        if (!themePicker || !window.DWHTheme) return;
+        const current = window.DWHTheme.get();
+        themePicker.querySelectorAll('[data-theme-option]').forEach(btn => {
+            const isOn = btn.dataset.themeOption === current;
+            btn.setAttribute('aria-checked', isOn ? 'true' : 'false');
+        });
+        syncThemeBadge();
+    }
+
+    if (themePicker && window.DWHTheme) {
+        syncThemePicker();
+        themePicker.addEventListener('click', event => {
+            const target = event.target.closest('[data-theme-option]');
+            if (!target) return;
+            const value = target.dataset.themeOption;
+            window.DWHTheme.set(value);
+            syncThemePicker();
+        });
+        window.DWHTheme.onChange(() => syncThemePicker());
+    } else if (themePicker) {
+        // theme.js not loaded yet (defer race); retry once it's available.
+        document.addEventListener('readystatechange', () => {
+            if (window.DWHTheme) {
+                syncThemePicker();
+                window.DWHTheme.onChange(() => syncThemePicker());
+            }
+        });
+    }
 
     // Google Drive connection
     const driveConnectBtn = document.getElementById('driveConnectBtn');

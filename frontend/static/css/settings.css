@@ -540,6 +540,18 @@
 .pwd-strength[data-level="3"] .pwd-strength__label { color: oklch(48% 0.11 180); }
 .pwd-strength[data-level="4"] .pwd-strength__label { color: var(--success); }
 
+/* ── Appearance tab ── */
+.appearance-picker-wrap {
+    display: grid;
+    gap: 0.85rem;
+    align-items: start;
+}
+
+.appearance-picker-hint {
+    margin: 0;
+    max-width: 58ch;
+}
+
 /* ── Login history table tweaks ── */
 .settings-card .table-shell {
     margin-top: 0;

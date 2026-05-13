@@ -8,6 +8,7 @@
     --bg-subtle: oklch(96.8% 0.006 170);
     --bg-panel: oklch(99.35% 0.001 106);
     --bg-panel-strong: oklch(97.9% 0.004 168);
+    --bg-elevated: oklch(99.6% 0.001 110);
     --line-soft: oklch(89.4% 0.004 150);
     --line-strong: oklch(77.8% 0.008 164);
     --text-strong: oklch(19.5% 0.01 185);
@@ -17,6 +18,7 @@
     --accent: oklch(36.5% 0.058 195);
     --accent-strong: oklch(29.5% 0.047 195);
     --accent-soft: oklch(94% 0.015 183);
+    --on-accent: oklch(99.5% 0.001 110);
     --success: oklch(50.5% 0.086 160);
     --success-soft: oklch(94.4% 0.023 158);
     --warning: oklch(71% 0.14 77);
@@ -27,6 +29,10 @@
     --info-soft: oklch(94.2% 0.016 205);
     --shadow-sm: 0 12px 34px -30px oklch(18% 0.018 180 / 0.22);
     --shadow-md: 0 42px 96px -62px oklch(18% 0.018 180 / 0.24);
+    --body-bg:
+        radial-gradient(circle at top center, oklch(95.9% 0.014 182) 0%, transparent 24%),
+        linear-gradient(180deg, oklch(99.1% 0.001 110) 0%, var(--bg-canvas) 100%);
+    --scrim: oklch(20% 0.015 220 / 0.28);
     --radius-xs: 8px;
     --radius-sm: 12px;
     --radius-md: 18px;
@@ -39,6 +45,96 @@
     --space-5: 1.5rem;
     --space-6: 2rem;
     --space-7: 3rem;
+    /* ── Motion tokens ── */
+    --ease-snap: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-soft: cubic-bezier(0.32, 0.72, 0, 1);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --dur-fast: 140ms;
+    --dur-base: 220ms;
+    --dur-slow: 360ms;
+    --dur-theme: 280ms;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+/* ── Dark theme tokens ──
+   Activated via:
+   - html[data-theme="dark"]   → user picked dark explicitly
+   - html[data-theme="auto"]   → user picked system, OS reports dark
+*/
+html[data-theme="dark"],
+html[data-theme="dark"]:root {
+    color-scheme: dark;
+    --bg-canvas: oklch(14.5% 0.012 215);
+    --bg-subtle: oklch(19.4% 0.014 215);
+    --bg-panel: oklch(21.6% 0.015 215);
+    --bg-panel-strong: oklch(24.8% 0.017 215);
+    --bg-elevated: oklch(26.5% 0.018 215);
+    --line-soft: oklch(30.5% 0.013 215);
+    --line-strong: oklch(42% 0.018 215);
+    --text-strong: oklch(96.5% 0.005 210);
+    --text-main: oklch(88.5% 0.007 210);
+    --text-muted: oklch(72% 0.012 210);
+    --text-faint: oklch(57% 0.014 210);
+    --accent: oklch(76% 0.085 195);
+    --accent-strong: oklch(86% 0.072 195);
+    --accent-soft: oklch(30% 0.045 195);
+    --on-accent: oklch(14% 0.012 215);
+    --success: oklch(74% 0.13 160);
+    --success-soft: oklch(26% 0.045 160);
+    --warning: oklch(80% 0.135 77);
+    --warning-soft: oklch(28% 0.05 77);
+    --danger: oklch(74% 0.16 27);
+    --danger-soft: oklch(28% 0.06 27);
+    --info: oklch(74% 0.075 212);
+    --info-soft: oklch(26% 0.045 212);
+    --shadow-sm: 0 14px 36px -28px oklch(0% 0 0 / 0.65);
+    --shadow-md: 0 46px 110px -58px oklch(0% 0 0 / 0.7);
+    --body-bg:
+        radial-gradient(circle at top center, oklch(24% 0.03 200) 0%, transparent 32%),
+        radial-gradient(circle at 80% 110%, oklch(22% 0.025 188) 0%, transparent 38%),
+        linear-gradient(180deg, oklch(16% 0.015 215) 0%, var(--bg-canvas) 100%);
+    --scrim: oklch(4% 0.01 220 / 0.62);
+}
+
+@media (prefers-color-scheme: dark) {
+    html[data-theme="auto"],
+    html[data-theme="auto"]:root {
+        color-scheme: dark;
+        --bg-canvas: oklch(14.5% 0.012 215);
+        --bg-subtle: oklch(19.4% 0.014 215);
+        --bg-panel: oklch(21.6% 0.015 215);
+        --bg-panel-strong: oklch(24.8% 0.017 215);
+        --bg-elevated: oklch(26.5% 0.018 215);
+        --line-soft: oklch(30.5% 0.013 215);
+        --line-strong: oklch(42% 0.018 215);
+        --text-strong: oklch(96.5% 0.005 210);
+        --text-main: oklch(88.5% 0.007 210);
+        --text-muted: oklch(72% 0.012 210);
+        --text-faint: oklch(57% 0.014 210);
+        --accent: oklch(76% 0.085 195);
+        --accent-strong: oklch(86% 0.072 195);
+        --accent-soft: oklch(30% 0.045 195);
+        --on-accent: oklch(14% 0.012 215);
+        --success: oklch(74% 0.13 160);
+        --success-soft: oklch(26% 0.045 160);
+        --warning: oklch(80% 0.135 77);
+        --warning-soft: oklch(28% 0.05 77);
+        --danger: oklch(74% 0.16 27);
+        --danger-soft: oklch(28% 0.06 27);
+        --info: oklch(74% 0.075 212);
+        --info-soft: oklch(26% 0.045 212);
+        --shadow-sm: 0 14px 36px -28px oklch(0% 0 0 / 0.65);
+        --shadow-md: 0 46px 110px -58px oklch(0% 0 0 / 0.7);
+        --body-bg:
+            radial-gradient(circle at top center, oklch(24% 0.03 200) 0%, transparent 32%),
+            radial-gradient(circle at 80% 110%, oklch(22% 0.025 188) 0%, transparent 38%),
+            linear-gradient(180deg, oklch(16% 0.015 215) 0%, var(--bg-canvas) 100%);
+        --scrim: oklch(4% 0.01 220 / 0.62);
+    }
 }
 
 *, *::before, *::after {
@@ -54,9 +150,7 @@ body {
     min-height: 100vh;
     font-family: var(--font-ui);
     color: var(--text-main);
-    background:
-        radial-gradient(circle at top center, oklch(95.9% 0.014 182) 0%, transparent 24%),
-        linear-gradient(180deg, oklch(99.1% 0.001 110) 0%, var(--bg-canvas) 100%);
+    background: var(--body-bg);
     font-kerning: normal;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -107,7 +201,7 @@ ol {
     padding: 0.75rem 1rem;
     border-radius: var(--radius-pill);
     background: var(--accent);
-    color: var(--bg-panel);
+    color: var(--on-accent);
     font-weight: 700;
     transition: top 0.2s ease;
 }
@@ -159,7 +253,7 @@ ol {
 
 .button--primary {
     background: var(--accent);
-    color: var(--bg-panel);
+    color: var(--on-accent);
     border-color: transparent;
 }
 
@@ -468,7 +562,7 @@ ol {
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    background: oklch(98.3% 0.003 150);
+    background: var(--bg-subtle);
     border-bottom: 1px solid var(--line-soft);
 }
 
@@ -514,7 +608,7 @@ ol {
     align-items: center;
     justify-content: center;
     padding: 1.5rem;
-    background: oklch(20% 0.015 220 / 0.28);
+    background: var(--scrim);
     backdrop-filter: blur(10px);
     z-index: 90;
 }
@@ -528,7 +622,7 @@ ol {
     max-height: min(90vh, 56rem);
     overflow: auto;
     padding: 1.35rem;
-    background: linear-gradient(180deg, oklch(99.4% 0.004 210) 0%, var(--bg-panel) 100%);
+    background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-panel) 100%);
     border: 1px solid var(--line-soft);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
@@ -625,6 +719,266 @@ ol {
         letter-spacing: 0.08em;
         text-transform: uppercase;
     }
+}
+
+/* ── Theme picker (segmented control: Light / Dark / Auto) ── */
+.theme-picker {
+    display: inline-grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.3rem;
+    padding: 0.35rem;
+    background: var(--bg-subtle);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-pill);
+    width: fit-content;
+    max-width: 100%;
+    box-shadow: var(--shadow-sm);
+}
+
+.theme-picker__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding: 0 1.05rem;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.theme-picker__btn svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.theme-picker__btn:hover {
+    background: var(--bg-panel);
+    color: var(--text-strong);
+}
+
+.theme-picker__btn[aria-checked="true"] {
+    background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-panel) 100%);
+    color: var(--accent-strong);
+    box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--line-soft);
+}
+
+.theme-picker__btn[aria-checked="true"] svg {
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+.theme-picker__btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+    .theme-picker {
+        width: 100%;
+    }
+    .theme-picker__btn span {
+        display: none;
+    }
+}
+
+/* ============================================================
+   Motion layer — smooth theme swaps, panel/modal/alert entrances,
+   page-load fade-up, refined easing.
+   Disabled wholesale by the prefers-reduced-motion block below.
+   ============================================================ */
+
+/* Smooth theme transitions on text + chrome surfaces.
+   We intentionally skip body's gradient bg (can't transition gradients);
+   color/border/box-shadow animate, which carries enough perceived smoothness. */
+body,
+.surface,
+.modal-card,
+.command-bar,
+.app-rail,
+.rail-brand,
+.rail-user,
+.rail-footer,
+.context-chip,
+.icon-button,
+.theme-picker,
+.theme-picker__btn,
+.settings-tabs,
+.settings-tab-btn,
+.settings-card,
+.settings-identity,
+.identity-row,
+.drive-connection-panel,
+.drive-config-form,
+.drive-policy,
+.drive-file-picker,
+.source-option,
+.drive-file-option,
+.input,
+.select,
+.textarea,
+.table-shell,
+.data-table thead th,
+.alert,
+.button,
+.status-pill,
+.signal-metric,
+.detail-row,
+.attention-item,
+.analysis-link,
+.mini-stat,
+.workflow-guide li,
+.workspace-card,
+.panel,
+.room-frame,
+.page,
+.mission-brief,
+.signal-strip,
+.analysis-option,
+.focus-action,
+.nav-link {
+    transition:
+        background-color var(--dur-theme) var(--ease-snap),
+        color var(--dur-theme) var(--ease-snap),
+        border-color var(--dur-theme) var(--ease-snap),
+        box-shadow var(--dur-theme) var(--ease-snap);
+}
+
+/* Re-add the per-component effects that were already transitioning
+   (transform, opacity), composed with the theme transition above. */
+.button {
+    transition:
+        background-color var(--dur-base) var(--ease-snap),
+        color var(--dur-base) var(--ease-snap),
+        border-color var(--dur-base) var(--ease-snap),
+        box-shadow var(--dur-base) var(--ease-snap),
+        transform var(--dur-fast) var(--ease-out);
+}
+
+.nav-link {
+    transition:
+        background-color var(--dur-base) var(--ease-snap),
+        color var(--dur-base) var(--ease-snap),
+        border-color var(--dur-base) var(--ease-snap),
+        box-shadow var(--dur-base) var(--ease-snap),
+        transform var(--dur-base) var(--ease-out);
+}
+
+.theme-picker__btn,
+.settings-tab-btn,
+.icon-button,
+.password-toggle,
+.avatar-upload-btn,
+.source-option,
+.drive-file-option,
+.focus-action,
+.analysis-option {
+    transition:
+        background-color var(--dur-base) var(--ease-snap),
+        color var(--dur-base) var(--ease-snap),
+        border-color var(--dur-base) var(--ease-snap),
+        box-shadow var(--dur-base) var(--ease-snap),
+        transform var(--dur-base) var(--ease-out),
+        opacity var(--dur-base) var(--ease-snap);
+}
+
+/* ── Entrance keyframes ── */
+@keyframes dwh-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes dwh-fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes dwh-fade-up-soft {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes dwh-pop-in {
+    from { opacity: 0; transform: translateY(6px) scale(0.985); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes dwh-slide-down {
+    from { opacity: 0; transform: translateY(-6px); max-height: 0; }
+    to   { opacity: 1; transform: none; max-height: 12rem; }
+}
+
+@keyframes dwh-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 currentColor; }
+    50%      { box-shadow: 0 0 0 5px transparent; }
+}
+
+/* ── Page enter — main content fades up once on load ── */
+.app-main,
+.auth-shell {
+    animation: dwh-fade-up var(--dur-slow) var(--ease-out) both;
+}
+
+.app-rail {
+    animation: dwh-fade-in var(--dur-slow) var(--ease-out) both;
+}
+
+/* ── Tab panel cross-fade ──
+   Toggle pattern: JS adds/removes .is-hidden. When a panel becomes
+   visible the :not(.is-hidden) selector matches and the animation
+   property is set → browser runs the keyframe. */
+.tab-panel:not(.is-hidden) {
+    animation: dwh-fade-up-soft var(--dur-base) var(--ease-out) both;
+}
+
+/* ── Modal open animation ── */
+.modal-overlay.is-visible {
+    animation: dwh-fade-in var(--dur-base) var(--ease-snap) both;
+}
+
+.modal-overlay.is-visible .modal-card {
+    animation: dwh-pop-in var(--dur-slow) var(--ease-out) both;
+}
+
+/* ── Alerts ── */
+.alert.is-visible,
+.alert:not(.is-hidden):not(:empty) {
+    animation: dwh-fade-up-soft var(--dur-base) var(--ease-out) both;
+}
+
+/* ── Live status pill: subtle breathing dot ── */
+.status-pill.tone-live::before,
+.status-pill.tone-success::before {
+    animation: dwh-pulse 2.4s var(--ease-snap) infinite;
+}
+
+/* ── Sidebar nav links: gentle stagger on first load ── */
+.rail-nav .nav-link {
+    animation: dwh-fade-up-soft var(--dur-slow) var(--ease-out) both;
+}
+.rail-nav .nav-link:nth-of-type(1) { animation-delay: 40ms; }
+.rail-nav .nav-link:nth-of-type(2) { animation-delay: 80ms; }
+.rail-nav .nav-link:nth-of-type(3) { animation-delay: 120ms; }
+.rail-nav .nav-link:nth-of-type(4) { animation-delay: 160ms; }
+.rail-nav .nav-link:nth-of-type(5) { animation-delay: 200ms; }
+
+/* ── Auth card entrance ── */
+.auth-card {
+    animation: dwh-fade-up var(--dur-slow) var(--ease-out) both;
+    animation-delay: 60ms;
+}
+
+/* ── Active-state subtle scale feedback for picker/tab buttons ── */
+.theme-picker__btn:active,
+.settings-tab-btn:active,
+.button:active {
+    transition: transform 60ms var(--ease-in);
 }
 
 @media (prefers-reduced-motion: reduce) {

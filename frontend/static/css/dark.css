@@ -1,0 +1,403 @@
+/* ============================================================
+   dark.css — Overlay for hardcoded colors that don't go through
+   design-system tokens. Loaded AFTER shell/dashboard/settings/auth
+   so its selectors win the cascade.
+
+   Pattern: html[data-theme="dark"] OR html[data-theme="auto"]
+            when @media (prefers-color-scheme: dark).
+   ============================================================ */
+
+/* ── Helper macros via duplication ──
+   We repeat each rule under two selector groups because CSS doesn't
+   have variables for selectors. Order matters: keep both blocks in sync.
+*/
+
+/* =========================================================
+   Block A — explicit dark
+   ========================================================= */
+html[data-theme="dark"] .app-rail {
+    background: linear-gradient(180deg, oklch(18% 0.014 215) 0%, oklch(15% 0.012 215) 100%);
+    border-right-color: var(--line-soft);
+}
+
+html[data-theme="dark"] .rail-brand,
+html[data-theme="dark"] .rail-user,
+html[data-theme="dark"] .rail-footer,
+html[data-theme="dark"] .page,
+html[data-theme="dark"] .command-bar,
+html[data-theme="dark"] .signal-strip,
+html[data-theme="dark"] .workspace-card,
+html[data-theme="dark"] .mission-brief,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .room-frame {
+    background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-panel) 100%);
+}
+
+html[data-theme="dark"] .nav-link:hover {
+    border-color: oklch(38% 0.04 200);
+    background: oklch(28% 0.05 200 / 0.45);
+    color: var(--accent-strong);
+}
+
+html[data-theme="dark"] .nav-link.is-active {
+    background: linear-gradient(180deg, oklch(34% 0.06 200) 0%, oklch(28% 0.05 200) 100%);
+    border-color: oklch(40% 0.06 200);
+    color: var(--accent-strong);
+    box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.06);
+}
+
+html[data-theme="dark"] .settings-tab-btn.is-active {
+    background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-panel) 100%);
+    color: var(--accent-strong);
+}
+
+html[data-theme="dark"] .settings-identity {
+    background: oklch(18% 0.013 215);
+}
+
+html[data-theme="dark"] .drive-connection-panel {
+    background: oklch(19% 0.013 215);
+}
+
+html[data-theme="dark"] .drive-file-picker {
+    background: linear-gradient(180deg, var(--bg-panel), oklch(19% 0.013 215));
+}
+
+html[data-theme="dark"] .source-option.is-active,
+html[data-theme="dark"] .drive-file-option:has(input:checked) {
+    border-color: oklch(50% 0.07 156);
+    background: oklch(28% 0.045 160);
+}
+
+html[data-theme="dark"] .pwd-strength[data-level="3"] .pwd-strength__fill {
+    background: oklch(72% 0.1 195);
+}
+
+html[data-theme="dark"] .pwd-strength[data-level="2"] .pwd-strength__label {
+    color: var(--warning);
+}
+
+html[data-theme="dark"] .pwd-strength[data-level="3"] .pwd-strength__label {
+    color: var(--info);
+}
+
+/* Dashboard surfaces */
+html[data-theme="dark"] .signal-metric,
+html[data-theme="dark"] .detail-row,
+html[data-theme="dark"] .attention-item,
+html[data-theme="dark"] .analysis-link,
+html[data-theme="dark"] .mini-stat,
+html[data-theme="dark"] .workflow-guide li {
+    background: var(--bg-subtle);
+}
+
+html[data-theme="dark"] .attention-item--success {
+    background: linear-gradient(180deg, oklch(24% 0.045 160) 0%, var(--success-soft) 100%);
+    border-color: oklch(38% 0.06 156);
+}
+
+html[data-theme="dark"] .attention-item--warning {
+    background: linear-gradient(180deg, oklch(26% 0.06 77) 0%, var(--warning-soft) 100%);
+    border-color: oklch(38% 0.07 77);
+    box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.04);
+}
+
+html[data-theme="dark"] .attention-item--warning::after {
+    background: var(--warning);
+}
+
+html[data-theme="dark"] .attention-item--danger {
+    background: linear-gradient(180deg, oklch(26% 0.06 28) 0%, var(--danger-soft) 100%);
+    border-color: oklch(38% 0.075 28);
+}
+
+html[data-theme="dark"] .analysis-option:hover {
+    border-color: var(--line-strong);
+    background: oklch(24% 0.025 195);
+}
+
+html[data-theme="dark"] .analysis-option.is-active {
+    background: linear-gradient(180deg, oklch(30% 0.05 195) 0%, oklch(24% 0.045 195) 100%);
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+html[data-theme="dark"] .analysis-stage {
+    background:
+        radial-gradient(circle at right bottom, oklch(22% 0.03 188) 0%, transparent 22%),
+        linear-gradient(180deg, var(--bg-panel) 0%, oklch(19% 0.013 215) 100%);
+}
+
+html[data-theme="dark"] .source-picker .source-option,
+html[data-theme="dark"] .drive-file-option {
+    background: var(--bg-subtle);
+}
+
+/* Mobile/responsive shell */
+@media (max-width: 1024px) {
+    html[data-theme="dark"] .app-rail {
+        box-shadow: 0 28px 60px -32px oklch(0% 0 0 / 0.7);
+    }
+}
+
+/* Auth pages */
+html[data-theme="dark"] .auth-body {
+    background:
+        radial-gradient(circle at 10% 8%, oklch(22% 0.03 200) 0%, transparent 28%),
+        linear-gradient(180deg, oklch(16% 0.014 215) 0%, oklch(14% 0.012 215) 100%);
+}
+
+html[data-theme="dark"] .auth-shell {
+    background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-panel) 100%);
+    box-shadow: 0 36px 80px -46px oklch(0% 0 0 / 0.7);
+}
+
+html[data-theme="dark"] .auth-panel {
+    background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-panel) 100%);
+}
+
+html[data-theme="dark"] .auth-card {
+    background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-panel) 100%);
+    box-shadow: 0 30px 68px -40px oklch(0% 0 0 / 0.6);
+}
+
+html[data-theme="dark"] .auth-trust-strip {
+    background: linear-gradient(180deg, oklch(22% 0.015 215) 0%, oklch(20% 0.013 215) 100%);
+    border-color: var(--line-soft);
+}
+
+/* ETL upload zone + workflow status (was bright white in dark mode) */
+html[data-theme="dark"] .upload-zone {
+    border-color: var(--line-strong);
+    background:
+        radial-gradient(circle at right bottom, oklch(24% 0.028 188) 0%, transparent 22%),
+        linear-gradient(180deg, var(--bg-panel) 0%, oklch(19% 0.013 215) 100%);
+}
+
+html[data-theme="dark"] .upload-zone::after {
+    background: linear-gradient(180deg, oklch(26% 0.04 195) 0%, oklch(22% 0.035 195) 100%);
+    opacity: 0.85;
+}
+
+html[data-theme="dark"] .upload-zone.is-dragging {
+    background: linear-gradient(180deg, oklch(24% 0.04 195) 0%, var(--accent-soft) 100%);
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+html[data-theme="dark"] .preview-item {
+    background: var(--bg-subtle);
+}
+
+html[data-theme="dark"] .workflow-status {
+    background: var(--bg-subtle);
+    border-color: var(--line-soft);
+}
+
+html[data-theme="dark"] .workflow-status.is-running {
+    background: oklch(26% 0.045 195);
+    border-color: var(--accent);
+}
+
+html[data-theme="dark"] .workflow-status.is-success {
+    background: oklch(26% 0.045 160);
+    border-color: oklch(40% 0.07 156);
+}
+
+html[data-theme="dark"] .workflow-status.is-error {
+    background: oklch(26% 0.06 28);
+    border-color: oklch(40% 0.08 28);
+}
+
+/* =========================================================
+   Block B — auto (follow OS) when OS is dark
+   ========================================================= */
+@media (prefers-color-scheme: dark) {
+    html[data-theme="auto"] .app-rail {
+        background: linear-gradient(180deg, oklch(18% 0.014 215) 0%, oklch(15% 0.012 215) 100%);
+        border-right-color: var(--line-soft);
+    }
+
+    html[data-theme="auto"] .rail-brand,
+    html[data-theme="auto"] .rail-user,
+    html[data-theme="auto"] .rail-footer,
+    html[data-theme="auto"] .page,
+    html[data-theme="auto"] .command-bar,
+    html[data-theme="auto"] .signal-strip,
+    html[data-theme="auto"] .workspace-card,
+    html[data-theme="auto"] .mission-brief,
+    html[data-theme="auto"] .panel,
+    html[data-theme="auto"] .room-frame {
+        background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-panel) 100%);
+    }
+
+    html[data-theme="auto"] .nav-link:hover {
+        border-color: oklch(38% 0.04 200);
+        background: oklch(28% 0.05 200 / 0.45);
+        color: var(--accent-strong);
+    }
+
+    html[data-theme="auto"] .nav-link.is-active {
+        background: linear-gradient(180deg, oklch(34% 0.06 200) 0%, oklch(28% 0.05 200) 100%);
+        border-color: oklch(40% 0.06 200);
+        color: var(--accent-strong);
+        box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.06);
+    }
+
+    html[data-theme="auto"] .settings-tab-btn.is-active {
+        background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-panel) 100%);
+        color: var(--accent-strong);
+    }
+
+    html[data-theme="auto"] .settings-identity {
+        background: oklch(18% 0.013 215);
+    }
+
+    html[data-theme="auto"] .drive-connection-panel {
+        background: oklch(19% 0.013 215);
+    }
+
+    html[data-theme="auto"] .drive-file-picker {
+        background: linear-gradient(180deg, var(--bg-panel), oklch(19% 0.013 215));
+    }
+
+    html[data-theme="auto"] .source-option.is-active,
+    html[data-theme="auto"] .drive-file-option:has(input:checked) {
+        border-color: oklch(50% 0.07 156);
+        background: oklch(28% 0.045 160);
+    }
+
+    html[data-theme="auto"] .pwd-strength[data-level="3"] .pwd-strength__fill {
+        background: oklch(72% 0.1 195);
+    }
+
+    html[data-theme="auto"] .pwd-strength[data-level="2"] .pwd-strength__label {
+        color: var(--warning);
+    }
+
+    html[data-theme="auto"] .pwd-strength[data-level="3"] .pwd-strength__label {
+        color: var(--info);
+    }
+
+    html[data-theme="auto"] .signal-metric,
+    html[data-theme="auto"] .detail-row,
+    html[data-theme="auto"] .attention-item,
+    html[data-theme="auto"] .analysis-link,
+    html[data-theme="auto"] .mini-stat,
+    html[data-theme="auto"] .workflow-guide li {
+        background: var(--bg-subtle);
+    }
+
+    html[data-theme="auto"] .attention-item--success {
+        background: linear-gradient(180deg, oklch(24% 0.045 160) 0%, var(--success-soft) 100%);
+        border-color: oklch(38% 0.06 156);
+    }
+
+    html[data-theme="auto"] .attention-item--warning {
+        background: linear-gradient(180deg, oklch(26% 0.06 77) 0%, var(--warning-soft) 100%);
+        border-color: oklch(38% 0.07 77);
+        box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.04);
+    }
+
+    html[data-theme="auto"] .attention-item--warning::after {
+        background: var(--warning);
+    }
+
+    html[data-theme="auto"] .attention-item--danger {
+        background: linear-gradient(180deg, oklch(26% 0.06 28) 0%, var(--danger-soft) 100%);
+        border-color: oklch(38% 0.075 28);
+    }
+
+    html[data-theme="auto"] .analysis-option:hover {
+        border-color: var(--line-strong);
+        background: oklch(24% 0.025 195);
+    }
+
+    html[data-theme="auto"] .analysis-option.is-active {
+        background: linear-gradient(180deg, oklch(30% 0.05 195) 0%, oklch(24% 0.045 195) 100%);
+        border-color: var(--accent);
+        box-shadow: inset 0 0 0 1px var(--accent);
+    }
+
+    html[data-theme="auto"] .analysis-stage {
+        background:
+            radial-gradient(circle at right bottom, oklch(22% 0.03 188) 0%, transparent 22%),
+            linear-gradient(180deg, var(--bg-panel) 0%, oklch(19% 0.013 215) 100%);
+    }
+
+    html[data-theme="auto"] .source-picker .source-option,
+    html[data-theme="auto"] .drive-file-option {
+        background: var(--bg-subtle);
+    }
+
+    @media (max-width: 1024px) {
+        html[data-theme="auto"] .app-rail {
+            box-shadow: 0 28px 60px -32px oklch(0% 0 0 / 0.7);
+        }
+    }
+
+    html[data-theme="auto"] .auth-body {
+        background:
+            radial-gradient(circle at 10% 8%, oklch(22% 0.03 200) 0%, transparent 28%),
+            linear-gradient(180deg, oklch(16% 0.014 215) 0%, oklch(14% 0.012 215) 100%);
+    }
+
+    html[data-theme="auto"] .auth-shell {
+        background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-panel) 100%);
+        box-shadow: 0 36px 80px -46px oklch(0% 0 0 / 0.7);
+    }
+
+    html[data-theme="auto"] .auth-panel {
+        background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-panel) 100%);
+    }
+
+    html[data-theme="auto"] .auth-card {
+        background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-panel) 100%);
+        box-shadow: 0 30px 68px -40px oklch(0% 0 0 / 0.6);
+    }
+
+    html[data-theme="auto"] .auth-trust-strip {
+        background: linear-gradient(180deg, oklch(22% 0.015 215) 0%, oklch(20% 0.013 215) 100%);
+        border-color: var(--line-soft);
+    }
+
+    html[data-theme="auto"] .upload-zone {
+        border-color: var(--line-strong);
+        background:
+            radial-gradient(circle at right bottom, oklch(24% 0.028 188) 0%, transparent 22%),
+            linear-gradient(180deg, var(--bg-panel) 0%, oklch(19% 0.013 215) 100%);
+    }
+
+    html[data-theme="auto"] .upload-zone::after {
+        background: linear-gradient(180deg, oklch(26% 0.04 195) 0%, oklch(22% 0.035 195) 100%);
+        opacity: 0.85;
+    }
+
+    html[data-theme="auto"] .upload-zone.is-dragging {
+        background: linear-gradient(180deg, oklch(24% 0.04 195) 0%, var(--accent-soft) 100%);
+        box-shadow: inset 0 0 0 1px var(--accent);
+    }
+
+    html[data-theme="auto"] .preview-item {
+        background: var(--bg-subtle);
+    }
+
+    html[data-theme="auto"] .workflow-status {
+        background: var(--bg-subtle);
+        border-color: var(--line-soft);
+    }
+
+    html[data-theme="auto"] .workflow-status.is-running {
+        background: oklch(26% 0.045 195);
+        border-color: var(--accent);
+    }
+
+    html[data-theme="auto"] .workflow-status.is-success {
+        background: oklch(26% 0.045 160);
+        border-color: oklch(40% 0.07 156);
+    }
+
+    html[data-theme="auto"] .workflow-status.is-error {
+        background: oklch(26% 0.06 28);
+        border-color: oklch(40% 0.08 28);
+    }
+}

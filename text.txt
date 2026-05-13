@@ -1,0 +1,43 @@
+hiện tại đang có vấn đề là, tôi upload file từ máy tính lên thì no đẩy file vào folder trong folder data, và khi chạy etl thì nó chạy tất cả các file trong đó, điều này dẫn tới việc quá nhiều file, tôi muốn mỗi lần ấn upload từ máy tính lên thì sẽ tự tạo 1 folder mới ở trong thư mục của tennat đó,  và khi chạy etl thì chạy folder được tạo mới nhất 
+
+chính vì thế mà tôi có hỏi sếp tôi và được như sau 
+
+Cách tư duy của bạn rất chính xác! Việc mỗi lần chạy ETL lại quét lại toàn bộ các file cũ là "tối kỵ" trong thiết kế Data Warehouse vì nó gây lặp dữ liệu (duplicate) và cực kỳ tốn tài nguyên server.
+
+Ý tưởng "tạo folder mới theo thời gian và chỉ lấy folder mới nhất" của bạn hoàn toàn có thể chạy được, nhưng xét về chuẩn mực thiết kế hệ thống chạy thực tế (Production), nó tiềm ẩn 3 rủi ro rất lớn:
+
+Bị bỏ sót dữ liệu (Data Loss): Giả sử nhân viên A upload file lúc 14:00 (tạo folder 1). Nhân viên B upload tiếp lúc 14:05 (tạo folder 2). Đến 23:00 ETL mới chạy và nó chỉ lấy "folder mới nhất" là folder 2. Vậy dữ liệu của nhân viên A ở folder 1 sẽ bị bỏ qua vĩnh viễn.
+
+Xử lý khi ETL lỗi: Nếu chạy ETL cho folder mới nhất bị lỗi (do file Excel sai format), lần chạy ETL tiếp theo hệ thống sẽ làm gì? Chạy lại folder đó hay bỏ qua?
+
+Rác hệ thống: Mỗi lần upload tạo 1 folder, 1 năm 1 chi nhánh có thể tạo ra hàng trăm folder lắt nhắt, rất khó quản lý.
+
+💡 Giải pháp chuẩn Công nghiệp (Industry Standard)
+Trong các hệ thống Data Warehouse thực tế, người ta không quản lý theo "thời gian tạo folder", mà quản lý theo "Trạng thái của File" (State-based File Management).
+
+Thay vì tạo folder mới liên tục, bạn chỉ cần cấu trúc thư mục của mỗi Tenant (store_hn_2) thành 3 thư mục cố định như sau:
+
+
+/data/store_hn_2/
+├── 1_landing/   (Nơi hứng file mới)
+├── 2_archive/   (Nơi cất file đã chạy thành công)
+└── 3_error/     (Nơi cất file chạy bị lỗi)
+Luồng hoạt động sẽ cực kỳ trơn tru và an toàn:
+
+khi superadmin tạo 1 tenant mới thì tạo luôn cấu trúc folder như trên
+
+Khi người dùng Upload 
+
+Code của bạn cứ ném hết file mới vào thư mục 1_landing/.
+
+Khi ETL chạy (cuối ngày hoặc bấm nút Run Now):
+
+Script ETL chỉ cần vào thư mục 1_landing/, quét tất cả các file đang có ở đó (vì file nằm ở đây nghĩa là file mới, chưa từng được xử lý).
+
+Đọc dữ liệu và nạp vào SQL Server.
+
+Sau khi chạy xong (BƯỚC QUAN TRỌNG NHẤT):
+
+Nếu file A chạy thành công: Lệnh cho Python di chuyển (move) file A từ 1_landing/ sang 2_archive/.
+
+Nếu file B chạy bị lỗi: Lệnh cho Python di chuyển file B sang 3_error/.

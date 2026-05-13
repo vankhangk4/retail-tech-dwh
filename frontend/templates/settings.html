@@ -4,10 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Thiết lập tài khoản | DWH Operations Console</title>
-    {% set asset_version = '20260513-settings-drive-auto1' %}
+    {% set asset_version = '20260513-motion2' %}
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('dwh_ui_theme');
+                if (t !== 'light' && t !== 'dark' && t !== 'auto') t = 'auto';
+                document.documentElement.setAttribute('data-theme', t);
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'auto');
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/shell.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css', v=asset_version) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark.css', v=asset_version) }}">
 </head>
 <body class="shell-body"
       data-user-role="{{ user.role }}"
@@ -78,6 +90,11 @@
                             aria-controls="tab-drive" data-tab="drive">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7.5 3h9L22 13l-4.5 8h-11L2 13 7.5 3Z"/><path d="M7.5 3 12 13l-5.5 8"/><path d="M16.5 3 12 13l5.5 8"/><path d="M2 13h20"/></svg>
                         <span data-i18n="tabs.drive">Kết nối Google Drive</span>
+                    </button>
+                    <button class="settings-tab-btn" type="button" id="tab-appearance-btn" role="tab" tabindex="-1" aria-selected="false"
+                            aria-controls="tab-appearance" data-tab="appearance">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                        <span data-i18n="tabs.appearance">Giao diện</span>
                     </button>
                 </nav>
 
@@ -376,10 +393,41 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="tab-panel is-hidden" id="tab-appearance" role="tabpanel" aria-labelledby="tab-appearance-btn">
+                    <div class="settings-card surface">
+                        <div class="settings-card__head">
+                            <div>
+                                <h2 class="settings-card__title" data-i18n="appearance.title">Giao diện</h2>
+                                <p class="settings-card__desc" data-i18n="appearance.desc">Chọn chế độ hiển thị phù hợp với môi trường làm việc của bạn. Lựa chọn được lưu cho từng trình duyệt và áp dụng ngay lập tức trên toàn bộ ứng dụng.</p>
+                            </div>
+                            <span class="status-pill tone-neutral" id="appearanceEffectiveBadge" data-i18n="appearance.effectiveLight">Đang dùng: Sáng</span>
+                        </div>
+
+                        <div class="appearance-picker-wrap">
+                            <div class="theme-picker" role="radiogroup" data-i18n-aria-label="appearance.ariaGroup" aria-label="Chọn giao diện sáng, tối hoặc theo hệ thống" id="themePicker">
+                                <button class="theme-picker__btn" type="button" role="radio" aria-checked="false" data-theme-option="light">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                                    <span data-i18n="appearance.light">Sáng</span>
+                                </button>
+                                <button class="theme-picker__btn" type="button" role="radio" aria-checked="false" data-theme-option="dark">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                                    <span data-i18n="appearance.dark">Tối</span>
+                                </button>
+                                <button class="theme-picker__btn" type="button" role="radio" aria-checked="false" data-theme-option="auto">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 22h8M12 18v4"/></svg>
+                                    <span data-i18n="appearance.auto">Theo hệ thống</span>
+                                </button>
+                            </div>
+                            <p class="appearance-picker-hint microcopy" data-i18n="appearance.hint">"Theo hệ thống" sẽ tự động chuyển sáng/tối theo cài đặt của máy tính. Lưu trữ cục bộ, không đồng bộ giữa các thiết bị.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
+    <script src="{{ url_for('static', filename='js/theme.js', v=asset_version) }}" defer></script>
     <script src="{{ url_for('static', filename='js/settings.js', v=asset_version) }}" defer></script>
 </body>
 </html>

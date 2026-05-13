@@ -4,10 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>DWH Operations Console</title>
-    {% set asset_version = '20260513-etl-source-picker1' %}
+    {% set asset_version = '20260513-motion2' %}
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('dwh_ui_theme');
+                if (t !== 'light' && t !== 'dark' && t !== 'auto') t = 'auto';
+                document.documentElement.setAttribute('data-theme', t);
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'auto');
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/shell.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css', v=asset_version) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark.css', v=asset_version) }}">
 </head>
 {% if user.role == 'viewer' %}
     {% set default_dashboard_page = 'analysis' %}
@@ -773,6 +785,7 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/i18n.js', v=asset_version) }}" defer></script>
+    <script src="{{ url_for('static', filename='js/theme.js', v=asset_version) }}" defer></script>
     <script src="{{ url_for('static', filename='js/dashboard.js', v=asset_version) }}" defer></script>
 </body>
 </html>

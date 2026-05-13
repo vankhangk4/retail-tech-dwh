@@ -4,9 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Đăng ký User | DWH Operations Console</title>
-    {% set asset_version = '20260513-i18n1' %}
+    {% set asset_version = '20260513-motion2' %}
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('dwh_ui_theme');
+                if (t !== 'light' && t !== 'dark' && t !== 'auto') t = 'auto';
+                document.documentElement.setAttribute('data-theme', t);
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'auto');
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css', v=asset_version) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark.css', v=asset_version) }}">
 </head>
 <body class="auth-body" data-auth-page="register" data-ui-lang="vi">
     <a href="#authMain" class="skip-link" data-i18n="page.register.skipLink">Bỏ qua giới thiệu, tới biểu mẫu đăng ký</a>
@@ -170,6 +182,7 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/i18n.js', v=asset_version) }}" defer></script>
+    <script src="{{ url_for('static', filename='js/theme.js', v=asset_version) }}" defer></script>
     <script src="{{ url_for('static', filename='js/auth.js', v=asset_version) }}" defer></script>
 </body>
 </html>
