@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>DWH Operations Console</title>
-    {% set asset_version = '20260513-admin-etl-logs1' %}
+    {% set asset_version = '20260513-etl-source-picker1' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/shell.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css', v=asset_version) }}">
@@ -345,10 +345,29 @@
                                 <h3 class="section-title" data-i18n="etl.upload.title">Kéo thả file nguồn hoặc chọn thủ công.</h3>
                                 <p class="section-copy" data-i18n="etl.upload.description">Chấp nhận `.xlsx`, `.xls` và `.csv`. Sau khi nạp, lịch sử file gần đây sẽ được cập nhật ngay ở phía dưới để bạn xác minh lại staging.</p>
                                 <div class="upload-zone__actions">
-                                    <label class="button button--primary" for="fileInput" data-i18n="etl.upload.chooseFiles">Chọn file nguồn</label>
+                                    <button class="button button--primary" type="button" id="etlSourcePickerBtn" data-i18n="etl.upload.chooseFiles">Chọn file nguồn</button>
                                     <button class="button button--secondary" type="button" data-run-etl-current data-i18n="etl.upload.runNow">Chạy ETL ngay</button>
                                 </div>
                                 <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" multiple hidden>
+                                <div class="source-picker__options is-hidden etl-source-options" id="etlSourcePickerOptions">
+                                    <button class="source-option" type="button" data-etl-source-option="local">
+                                        <strong data-i18n="etl.upload.sourceLocal">Chọn từ máy tính</strong>
+                                        <span data-i18n="etl.upload.sourceLocalDesc">Upload file Excel hoặc CSV vào staging của tenant hiện tại.</span>
+                                    </button>
+                                    <button class="source-option" type="button" data-etl-source-option="drive">
+                                        <strong data-i18n="etl.upload.sourceDrive">Chọn từ Google Drive</strong>
+                                        <span data-i18n="etl.upload.sourceDriveDesc">Chọn file từ tài khoản Drive đã kết nối trong phần Thiết lập.</span>
+                                    </button>
+                                </div>
+                                <div class="etl-drive-source is-hidden" id="etlDriveSourcePanel">
+                                    <div class="etl-drive-source__head">
+                                        <input class="input" type="search" id="etlDriveSearch" data-i18n-placeholder="etl.upload.driveSearchPlaceholder" placeholder="Tìm file Google Drive">
+                                        <span class="status-pill tone-neutral" id="etlDriveSelectedCount" data-i18n="etl.upload.noDriveFileSelected">Chưa chọn file</span>
+                                        <button class="button button--secondary" type="button" id="etlDriveRefreshBtn" data-i18n="etl.upload.refreshDriveFiles">Tải danh sách Drive</button>
+                                        <button class="button button--primary" type="button" id="etlDriveRunBtn" disabled data-i18n="etl.upload.runDriveFiles">Đồng bộ Drive và chạy ETL</button>
+                                    </div>
+                                    <div class="drive-file-list" id="etlDriveFileList" aria-live="polite"></div>
+                                </div>
                             </div>
 
                             <div class="upload-preview" id="uploadPreview"></div>

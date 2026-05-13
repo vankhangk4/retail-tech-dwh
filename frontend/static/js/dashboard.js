@@ -210,6 +210,18 @@ const COPY = {
                 title: 'Kéo thả file nguồn hoặc chọn thủ công.',
                 description: 'Chấp nhận `.xlsx`, `.xls` và `.csv`. Sau khi nạp, lịch sử file gần đây sẽ được cập nhật ngay ở phía dưới để bạn xác minh lại staging.',
                 chooseFiles: 'Chọn file nguồn',
+                sourceLocal: 'Chọn từ máy tính',
+                sourceLocalDesc: 'Upload file Excel hoặc CSV vào staging của tenant hiện tại.',
+                sourceDrive: 'Chọn từ Google Drive',
+                sourceDriveDesc: 'Chọn file từ tài khoản Drive đã kết nối trong phần Thiết lập.',
+                driveSearchPlaceholder: 'Tìm file Google Drive',
+                refreshDriveFiles: 'Tải danh sách Drive',
+                runDriveFiles: 'Đồng bộ Drive và chạy ETL',
+                noDriveFileSelected: 'Chưa chọn file',
+                driveFileSelected: 'Đã chọn {count} file',
+                driveEmpty: 'Không tìm thấy file Drive phù hợp.',
+                driveLoading: 'Đang tải file Google Drive...',
+                driveNotConnected: 'Chưa kết nối Google Drive. Vào Thiết lập để kết nối trước.',
                 runNow: 'Chạy ETL ngay',
             },
             guide: {
@@ -717,6 +729,18 @@ const COPY = {
                 title: 'Drag and drop source files or choose them manually.',
                 description: 'Accepts `.xlsx`, `.xls`, and `.csv`. After upload, the recent file history is refreshed below so you can validate staging immediately.',
                 chooseFiles: 'Choose source files',
+                sourceLocal: 'Choose from computer',
+                sourceLocalDesc: 'Upload Excel or CSV files into the current branch staging area.',
+                sourceDrive: 'Choose from Google Drive',
+                sourceDriveDesc: 'Select files from the Drive account connected in Settings.',
+                driveSearchPlaceholder: 'Search Google Drive files',
+                refreshDriveFiles: 'Load Drive files',
+                runDriveFiles: 'Sync Drive and run ETL',
+                noDriveFileSelected: 'No file selected',
+                driveFileSelected: '{count} files selected',
+                driveEmpty: 'No matching Drive files found.',
+                driveLoading: 'Loading Google Drive files...',
+                driveNotConnected: 'Google Drive is not connected. Connect it in Settings first.',
                 runNow: 'Run ETL now',
             },
             guide: {
@@ -2220,6 +2244,113 @@ async function populateETLTenantSelect() {
     } catch (error) {}
 }
 
+let etlDriveFiles = [];
+let etlSelectedDriveFiles = [];
+let etlDriveSearchTimer = 0;
+
+function renderEtlDriveCount() {
+    const el = byId('etlDriveSelectedCount');
+    const button = byId('etlDriveRunBtn');
+    const count = etlSelectedDriveFiles.length;
+    if (el) {
+        el.textContent = count ? t('etl.upload.driveFileSelected', { count }) : t('etl.upload.noDriveFileSelected');
+        el.className = `status-pill ${count ? 'tone-success' : 'tone-neutral'}`;
+    }
+    if (button) button.disabled = count === 0;
+}
+
+function renderEtlDriveFiles(state = 'ready') {
+    const container = byId('etlDriveFileList');
+    if (!container) return;
+    renderEtlDriveCount();
+    if (state === 'loading') {
+        container.innerHTML = `<div class="empty-state"><span class="microcopy">${escapeHtml(t('etl.upload.driveLoading'))}</span></div>`;
+        return;
+    }
+    if (!etlDriveFiles.length) {
+        container.innerHTML = `<div class="empty-state"><span class="microcopy">${escapeHtml(t('etl.upload.driveEmpty'))}</span></div>`;
+        return;
+    }
+    const selectedIds = new Set(etlSelectedDriveFiles.map((file) => file.id));
+    container.innerHTML = etlDriveFiles.map((file) => {
+        const checked = selectedIds.has(file.id) ? 'checked' : '';
+        const type = file.isGoogleSheet ? 'Google Sheets' : 'Excel/CSV';
+        const size = Number.isFinite(file.size) ? i18n.formatFileSize(file.size) : '';
+        const meta = [type, size, formatDateTime(file.modifiedTime)].filter(Boolean).join(' • ');
+        return `
+            <label class="drive-file-option">
+                <input type="checkbox" value="${escapeHtml(file.id)}" ${checked}>
+                <span class="drive-file-option__body">
+                    <strong>${escapeHtml(file.name || '—')}</strong>
+                    <span>${escapeHtml(meta)}</span>
+                </span>
+            </label>
+        `;
+    }).join('');
+    container.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+        input.addEventListener('change', () => {
+            const file = etlDriveFiles.find((item) => item.id === input.value);
+            if (!file) return;
+            if (input.checked) {
+                if (!etlSelectedDriveFiles.some((item) => item.id === file.id)) etlSelectedDriveFiles.push(file);
+            } else {
+                etlSelectedDriveFiles = etlSelectedDriveFiles.filter((item) => item.id !== file.id);
+            }
+            renderEtlDriveCount();
+        });
+    });
+}
+
+async function loadEtlDriveFiles() {
+    const search = byId('etlDriveSearch')?.value.trim() || '';
+    const params = new URLSearchParams();
+    if (search) params.set('q', search);
+    renderEtlDriveFiles('loading');
+    try {
+        const response = await authFetch(`/api/google-drive/files${params.toString() ? `?${params}` : ''}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || t('etl.upload.driveNotConnected'));
+        etlDriveFiles = data.files || [];
+        renderEtlDriveFiles();
+    } catch (error) {
+        etlDriveFiles = [];
+        renderEtlDriveFiles();
+        showShellAlert(error.message || t('etl.upload.driveNotConnected'), 'danger', 5000);
+    }
+}
+
+async function syncDriveFilesAndRunETL() {
+    if (!etlSelectedDriveFiles.length) return;
+    setUploadStatus({ kind: 'etl-running', tenant: currentTenant() });
+    try {
+        await authFetch('/api/google-drive/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                source_type: 'drive',
+                tenant_scope: 'current',
+                selected_files: etlSelectedDriveFiles.map((file) => ({
+                    id: file.id,
+                    name: file.name,
+                    mimeType: file.mimeType,
+                })),
+            }),
+        });
+        const response = await authFetch('/api/google-drive/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ run_etl: true }),
+        });
+        const data = await response.json();
+        if (!response.ok || data.success === false) throw new Error(data.error || data.message || t('runtime.etlRun.failedTitle'));
+        setUploadStatus({ kind: 'etl-success', tenant: currentTenant(), message: data.message });
+        await loadUploadedFiles();
+        refreshEtlLogs({ force: true });
+    } catch (error) {
+        setUploadStatus({ kind: 'etl-error', message: error.message });
+    }
+}
+
 function showFilePreview() {
     const input = byId('fileInput');
     const preview = byId('uploadPreview');
@@ -2874,6 +3005,27 @@ function bindGlobalEvents() {
     });
 
     byId('fileInput')?.addEventListener('change', showFilePreview);
+    byId('etlSourcePickerBtn')?.addEventListener('click', () => {
+        byId('etlSourcePickerOptions')?.classList.toggle('is-hidden');
+    });
+    document.querySelectorAll('[data-etl-source-option]').forEach((button) => {
+        button.addEventListener('click', () => {
+            byId('etlSourcePickerOptions')?.classList.add('is-hidden');
+            if (button.dataset.etlSourceOption === 'local') {
+                byId('etlDriveSourcePanel')?.classList.add('is-hidden');
+                byId('fileInput')?.click();
+            } else {
+                byId('etlDriveSourcePanel')?.classList.remove('is-hidden');
+                loadEtlDriveFiles();
+            }
+        });
+    });
+    byId('etlDriveRefreshBtn')?.addEventListener('click', loadEtlDriveFiles);
+    byId('etlDriveRunBtn')?.addEventListener('click', syncDriveFilesAndRunETL);
+    byId('etlDriveSearch')?.addEventListener('input', () => {
+        window.clearTimeout(etlDriveSearchTimer);
+        etlDriveSearchTimer = window.setTimeout(loadEtlDriveFiles, 350);
+    });
     byId('etlTenantSelect')?.addEventListener('change', loadUploadedFiles);
     byId('tenantSearchInput')?.addEventListener('input', (event) => {
         appState.tenantSearchTerm = event.target.value || '';

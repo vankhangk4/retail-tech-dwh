@@ -133,18 +133,27 @@
                 connect: 'Kết nối Google Drive',
                 disconnect: 'Ngắt kết nối',
                 syncRun: 'Đồng bộ và chạy ETL',
-                filePickerTitle: 'File nguồn Google Drive',
-                filePickerDesc: 'Chọn đúng file Excel hoặc Google Sheets cần nạp vào staging cho kỳ ETL hiện tại.',
+                chooseSource: 'Chọn file nguồn',
+                sourceLocal: 'Chọn từ máy tính',
+                sourceLocalDesc: 'Chọn file Excel hoặc CSV từ thiết bị và nạp vào staging.',
+                sourceDrive: 'Chọn từ Google Drive',
+                sourceDriveDesc: 'Lấy file Excel hoặc Google Sheets từ tài khoản Drive đã kết nối.',
+                filePickerTitle: 'File nguồn',
+                filePickerDesc: 'Chọn đúng file nguồn cần nạp vào staging cho kỳ ETL hiện tại.',
+                systemPickerDesc: 'Chọn file Excel hoặc CSV từ máy tính để nạp vào staging của chi nhánh hiện tại.',
+                drivePickerDesc: 'Chọn file Excel hoặc Google Sheets từ Google Drive để đồng bộ vào staging.',
                 searchPlaceholder: 'Tìm theo tên file',
-                refreshFiles: 'Tải danh sách file',
+                refreshFiles: 'Chọn file từ máy tính',
                 loadingFiles: 'Đang tải danh sách file nguồn...',
-                fileListConnectHint: 'Kết nối Google Drive để tải danh sách file nguồn.',
-                fileListEmpty: 'Không tìm thấy file Excel hoặc Google Sheets trong Google Drive.',
-                fileListError: 'Không thể tải danh sách file Google Drive.',
+                fileListConnectHint: 'Chọn nguồn dữ liệu để tải danh sách file.',
+                fileListEmpty: 'Chưa có file nào được chọn.',
+                fileListError: 'Không thể tải danh sách file nguồn.',
                 noFileSelected: 'Chưa chọn file',
                 selectedCount: 'Đã chọn {count} file',
                 sheetType: 'Google Sheets',
                 fileType: 'File Excel',
+                systemFileType: 'File máy tính',
+                localUploadSuccess: 'Đã nạp file từ máy tính vào staging.',
                 folderLabel: 'ID thư mục nguồn',
                 folderPlaceholder: 'Ví dụ: 1AbC...',
                 folderHint: 'Thư mục chứa file Excel theo từng chi nhánh hoặc kỳ dữ liệu.',
@@ -315,18 +324,27 @@
                 connect: 'Connect Google Drive',
                 disconnect: 'Disconnect',
                 syncRun: 'Sync and Run ETL',
-                filePickerTitle: 'Google Drive Source Files',
-                filePickerDesc: 'Select the Excel files or Google Sheets to load into staging for the current ETL run.',
+                chooseSource: 'Choose Source Files',
+                sourceLocal: 'Choose from Computer',
+                sourceLocalDesc: 'Select Excel or CSV files from this device and load them into staging.',
+                sourceDrive: 'Choose from Google Drive',
+                sourceDriveDesc: 'Load Excel files or Google Sheets from the connected Drive account.',
+                filePickerTitle: 'Source Files',
+                filePickerDesc: 'Select the source files to load into staging for the current ETL run.',
+                systemPickerDesc: 'Select Excel or CSV files from this computer to load into the current branch staging folder.',
+                drivePickerDesc: 'Select Excel files or Google Sheets from Google Drive to sync into staging.',
                 searchPlaceholder: 'Search by file name',
-                refreshFiles: 'Load File List',
+                refreshFiles: 'Choose Files from Computer',
                 loadingFiles: 'Loading source files...',
-                fileListConnectHint: 'Connect Google Drive to load source files.',
-                fileListEmpty: 'No Excel files or Google Sheets were found in Google Drive.',
-                fileListError: 'Unable to load Google Drive files.',
+                fileListConnectHint: 'Choose a data source to load source files.',
+                fileListEmpty: 'No files selected yet.',
+                fileListError: 'Unable to load source files.',
                 noFileSelected: 'No file selected',
                 selectedCount: '{count} files selected',
                 sheetType: 'Google Sheets',
                 fileType: 'Excel File',
+                systemFileType: 'Computer File',
+                localUploadSuccess: 'Files from computer loaded into staging.',
                 folderLabel: 'Source Folder ID',
                 folderPlaceholder: 'Example: 1AbC...',
                 folderHint: 'Folder containing Excel files by branch or data period.',
@@ -700,12 +718,16 @@
     const driveSyncBtn = document.getElementById('driveSyncBtn');
     const driveSaveBtn = document.getElementById('driveSaveBtn');
     const driveRefreshFilesBtn = document.getElementById('driveRefreshFilesBtn');
+    const sourcePickerBtn = document.getElementById('sourcePickerBtn');
+    const sourcePickerOptions = document.getElementById('sourcePickerOptions');
+    const localSourceFileInput = document.getElementById('localSourceFileInput');
     const driveConfigForm = document.getElementById('driveConfigForm');
     const driveErrorAlert = document.getElementById('driveErrorAlert');
     const driveSuccessAlert = document.getElementById('driveSuccessAlert');
     const driveConnectionStatus = document.getElementById('driveConnectionStatus');
     const driveFileList = document.getElementById('driveFileList');
     const driveFileSearch = document.getElementById('driveFileSearch');
+    const driveFilePickerDesc = document.getElementById('driveFilePickerDesc');
     const driveSelectedCount = document.getElementById('driveSelectedCount');
     const driveFolderId = document.getElementById('driveFolderId');
     const driveTenantScope = document.getElementById('driveTenantScope');
@@ -714,8 +736,12 @@
     let driveStatusLoaded = false;
     let driveIsConnected = false;
     let driveFilesLoaded = false;
+    let systemFilesLoaded = false;
+    let sourceType = 'local';
     let driveAvailableFiles = [];
     let driveSelectedFiles = [];
+    let systemAvailableFiles = [];
+    let systemSelectedFiles = [];
     let driveSearchTimer = 0;
 
     function interpolateCopy(key, values = {}) {
@@ -748,6 +774,10 @@
         return new Set(driveSelectedFiles.map(file => file.id));
     }
 
+    function getSystemSelectedIds() {
+        return new Set(systemSelectedFiles.map(file => file.filename));
+    }
+
     function normalizeDriveFile(file) {
         return {
             id: file.id,
@@ -759,22 +789,40 @@
         };
     }
 
+    function normalizeSystemFile(file) {
+        return {
+            filename: file.filename || file.name || '',
+            name: file.name || file.filename || t('common.notAvailable'),
+            file_type: file.file_type || '',
+            size_bytes: Number.isFinite(file.size_bytes) ? file.size_bytes : Number(file.size_bytes || 0),
+            uploaded_at: file.uploaded_at || '',
+        };
+    }
+
+    function getActiveSelectedCount() {
+        return sourceType === 'local' ? systemSelectedFiles.length : driveSelectedFiles.length;
+    }
+
     function updateDriveSelectedCount() {
         if (!driveSelectedCount) return;
-        const count = driveSelectedFiles.length;
+        const count = getActiveSelectedCount();
         driveSelectedCount.textContent = count
             ? interpolateCopy('drive.selectedCount', { count })
             : t('drive.noFileSelected');
         driveSelectedCount.className = `status-pill ${count ? 'tone-success' : 'tone-neutral'}`;
         setRuntimeTranslation(driveSelectedCount, '');
-        if (driveSyncBtn) driveSyncBtn.disabled = !driveIsConnected || count === 0;
+        if (driveSyncBtn) driveSyncBtn.disabled = count === 0 || (sourceType === 'drive' && !driveIsConnected);
     }
 
     function renderDriveFileList(state = 'ready') {
         if (!driveFileList) return;
         updateDriveSelectedCount();
+        if (driveFilePickerDesc) {
+            driveFilePickerDesc.textContent = t(sourceType === 'local' ? 'drive.systemPickerDesc' : 'drive.drivePickerDesc');
+            setRuntimeTranslation(driveFilePickerDesc, sourceType === 'local' ? 'drive.systemPickerDesc' : 'drive.drivePickerDesc');
+        }
 
-        if (!driveIsConnected) {
+        if (sourceType === 'drive' && !driveIsConnected) {
             driveFileList.innerHTML = `<div class="empty-state"><span class="text-faint">${escHtml(t('drive.fileListConnectHint'))}</span></div>`;
             return;
         }
@@ -782,19 +830,25 @@
             driveFileList.innerHTML = `<div class="empty-state"><span class="text-faint">${escHtml(t('drive.loadingFiles'))}</span></div>`;
             return;
         }
-        if (!driveAvailableFiles.length) {
+        const availableFiles = sourceType === 'local' ? systemAvailableFiles : driveAvailableFiles;
+        if (!availableFiles.length) {
             driveFileList.innerHTML = `<div class="empty-state"><span class="text-faint">${escHtml(t('drive.fileListEmpty'))}</span></div>`;
             return;
         }
 
-        const selectedIds = getDriveSelectedIds();
-        driveFileList.innerHTML = driveAvailableFiles.map(file => {
-            const checked = selectedIds.has(file.id) ? 'checked' : '';
-            const typeLabel = file.isGoogleSheet ? t('drive.sheetType') : t('drive.fileType');
-            const meta = [typeLabel, formatDriveFileSize(file.size), formatDriveModifiedTime(file.modifiedTime)].filter(Boolean).join(' • ');
+        const selectedIds = sourceType === 'local' ? getSystemSelectedIds() : getDriveSelectedIds();
+        driveFileList.innerHTML = availableFiles.map(file => {
+            const fileKey = sourceType === 'local' ? file.filename : file.id;
+            const checked = selectedIds.has(fileKey) ? 'checked' : '';
+            const typeLabel = sourceType === 'local'
+                ? (file.file_type || t('drive.systemFileType'))
+                : (file.isGoogleSheet ? t('drive.sheetType') : t('drive.fileType'));
+            const size = sourceType === 'local' ? file.size_bytes : file.size;
+            const modified = sourceType === 'local' ? file.uploaded_at : file.modifiedTime;
+            const meta = [typeLabel, formatDriveFileSize(size), formatDriveModifiedTime(modified)].filter(Boolean).join(' • ');
             return `
                 <label class="drive-file-option">
-                    <input type="checkbox" value="${escHtml(file.id)}" ${checked}>
+                    <input type="checkbox" value="${escHtml(fileKey)}" ${checked}>
                     <span class="drive-file-option__body">
                         <strong>${escHtml(file.name)}</strong>
                         <span>${escHtml(meta)}</span>
@@ -805,9 +859,17 @@
 
         driveFileList.querySelectorAll('input[type="checkbox"]').forEach(input => {
             input.addEventListener('change', () => {
-                const file = driveAvailableFiles.find(item => item.id === input.value);
+                const file = availableFiles.find(item => (sourceType === 'local' ? item.filename : item.id) === input.value);
                 if (!file) return;
-                if (input.checked) {
+                if (sourceType === 'local') {
+                    if (input.checked) {
+                        if (!systemSelectedFiles.some(item => item.filename === file.filename)) {
+                            systemSelectedFiles.push(file);
+                        }
+                    } else {
+                        systemSelectedFiles = systemSelectedFiles.filter(item => item.filename !== file.filename);
+                    }
+                } else if (input.checked) {
                     if (!driveSelectedFiles.some(item => item.id === file.id)) {
                         driveSelectedFiles.push(file);
                     }
@@ -849,15 +911,41 @@
         }
     }
 
+    async function loadSystemFiles({ force = false } = {}) {
+        renderDriveFileList();
+    }
+
+    function loadActiveSourceFiles({ force = false } = {}) {
+        if (sourceType === 'local') {
+            loadSystemFiles({ force });
+        } else {
+            loadDriveFiles({ force });
+        }
+    }
+
+    function setSourceType(nextSourceType, { load = true } = {}) {
+        sourceType = nextSourceType === 'drive' ? 'drive' : 'local';
+        sourcePickerOptions?.querySelectorAll('[data-source-option]').forEach(btn => {
+            btn.classList.toggle('is-active', btn.dataset.sourceOption === sourceType);
+        });
+        if (driveFileSearch) driveFileSearch.value = '';
+        renderDriveFileList();
+        if (load) loadActiveSourceFiles();
+    }
+
     function renderDriveStatus({ connected = false, runtime_ready = true, runtime_error = '', config = null } = {}) {
         driveIsConnected = Boolean(connected);
         if (config) {
+            sourceType = config.source_type === 'drive' ? 'drive' : 'local';
             if (driveFolderId) driveFolderId.value = config.folder_id || '';
             if (driveTenantScope) driveTenantScope.value = config.tenant_scope || 'current';
             if (driveFilePattern) driveFilePattern.value = config.file_pattern || '*.xlsx;*.xls;*.csv';
             if (driveScheduleTime) driveScheduleTime.value = config.schedule_time || '23:30';
             driveSelectedFiles = Array.isArray(config.selected_files)
                 ? config.selected_files.map(normalizeDriveFile)
+                : [];
+            systemSelectedFiles = Array.isArray(config.selected_system_files)
+                ? config.selected_system_files.map(normalizeSystemFile)
                 : [];
         }
 
@@ -867,9 +955,12 @@
             driveConnectionStatus.className = `status-pill ${driveIsConnected ? 'tone-success' : 'tone-neutral'}`;
             setRuntimeTranslation(driveConnectionStatus, statusKey);
         }
+        sourcePickerOptions?.querySelectorAll('[data-source-option]').forEach(btn => {
+            btn.classList.toggle('is-active', btn.dataset.sourceOption === sourceType);
+        });
         if (driveDisconnectBtn) driveDisconnectBtn.disabled = !driveIsConnected;
-        if (driveRefreshFilesBtn) driveRefreshFilesBtn.disabled = !driveIsConnected || !runtime_ready;
-        if (driveSyncBtn) driveSyncBtn.disabled = !driveIsConnected || !runtime_ready || driveSelectedFiles.length === 0;
+        if (driveRefreshFilesBtn) driveRefreshFilesBtn.disabled = sourceType === 'drive' && (!runtime_ready || !driveIsConnected);
+        if (driveSyncBtn) driveSyncBtn.disabled = getActiveSelectedCount() === 0 || (sourceType === 'drive' && (!runtime_ready || !driveIsConnected));
         renderDriveFileList();
         if (!runtime_ready && runtime_error) {
             showAlert(driveErrorAlert, runtime_error, 'danger');
@@ -884,7 +975,7 @@
             if (!r.ok) throw new Error(data.error || t('drive.configLoadError'));
             driveStatusLoaded = true;
             renderDriveStatus(data);
-            if (data.connected) loadDriveFiles();
+            loadActiveSourceFiles();
         } catch (err) {
             showAlert(driveErrorAlert, err.message || t('drive.configLoadError'));
         }
@@ -894,6 +985,7 @@
         hideAlert(driveSuccessAlert);
         hideAlert(driveErrorAlert);
         const body = {
+            source_type: sourceType,
             folder_id: driveFolderId?.value.trim() || '',
             tenant_scope: driveTenantScope?.value || 'current',
             file_pattern: driveFilePattern?.value.trim() || '*.xlsx;*.xls;*.csv',
@@ -901,6 +993,12 @@
                 id: file.id,
                 name: file.name,
                 mimeType: file.mimeType,
+            })),
+            selected_system_files: systemSelectedFiles.map(file => ({
+                filename: file.filename,
+                file_type: file.file_type,
+                size_bytes: file.size_bytes,
+                uploaded_at: file.uploaded_at,
             })),
             schedule_time: driveScheduleTime?.value || '23:30',
         };
@@ -949,8 +1047,11 @@
             if (!r.ok) throw new Error(data.error || t('drive.disconnectError'));
             driveStatusLoaded = false;
             driveFilesLoaded = false;
+            systemFilesLoaded = false;
             driveAvailableFiles = [];
             driveSelectedFiles = [];
+            systemAvailableFiles = [];
+            systemSelectedFiles = [];
             renderDriveStatus({ connected: false, runtime_ready: true });
             showAlert(driveSuccessAlert, '', 'success', 4000, 'drive.disconnectSuccess');
         } catch (err) {
@@ -958,27 +1059,93 @@
         } finally {
             setBtnLoading(driveDisconnectBtn, false, 'drive.disconnect');
             if (!driveIsConnected && driveDisconnectBtn) driveDisconnectBtn.disabled = true;
-            if (!driveIsConnected && driveSyncBtn) driveSyncBtn.disabled = true;
-            if (!driveIsConnected && driveRefreshFilesBtn) driveRefreshFilesBtn.disabled = true;
+            updateDriveSelectedCount();
         }
     });
 
     driveRefreshFilesBtn?.addEventListener('click', () => {
-        loadDriveFiles({ force: true });
+        if (sourceType === 'local') {
+            localSourceFileInput?.click();
+        } else {
+            driveFilesLoaded = false;
+            loadActiveSourceFiles({ force: true });
+        }
+    });
+
+    localSourceFileInput?.addEventListener('change', async () => {
+        const selected = Array.from(localSourceFileInput.files || []);
+        if (!selected.length) return;
+        hideAlert(driveErrorAlert);
+        hideAlert(driveSuccessAlert);
+        setBtnLoading(driveRefreshFilesBtn, true, 'drive.refreshFiles');
+
+        try {
+            const formData = new FormData();
+            selected.forEach(file => formData.append('files', file));
+            const tenantId = APP_CONTEXT.userTenant;
+            if (!tenantId) throw new Error(t('drive.syncError'));
+
+            const r = await fetch(`/api/upload/${encodeURIComponent(tenantId)}`, {
+                method: 'POST',
+                body: formData,
+            });
+            const data = await r.json();
+            if (!r.ok || data.success === false) {
+                throw new Error(data.message || data.error || t('drive.syncError'));
+            }
+
+            const uploadedFiles = (data.uploaded_files || [])
+                .filter(item => item.success)
+                .map(item => normalizeSystemFile({
+                    filename: item.filename,
+                    file_type: item.file_type,
+                    size_bytes: item.file_size_bytes,
+                    uploaded_at: new Date().toISOString(),
+                }));
+
+            systemAvailableFiles = uploadedFiles;
+            systemSelectedFiles = uploadedFiles;
+            systemFilesLoaded = true;
+            renderDriveFileList();
+            showAlert(driveSuccessAlert, '', 'success', 4000, 'drive.localUploadSuccess');
+        } catch (err) {
+            showAlert(driveErrorAlert, err.message || t('drive.syncError'));
+        } finally {
+            setBtnLoading(driveRefreshFilesBtn, false, 'drive.refreshFiles');
+            localSourceFileInput.value = '';
+        }
     });
 
     driveFileSearch?.addEventListener('input', () => {
         window.clearTimeout(driveSearchTimer);
         driveSearchTimer = window.setTimeout(() => {
-            driveFilesLoaded = false;
-            loadDriveFiles({ force: true });
+            if (sourceType === 'local') {
+                systemFilesLoaded = false;
+            } else {
+                driveFilesLoaded = false;
+            }
+            loadActiveSourceFiles({ force: true });
         }, 350);
+    });
+
+    sourcePickerBtn?.addEventListener('click', () => {
+        if (!sourcePickerOptions) return;
+        const isOpen = sourcePickerOptions.classList.toggle('is-hidden') === false;
+        sourcePickerBtn.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    sourcePickerOptions?.querySelectorAll('[data-source-option]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            sourcePickerOptions.classList.add('is-hidden');
+            sourcePickerBtn?.setAttribute('aria-expanded', 'false');
+            setSourceType(btn.dataset.sourceOption, { load: true });
+        });
     });
 
     driveSyncBtn?.addEventListener('click', async () => {
         hideAlert(driveSuccessAlert);
         hideAlert(driveErrorAlert);
-        if (!driveSelectedFiles.length) {
+        if (getActiveSelectedCount() === 0) {
             showAlert(driveErrorAlert, '', 'danger', 0, 'drive.folderRequired');
             return;
         }

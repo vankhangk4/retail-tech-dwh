@@ -1208,6 +1208,116 @@ body.shell-body {
     gap: 0.75rem;
 }
 
+.etl-source-options {
+    width: min(44rem, 100%);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.etl-source-options.is-hidden,
+.etl-drive-source.is-hidden {
+    display: none;
+}
+
+.source-option {
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.9rem 1rem;
+    text-align: left;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    background: var(--bg-panel);
+    color: var(--text-main);
+    cursor: pointer;
+}
+
+.source-option:hover {
+    border-color: var(--line-strong);
+    background: var(--bg-subtle);
+}
+
+.source-option strong {
+    color: var(--text-strong);
+    font-size: 0.9rem;
+}
+
+.source-option span {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    line-height: 1.45;
+}
+
+.etl-drive-source {
+    display: grid;
+    gap: 0.8rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    background: var(--bg-panel);
+}
+
+.etl-drive-source__head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+}
+
+.etl-drive-source__head .input {
+    width: min(24rem, 100%);
+}
+
+.drive-file-list {
+    max-height: 20rem;
+    overflow-y: auto;
+    display: grid;
+    gap: 0.55rem;
+    padding: 0.25rem;
+}
+
+.drive-file-option {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    background: var(--bg-panel);
+    cursor: pointer;
+}
+
+.drive-file-option:has(input:checked) {
+    border-color: oklch(75% 0.042 156);
+    background: var(--success-soft);
+}
+
+.drive-file-option__body {
+    min-width: 0;
+    display: grid;
+    gap: 0.18rem;
+}
+
+.drive-file-option__body strong,
+.drive-file-option__body span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.drive-file-option__body strong {
+    color: var(--text-strong);
+    font-size: 0.92rem;
+}
+
+.drive-file-option__body span {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+}
+
 .upload-preview,
 .workflow-status {
     display: grid;

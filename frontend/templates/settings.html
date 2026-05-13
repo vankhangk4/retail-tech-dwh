@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Thiết lập tài khoản | DWH Operations Console</title>
-    {% set asset_version = '20260513-drive-files1' %}
+    {% set asset_version = '20260513-settings-drive-auto1' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/system.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/shell.css', v=asset_version) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css', v=asset_version) }}">
@@ -332,9 +332,6 @@
                                     <button class="button button--secondary" type="button" id="driveDisconnectBtn" disabled>
                                         <span class="button__label" data-i18n="drive.disconnect">Ngắt kết nối</span>
                                     </button>
-                                    <button class="button button--secondary" type="button" id="driveSyncBtn" disabled>
-                                        <span class="button__label" data-i18n="drive.syncRun">Đồng bộ và chạy ETL</span>
-                                    </button>
                                 </div>
 
                                 <div class="alert alert--danger is-hidden" id="driveErrorAlert" aria-live="polite"></div>
@@ -342,30 +339,6 @@
                             </section>
 
                             <form class="settings-form drive-config-form" id="driveConfigForm">
-                                <section class="drive-file-picker" aria-labelledby="driveFilePickerTitle">
-                                    <div class="drive-file-picker__head">
-                                        <div>
-                                            <h3 id="driveFilePickerTitle" data-i18n="drive.filePickerTitle">File nguồn Google Drive</h3>
-                                            <p data-i18n="drive.filePickerDesc">Chọn đúng file Excel hoặc Google Sheets cần nạp vào staging cho kỳ ETL hiện tại.</p>
-                                        </div>
-                                        <div class="drive-file-picker__actions">
-                                            <input class="input drive-file-search" type="search" id="driveFileSearch"
-                                                   data-i18n-placeholder="drive.searchPlaceholder"
-                                                   placeholder="Tìm theo tên file">
-                                            <span class="status-pill tone-neutral" id="driveSelectedCount" data-i18n="drive.noFileSelected">Chưa chọn file</span>
-                                            <button class="button button--secondary" type="button" id="driveRefreshFilesBtn" disabled>
-                                                <span class="button__label" data-i18n="drive.refreshFiles">Tải danh sách file</span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div class="drive-file-list" id="driveFileList" aria-live="polite">
-                                        <div class="empty-state">
-                                            <span class="text-faint" data-i18n="drive.fileListConnectHint">Kết nối Google Drive để tải danh sách file nguồn.</span>
-                                        </div>
-                                    </div>
-                                </section>
-
                                 <div class="settings-form__row">
                                     <div class="field">
                                         <label for="driveTenantScope" data-i18n="drive.scopeLabel">Phạm vi đồng bộ</label>

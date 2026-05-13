@@ -455,10 +455,12 @@ def _drive_user_key():
 
 def _drive_default_config():
     return {
+        'source_type': 'local',
         'folder_id': '',
         'tenant_scope': 'current',
         'file_pattern': '*.xlsx;*.xls;*.csv',
         'selected_files': [],
+        'selected_system_files': [],
         'schedule_time': '23:30',
     }
 
@@ -474,9 +476,18 @@ def _drive_safe_config(payload):
     selected_files = payload.get('selected_files') or []
     if not isinstance(selected_files, list):
         selected_files = []
+    selected_system_files = payload.get('selected_system_files') or []
+    if not isinstance(selected_system_files, list):
+        selected_system_files = []
+    source_type = str(payload.get('source_type') or 'local').strip()
+    if source_type == 'system':
+        source_type = 'local'
+    if source_type not in ('local', 'drive'):
+        source_type = 'local'
 
     config = _drive_default_config()
     config.update({
+        'source_type': source_type,
         'folder_id': str(payload.get('folder_id') or '').strip(),
         'tenant_scope': str(payload.get('tenant_scope') or 'current').strip(),
         'file_pattern': str(payload.get('file_pattern') or config['file_pattern']).strip(),
@@ -488,6 +499,16 @@ def _drive_safe_config(payload):
             }
             for item in selected_files
             if isinstance(item, dict) and str(item.get('id') or '').strip()
+        ][:50],
+        'selected_system_files': [
+            {
+                'filename': str(item.get('filename') or item.get('name') or '').strip(),
+                'file_type': str(item.get('file_type') or '').strip(),
+                'size_bytes': int(item.get('size_bytes') or 0),
+                'uploaded_at': str(item.get('uploaded_at') or '').strip(),
+            }
+            for item in selected_system_files
+            if isinstance(item, dict) and str(item.get('filename') or item.get('name') or '').strip()
         ][:50],
         'schedule_time': str(payload.get('schedule_time') or config['schedule_time']).strip(),
     })
@@ -585,6 +606,16 @@ def _drive_file_item(raw_file):
         'modifiedTime': raw_file.get('modifiedTime'),
         'size': int(size) if str(size or '').isdigit() else None,
         'isGoogleSheet': raw_file.get('mimeType') == GOOGLE_DRIVE_SHEET_MIME,
+    }
+
+
+def _system_file_item(raw_file):
+    return {
+        'filename': raw_file.get('filename'),
+        'name': raw_file.get('filename'),
+        'file_type': raw_file.get('file_type'),
+        'size_bytes': raw_file.get('size_bytes'),
+        'uploaded_at': raw_file.get('uploaded_at'),
     }
 
 
@@ -725,16 +756,49 @@ def api_google_drive_files():
         return jsonify({'error': f'Loi tai danh sach file Google Drive: {str(exc)}'}), 500
 
 
+@app.route('/api/source-files/system', methods=['GET'])
+def api_system_source_files():
+    if 'access_token' not in session:
+        return jsonify({'error': 'Chua dang nhap'}), 401
+
+    tenant_id = session.get('tenant_id')
+    if not tenant_id:
+        return jsonify({'error': 'Khong xac dinh duoc chi nhanh hien tai'}), 400
+
+    try:
+        response = requests.get(
+            f'{API_BASE_URL}/api/upload/{tenant_id}/files',
+            headers={'Authorization': f'Bearer {session["access_token"]}'},
+            timeout=10,
+        )
+        payload = response.json() if response.content else {}
+        if not response.ok:
+            return jsonify(payload), response.status_code
+
+        search_text = request.args.get('q', '').strip().lower()
+        files = [_system_file_item(item) for item in payload.get('files', [])]
+        if search_text:
+            files = [
+                item for item in files
+                if search_text in (item.get('filename') or '').lower()
+            ]
+        entry = _drive_entry()
+        return jsonify({
+            'files': files,
+            'selected_files': (entry.get('config') or {}).get('selected_system_files') or [],
+        })
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'Khong ket noi duoc Auth Gateway'}), 503
+    except Exception as exc:
+        return jsonify({'error': f'Loi tai file thu muc he thong: {str(exc)}'}), 500
+
+
 @app.route('/api/google-drive/sync', methods=['POST'])
 def api_google_drive_sync():
     if 'access_token' not in session:
         return jsonify({'error': 'Chua dang nhap'}), 401
     if session.get('role') not in ('admin', 'superadmin'):
         return jsonify({'error': 'Chi quan tri vien moi duoc dong bo du lieu nguon'}), 403
-
-    runtime_error = _require_drive_runtime()
-    if runtime_error:
-        return jsonify({'error': runtime_error}), 503
 
     entry = _drive_entry()
     config = {**_drive_default_config(), **(entry.get('config') or {})}
@@ -744,6 +808,41 @@ def api_google_drive_sync():
         return jsonify({'error': 'Dong bo toan he thong can cau hinh mapping thu muc theo tung chi nhanh.'}), 400
     if not tenant_id:
         return jsonify({'error': 'Khong xac dinh duoc chi nhanh de dong bo'}), 400
+
+    source_type = config.get('source_type') or 'local'
+    if source_type in ('local', 'system'):
+        selected_system_files = config.get('selected_system_files') or []
+        if not selected_system_files:
+            return jsonify({'error': 'Chua chon file trong thu muc he thong'}), 400
+        should_run_etl = bool((request.get_json(silent=True) or {}).get('run_etl'))
+        etl_response_body = None
+        if should_run_etl:
+            etl_response = requests.post(
+                f'{API_BASE_URL}/api/upload/{tenant_id}/etl',
+                headers={'Authorization': f'Bearer {session["access_token"]}'},
+                timeout=60,
+            )
+            etl_response_body = etl_response.json() if etl_response.content else {}
+            if not etl_response.ok:
+                return jsonify({
+                    'success': False,
+                    'message': 'Khong kich hoat duoc ETL cho file trong thu muc he thong.',
+                    'selected_files': selected_system_files,
+                    'etl_response': etl_response_body,
+                }), etl_response.status_code
+
+        return jsonify({
+            'success': True,
+            'tenant_id': tenant_id,
+            'source_type': 'local',
+            'synced_files': selected_system_files,
+            'etl_response': etl_response_body,
+            'message': f'Da chon {len(selected_system_files)} file tu may tinh va kich hoat ETL.',
+        })
+
+    runtime_error = _require_drive_runtime()
+    if runtime_error:
+        return jsonify({'error': runtime_error}), 503
 
     credentials = _drive_credentials_from_entry(entry)
     if not credentials:
