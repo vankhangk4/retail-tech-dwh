@@ -178,18 +178,35 @@ def transform_staging_sales(df: pd.DataFrame, tenant_id: str) -> pd.DataFrame:
         (out['Quantity'] > 0) &
         (out['UnitPrice'] >= 0)
     )
+    rows_rejected = int((~valid_mask).sum())
     out = out.loc[valid_mask].copy()
     out['SaleDate'] = sale_date.loc[valid_mask].dt.strftime('%Y-%m-%d')
-    out = out.drop_duplicates(subset=['InvoiceNumber', 'ProductID'], keep='last')
-    out['LoadStatus'] = 'LOADED'
-    out['ErrorMessage'] = None
     if 'CreatedAt' not in out.columns:
         out['CreatedAt'] = pd.Timestamp.now()
+    out = (
+        out
+        .groupby(['TenantID', 'InvoiceNumber', 'ProductID', 'StoreName'], as_index=False)
+        .agg({
+            'SaleDate': 'last',
+            'CustomerName': 'last',
+            'EmployeeName': 'last',
+            'PaymentMethod': 'last',
+            'Quantity': 'sum',
+            'UnitPrice': 'max',
+            'Discount': 'sum',
+            'Revenue': 'sum',
+            'CreatedAt': 'last',
+        })
+    )
+    out['LoadStatus'] = 'LOADED'
+    out['ErrorMessage'] = None
+    out.attrs['rows_rejected'] = rows_rejected
+    out.attrs['rows_aggregated'] = original_count - rows_rejected - len(out)
 
     rows_kept = len(out)
     logger.info(
         f'[{tenant_id}] Staging sales transform complete: {rows_kept}/{original_count} rows kept '
-        f'({original_count - rows_kept} filtered)'
+        f'({rows_rejected} rejected, {out.attrs["rows_aggregated"]} aggregated)'
     )
 
     return out.reset_index(drop=True)

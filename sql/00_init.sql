@@ -111,7 +111,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'DimCustomer')
 BEGIN
     CREATE TABLE DimCustomer (
         CustomerKey   INT IDENTITY(1,1) PRIMARY KEY,
-        CustomerID    VARCHAR(20)   NOT NULL UNIQUE,
+        CustomerID    VARCHAR(20)   NOT NULL,
         CustomerName  NVARCHAR(200) NOT NULL,
         Phone         VARCHAR(20)   NULL,
         Email         VARCHAR(100)  NULL,
@@ -589,6 +589,29 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='STG_Cu
     ALTER TABLE STG_CustomerRaw ADD CustomerType NVARCHAR(50) NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='STG_CustomerRaw' AND COLUMN_NAME='TenantID')
     ALTER TABLE STG_CustomerRaw ADD TenantID VARCHAR(20) NULL;
+DECLARE @customer_uq SYSNAME;
+SELECT TOP 1 @customer_uq = kc.name
+FROM sys.key_constraints kc
+INNER JOIN sys.index_columns ic
+    ON ic.object_id = kc.parent_object_id
+   AND ic.index_id = kc.unique_index_id
+INNER JOIN sys.columns c
+    ON c.object_id = ic.object_id
+   AND c.column_id = ic.column_id
+WHERE kc.parent_object_id = OBJECT_ID('DimCustomer')
+  AND kc.type = 'UQ'
+GROUP BY kc.name
+HAVING COUNT(*) = 1 AND MAX(c.name) = 'CustomerID';
+IF @customer_uq IS NOT NULL
+    EXEC('ALTER TABLE DimCustomer DROP CONSTRAINT [' + @customer_uq + ']');
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID('DimCustomer')
+      AND name = 'UX_DimCustomer_TenantCustomer'
+)
+    CREATE UNIQUE INDEX UX_DimCustomer_TenantCustomer
+    ON DimCustomer(TenantID, CustomerID)
+    WHERE TenantID IS NOT NULL AND CustomerID IS NOT NULL;
 PRINT 'Fixed: STG columns added';
 
 -- ============================================================

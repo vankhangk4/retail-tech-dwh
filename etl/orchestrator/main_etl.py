@@ -363,7 +363,7 @@ def process_sales_file(conn, tenant_id: str, file_path: str, batch_date: date, c
 
     start = datetime.now()
     df = transform_staging_sales(df, tenant_id)
-    rows_rejected = rows_extracted - len(df)
+    rows_rejected = int(df.attrs.get('rows_rejected', 0))
     stg_sales_cols = [
         'TenantID', 'InvoiceNumber', 'SaleDate', 'ProductID', 'CustomerName',
         'StoreName', 'EmployeeName', 'PaymentMethod', 'Quantity',
@@ -792,15 +792,25 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
 
         # Upsert DimCustomer (per TenantID)
         try:
-            run_sql(conn, f"""
-                MERGE INTO DimCustomer AS target
-                USING (
-                    SELECT DISTINCT CustomerID, CustomerName, Phone, Email,
-                           City, Region, CustomerType, TenantID
+            run_sql(conn, """
+                ;WITH GroupedCustomer AS (
+                    SELECT
+                        CustomerID,
+                        MAX(CustomerName) AS CustomerName,
+                        MAX(Phone) AS Phone,
+                        MAX(Email) AS Email,
+                        MAX(City) AS City,
+                        MAX(Region) AS Region,
+                        MAX(CustomerType) AS CustomerType,
+                        TenantID
                     FROM STG_CustomerRaw
                     WHERE TenantID = %s
-                      AND CustomerID IS NOT NULL AND CustomerID != ''
-                ) AS source
+                      AND CustomerID IS NOT NULL
+                      AND CustomerID != ''
+                    GROUP BY TenantID, CustomerID
+                )
+                MERGE INTO DimCustomer AS target
+                USING GroupedCustomer AS source
                 ON target.CustomerID = source.CustomerID AND target.TenantID = source.TenantID
                 WHEN MATCHED THEN
                     UPDATE SET

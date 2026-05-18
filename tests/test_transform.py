@@ -228,7 +228,11 @@ class TestStagingSalesTransform:
         assert result['ProductID'].iloc[0] == 'SP001'
         assert result['StoreName'].iloc[0] == 'STORE_HN'
         assert result['PaymentMethod'].iloc[0] == 'Chuyển khoản'
-        assert result['Revenue'].iloc[0] == 230000
+        assert result['Quantity'].iloc[0] == 3
+        assert result['Discount'].iloc[0] == 10000
+        assert result['Revenue'].iloc[0] == 330000
+        assert result.attrs['rows_rejected'] == 1
+        assert result.attrs['rows_aggregated'] == 1
 
 
 # ─────────────────────────────────────────────
