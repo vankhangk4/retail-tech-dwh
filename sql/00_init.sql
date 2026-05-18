@@ -198,6 +198,7 @@ BEGIN
     CREATE TABLE FactSales (
         SalesKey      BIGINT IDENTITY(1,1) PRIMARY KEY,
         TenantID      VARCHAR(20)   NOT NULL,
+        InvoiceNumber VARCHAR(50)   NULL,
         SaleDate      DATE          NOT NULL,
         ProductID     VARCHAR(20)   NOT NULL,
         CustomerID    VARCHAR(20)   NULL,
@@ -209,7 +210,7 @@ BEGIN
         Discount      DECIMAL(18,2) NOT NULL DEFAULT 0,
         Revenue       DECIMAL(18,2) NOT NULL,
         Cost          DECIMAL(18,2) NOT NULL DEFAULT 0,
-        Profit        AS (Revenue - Cost - Discount) PERSISTED,
+        Profit        AS (Revenue - Cost) PERSISTED,
         CreatedAt     DATETIME2     NOT NULL DEFAULT GETDATE()
     );
     PRINT 'Created: FactSales';
@@ -256,6 +257,7 @@ BEGIN
     CREATE TABLE STG_SalesRaw (
         ID             INT IDENTITY(1,1) PRIMARY KEY,
         TenantID       VARCHAR(20)   NOT NULL,
+        InvoiceNumber  NVARCHAR(50)  NULL,
         SaleDate       NVARCHAR(50)  NULL,
         ProductID      NVARCHAR(50)  NULL,
         CustomerName   NVARCHAR(200) NULL,
@@ -556,6 +558,21 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='STG_Sa
     ALTER TABLE STG_SalesRaw ADD SupplierID NVARCHAR(50) NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='STG_SalesRaw' AND COLUMN_NAME='TenantID')
     ALTER TABLE STG_SalesRaw ADD TenantID VARCHAR(20) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='STG_SalesRaw' AND COLUMN_NAME='InvoiceNumber')
+    ALTER TABLE STG_SalesRaw ADD InvoiceNumber NVARCHAR(50) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='FactSales' AND COLUMN_NAME='InvoiceNumber')
+    ALTER TABLE FactSales ADD InvoiceNumber VARCHAR(50) NULL;
+IF EXISTS (
+    SELECT 1
+    FROM sys.computed_columns
+    WHERE object_id = OBJECT_ID('FactSales')
+      AND name = 'Profit'
+      AND definition LIKE '%Discount%'
+)
+BEGIN
+    ALTER TABLE FactSales DROP COLUMN Profit;
+    ALTER TABLE FactSales ADD Profit AS (Revenue - Cost) PERSISTED;
+END
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='STG_SalesRaw' AND COLUMN_NAME='City')
     ALTER TABLE STG_SalesRaw ADD City NVARCHAR(100) NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='STG_ProductRaw' AND COLUMN_NAME='TenantID')
@@ -817,10 +834,10 @@ BEGIN
             fs.ProductID,
             dp.Category,
             SUM(fs.Revenue) AS TotalRevenue,
-            SUM(fs.Revenue) * 0.7 AS TotalCost,
-            SUM(fs.Revenue) * 0.25 AS TotalProfit,
-            COUNT(*) AS OrderCount,
-            CASE WHEN COUNT(*) > 0 THEN SUM(fs.Revenue) / COUNT(*) ELSE 0 END AS AvgOrderVal
+            SUM(fs.Cost) AS TotalCost,
+            SUM(fs.Revenue - fs.Cost) AS TotalProfit,
+            COUNT(DISTINCT fs.InvoiceNumber) AS OrderCount,
+            CASE WHEN COUNT(DISTINCT fs.InvoiceNumber) > 0 THEN SUM(fs.Revenue) / COUNT(DISTINCT fs.InvoiceNumber) ELSE 0 END AS AvgOrderVal
         FROM FactSales fs
         LEFT JOIN DimProduct dp ON fs.ProductID = dp.ProductID
         GROUP BY fs.TenantID, YEAR(fs.SaleDate), MONTH(fs.SaleDate), DATEPART(QUARTER, fs.SaleDate), fs.ProductID, dp.Category
@@ -855,7 +872,7 @@ BEGIN
             fs.TenantID,
             fs.CustomerID,
             DATEDIFF(DAY, MAX(fs.SaleDate), @maxDate) AS Recency,
-            COUNT(*) AS Frequency,
+            COUNT(DISTINCT fs.InvoiceNumber) AS Frequency,
             SUM(fs.Revenue) AS Monetary
         FROM FactSales fs
         WHERE fs.CustomerID IS NOT NULL
@@ -890,7 +907,7 @@ IF NOT EXISTS (SELECT * FROM sys.views WHERE name = 'v_FactSales_ByTenant')
 EXEC('
 CREATE VIEW v_FactSales_ByTenant AS
 SELECT
-    fs.SalesKey, fs.TenantID, fs.SaleDate,
+    fs.SalesKey, fs.TenantID, fs.InvoiceNumber, fs.SaleDate,
     dp.ProductName, dp.Category,
     dc.CustomerName, dc.City,
     ds.StoreName, ds.City AS StoreCity,

@@ -1,26 +1,31 @@
-﻿Mã SP,Tên SP,Thương hiệu,Danh mục,Danh mục con,Giá vốn,Giá niêm yết,Đơn vị tính,Bảo hành (tháng)
-SP001,iPhone 15 Pro 256GB,Apple,Điện thoại,iPhone,18000000,25000000,cái,6
-SP002,iPhone 15 128GB,Apple,Điện thoại,iPhone,15000000,20000000,cái,6
-SP003,Samsung Galaxy S24 Ultra,Samsung,Điện thoại,Galaxy S,17000000,22000000,cái,18
-SP004,Samsung Galaxy A55,Samsung,Điện thoại,Galaxy A,8000000,11000000,cái,12
-SP005,Xiaomi Redmi Note 13 Pro,Xiaomi,Điện thoại,Redmi Note,5000000,7500000,cái,12
-SP006,MacBook Pro 14 M3,Apple,Laptop,MacBook Pro,32000000,45000000,cái,12
-SP007,MacBook Air M2 13-inch,Apple,Laptop,MacBook Air,20000000,28000000,cái,6
-SP008,Dell XPS 15,Dell,Laptop,XPS,25000000,35000000,cái,6
-SP009,Lenovo ThinkPad X1 Carbon,Lenovo,Laptop,ThinkPad,22000000,32000000,cái,24
-SP010,HP Pavilion 15,HP,Laptop,Pavilion,14000000,19000000,cái,6
-SP011,ASUS ROG Strix G16,ASUS,Laptop,ROG,28000000,38000000,cái,6
-SP012,iPad Pro 12.9 M4,Apple,Tablet,iPad Pro,24000000,32000000,cái,6
-SP013,Samsung Galaxy Tab S9 Ultra,Samsung,Tablet,Galaxy Tab,20000000,28000000,cái,12
-SP014,iPad Air 11 inch M2,Apple,Tablet,iPad Air,14000000,19000000,cái,12
-SP015,AirPods Pro 2,Apple,Tai nghe,AirPods,4500000,6500000,cái,6
-SP016,Sony WH-1000XM5,Sony,Tai nghe,Over-ear,5500000,8000000,cái,12
-SP017,Samsung Galaxy Watch 6,Samsung,Đồng hồ,Galaxy Watch,6000000,8500000,cái,24
-SP018,Apple Watch Series 9 45mm,Apple,Đồng hồ,Apple Watch,9000000,12500000,cái,12
-SP019,Apple Watch SE 40mm,Apple,Đồng hồ,Apple Watch,5000000,7500000,cái,24
-SP020,Cáp sạc Lightning 1m,Apple,Phụ kiện,Cáp sạc,200000,350000,cái,18
-SP021,Sạc dự phòng 10000mAh,Anker,Phụ kiện,Sạc dự phòng,350000,550000,cái,6
-SP022,Ốp lưng iPhone 15 Silicone,Apple,Phụ kiện,Ốp lưng,150000,299000,cái,12
-SP023,Miếng dán kính iPhone 15,Spigen,Phụ kiện,Miếng dán,80000,150000,cái,24
-SP024,Chuột Logitech MX Master 3S,Logitech,Phụ kiện,Chuột,1800000,2800000,cái,18
-SP025,Bàn phím Logitech MX Keys,Logitech,Phụ kiện,Bàn phím,1500000,2300000,cái,18
+﻿Mã SP,Tên SP,Thương hiệu,Danh mục,Danh mục con,Giá vốn,Giá niêm yết,Đơn vị tính,Bảo hành (tháng),Mã NCC
+SP001,iPhone 15 Pro Max 256GB Natural Titanium,Apple,Điện thoại,iPhone,24450000,30990000,Cái,12,NCC001
+SP002,iPhone 15 128GB Black,Apple,Điện thoại,iPhone,15700000,19990000,Cái,12,NCC001
+SP003,iPhone 14 128GB Blue,Apple,Điện thoại,iPhone,12800000,16990000,Cái,12,NCC001
+SP004,Samsung Galaxy S24 Ultra 12GB/256GB,Samsung,Điện thoại,Galaxy S,22100000,28990000,Cái,12,NCC002
+SP005,Samsung Galaxy A55 5G 8GB/256GB,Samsung,Điện thoại,Galaxy A,7850000,10490000,Cái,12,NCC002
+SP006,Xiaomi Redmi Note 13 Pro 8GB/256GB,Xiaomi,Điện thoại,Redmi Note,4850000,7290000,Cái,18,NCC003
+SP007,OPPO Reno11 F 5G 8GB/256GB,OPPO,Điện thoại,Reno,6200000,8990000,Cái,12,NCC004
+SP008,MacBook Air 13 M2 8GB/256GB Midnight,Apple,Laptop,MacBook Air,19800000,24990000,Cái,12,NCC001
+SP009,MacBook Pro 14 M3 16GB/512GB Space Black,Apple,Laptop,MacBook Pro,38100000,48990000,Cái,12,NCC001
+SP010,Dell XPS 13 Plus i7 16GB/512GB,Dell,Laptop,XPS,26600000,34990000,Cái,24,NCC006
+SP011,Lenovo ThinkPad X1 Carbon Gen 12,Lenovo,Laptop,ThinkPad,28700000,38990000,Cái,24,NCC006
+SP012,ASUS ROG Strix G16 i7 RTX 4060,ASUS,Laptop,Gaming,30500000,41990000,Cái,24,NCC007
+SP013,HP Pavilion 15 eg3091TU,HP,Laptop,Pavilion,13200000,17990000,Cái,24,NCC006
+SP014,iPad Air 11 M2 Wi-Fi 128GB,Apple,Tablet,iPad Air,13500000,16990000,Cái,12,NCC001
+SP015,iPad Pro 11 M4 Wi-Fi 256GB,Apple,Tablet,iPad Pro,22400000,28990000,Cái,12,NCC001
+SP016,Samsung Galaxy Tab S9 FE 5G,Samsung,Tablet,Galaxy Tab,8800000,11990000,Cái,12,NCC002
+SP017,AirPods Pro 2 USB-C,Apple,Tai nghe,True Wireless,4350000,6190000,Cái,12,NCC001
+SP018,Sony WH-1000XM5 Black,Sony,Tai nghe,Chống ồn,5680000,7990000,Cái,12,NCC008
+SP019,Samsung Galaxy Buds2 Pro,Samsung,Tai nghe,True Wireless,2550000,3990000,Cái,12,NCC002
+SP020,Apple Watch Series 9 GPS 45mm,Apple,Đồng hồ,Apple Watch,8200000,10990000,Cái,12,NCC001
+SP021,Samsung Galaxy Watch6 Classic 43mm,Samsung,Đồng hồ,Galaxy Watch,5100000,7990000,Cái,12,NCC002
+SP022,Anker PowerCore 10000mAh 22.5W,Anker,Phụ kiện,Sạc dự phòng,315000,590000,Cái,18,NCC010
+SP023,Củ sạc Apple USB-C 20W,Apple,Phụ kiện,Củ sạc,315000,590000,Cái,12,NCC001
+SP024,Cáp USB-C to USB-C Anker 1.8m,Anker,Phụ kiện,Cáp sạc,95000,190000,Cái,18,NCC010
+SP025,Ốp lưng iPhone 15 Pro Max MagSafe,Apple,Phụ kiện,Ốp lưng,280000,690000,Cái,12,NCC001
+SP026,Miếng dán cường lực iPhone 15 Pro Max,Spigen,Phụ kiện,Miếng dán,55000,150000,Cái,6,NCC005
+SP027,Chuột Logitech MX Master 3S Graphite,Logitech,Phụ kiện,Chuột,1750000,2590000,Cái,12,NCC009
+SP028,Bàn phím Logitech MX Keys S,Logitech,Phụ kiện,Bàn phím,1660000,2390000,Cái,12,NCC009
+SP029,Màn hình Dell UltraSharp U2723QE 27 inch,Dell,Màn hình,Văn phòng,9400000,12990000,Cái,36,NCC006
+SP030,Router Wi-Fi 6 TP-Link Archer AX55,TP-Link,Thiết bị mạng,Router,1680000,2490000,Cái,24,NCC004

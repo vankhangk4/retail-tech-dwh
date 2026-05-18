@@ -253,6 +253,35 @@ def run_sql(conn, sql: str, params: list = None) -> None:
     conn.commit()
 
 
+def ensure_runtime_schema(conn) -> None:
+    """Keep the existing demo database compatible with the current ETL contract."""
+    cursor = conn.cursor()
+    required_columns = [
+        ('STG_SalesRaw', 'InvoiceNumber', 'ALTER TABLE STG_SalesRaw ADD InvoiceNumber NVARCHAR(50) NULL'),
+        ('FactSales', 'InvoiceNumber', 'ALTER TABLE FactSales ADD InvoiceNumber VARCHAR(50) NULL'),
+    ]
+    for table_name, column_name, ddl in required_columns:
+        cursor.execute(
+            'SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = %s AND COLUMN_NAME = %s',
+            (table_name, column_name)
+        )
+        if not cursor.fetchone():
+            cursor.execute(ddl)
+            logger.info(f'  [SCHEMA] Added {table_name}.{column_name}')
+
+    cursor.execute("""
+        SELECT definition
+        FROM sys.computed_columns
+        WHERE object_id = OBJECT_ID('FactSales') AND name = 'Profit'
+    """)
+    profit_definition = cursor.fetchone()
+    if profit_definition and 'Discount' in str(profit_definition[0]):
+        cursor.execute('ALTER TABLE FactSales DROP COLUMN Profit')
+        cursor.execute('ALTER TABLE FactSales ADD Profit AS (Revenue - Cost) PERSISTED')
+        logger.info('  [SCHEMA] Rebuilt FactSales.Profit as Revenue - Cost')
+    conn.commit()
+
+
 # =============================================================================
 # File type detection
 # =============================================================================
@@ -286,8 +315,7 @@ def classify_file(filename: str) -> dict:
 
 def process_sales_file(conn, tenant_id: str, file_path: str, batch_date: date) -> dict:
     """Extract, transform, and load a sales Excel file into STG_SalesRaw."""
-    wm = get_last_watermark(conn, tenant_id, 'Sales_Excel')
-    df = extract_sales_from_excel(file_path, wm, tenant_id)
+    df = extract_sales_from_excel(file_path, None, tenant_id)
     result = {'rows_extracted': len(df), 'rows_inserted': 0, 'rows_rejected': 0}
 
     if df.empty:
@@ -298,7 +326,7 @@ def process_sales_file(conn, tenant_id: str, file_path: str, batch_date: date) -
     start = datetime.now()
     rows_extracted = len(df)
     stg_sales_cols = [
-        'TenantID', 'SaleDate', 'ProductID', 'CustomerName',
+        'TenantID', 'InvoiceNumber', 'SaleDate', 'ProductID', 'CustomerName',
         'StoreName', 'EmployeeName', 'PaymentMethod', 'Quantity',
         'UnitPrice', 'Discount', 'Revenue', 'LoadStatus',
         'ErrorMessage', 'CreatedAt'
@@ -524,6 +552,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
     conn = None
     try:
         conn = get_conn()
+        ensure_runtime_schema(conn)
 
         # ---- PHASE 1: SCAN files ----
         logger.info(f'[PHASE 1] SCAN — {tenant_id} @ {landing_dir}')
@@ -533,6 +562,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
 
         all_files = []
         failed_files = []
+        successful_files = []
         unrecognized_files = []
         for f in xlsx_files + csv_files:
             info = classify_file(os.path.basename(f))
@@ -553,6 +583,22 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
 
         if not all_files and not failed_files:
             logger.warning(f'[{tenant_id}] No recognizable data files found in {landing_dir}')
+            write_etl_log(
+                conn, tenant_id, 'ETL_AllFiles', 'PipelineComplete', 'FAILED',
+                error_msg='Chua upload du lieu moi trong 1_landing.'
+            )
+            conn.close()
+            return False
+
+        if failed_files:
+            final_error = f'Failed source files: {", ".join(failed_files)}'
+            write_etl_log(
+                conn, tenant_id, 'ETL_AllFiles', 'PipelineComplete', 'FAILED',
+                rows_processed=0,
+                error_msg=final_error,
+            )
+            logger.error(f'[{tenant_id}] ETL stopped before extraction due to source file errors — {failed_files}')
+            conn.close()
             return False
 
         logger.info(
@@ -603,8 +649,8 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                     total_stats['supplier']['extracted'] += stats['rows_extracted']
                     total_stats['supplier']['inserted']   += stats['rows_inserted']
 
-                archive_path = move_processed_file(fpath, stage_dirs['archive'])
-                logger.info(f'  [{tenant_id}] Archived processed file: {fname} -> {archive_path}')
+                successful_files.append(fpath)
+                logger.info(f'  [{tenant_id}] Extracted successfully: {fname}')
 
             except Exception as ex:
                 failed_files.append(fname)
@@ -624,10 +670,27 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                     logger.error(f'  [{tenant_id}] Could not move failed file {fname}: {move_ex}')
                 # Continue with other files — don't abort the whole tenant
 
+        if failed_files:
+            total_rows = sum(v['extracted'] for v in total_stats.values())
+            final_error = f'Failed source files: {", ".join(failed_files)}'
+            write_etl_log(
+                conn, tenant_id, 'ETL_AllFiles', 'PipelineComplete', 'FAILED',
+                rows_processed=total_rows,
+                rows_inserted=sum(v['inserted'] for v in total_stats.values()),
+                error_msg=final_error,
+            )
+            logger.error(
+                f'[{tenant_id}] ETL stopped before fact refresh because one or more files failed. '
+                f'Successful files stay in landing for the next retry.'
+            )
+            conn.close()
+            return False
+
         replace_fact_types = {
             ftype for ftype in ('sales', 'inventory', 'purchase')
             if total_stats[ftype]['extracted'] > 0 and ftype not in failed_types
         }
+        phase_failures = []
 
         # ---- PHASE 3: TRANSFORM (Python — already done per-file for Sales) ----
         logger.info(f'[PHASE 3] TRANSFORM — {tenant_id} (handled inline in Phase 2 for Sales)')
@@ -661,6 +724,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
             """)
             logger.info('  [MERGE] DimProduct done')
         except Exception as e:
+            phase_failures.append(f'DimProduct: {e}')
             logger.warning(f'  [MERGE] DimProduct failed: {e}')
 
         # Upsert DimCustomer (per TenantID)
@@ -690,6 +754,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
             """, [tenant_id])
             logger.info('  [MERGE] DimCustomer done')
         except Exception as e:
+            phase_failures.append(f'DimCustomer: {e}')
             logger.warning(f'  [MERGE] DimCustomer failed: {e}')
 
         # Sync DimStore from tenant master instead of trusting StoreName in uploaded files.
@@ -724,6 +789,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
             """, [tenant_id, tenant_id, tenant_id])
             logger.info('  [MERGE] DimStore synced from Tenants done')
         except Exception as e:
+            phase_failures.append(f'DimStore: {e}')
             logger.warning(f'  [MERGE] DimStore failed: {e}')
 
         # ---- PHASE 5: LOAD FACTS (Python MERGE — matches actual DB schema) ----
@@ -736,21 +802,23 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                 logger.info('  [REPLACE] Cleared FactSales for current tenant')
             run_sql(conn, f"""
                 INSERT INTO FactSales (
-                    TenantID, SaleDate, ProductID, CustomerID, StoreKey,
+                    TenantID, InvoiceNumber, SaleDate, ProductID, CustomerID, StoreKey,
                     EmployeeID, PaymentMethod, Quantity, UnitPrice, Discount,
                     Revenue, Cost, CreatedAt
                 )
                 SELECT
                     s.TenantID,
+                    NULLIF(s.InvoiceNumber, '') COLLATE Vietnamese_CI_AS,
                     TRY_CAST(s.SaleDate AS DATE),
                     s.ProductID,
                     NULLIF(s.CustomerName, '') COLLATE Vietnamese_CI_AS,
                     st.StoreKey,
                     NULLIF(s.EmployeeName, '') COLLATE Vietnamese_CI_AS,
                     CASE
-                        WHEN LOWER(LTRIM(RTRIM(s.PaymentMethod))) IN ('cash','tm') THEN 'Cash'
-                        WHEN LOWER(LTRIM(RTRIM(s.PaymentMethod))) IN ('transfer','ck') THEN 'Transfer'
-                        WHEN LOWER(LTRIM(RTRIM(s.PaymentMethod))) IN ('card','credit') THEN 'Card'
+                        WHEN LOWER(LTRIM(RTRIM(s.PaymentMethod))) IN (N'tiền mặt', N'tien mat', 'cash', 'tm') THEN 'Cash'
+                        WHEN LOWER(LTRIM(RTRIM(s.PaymentMethod))) IN (N'chuyển khoản', N'chuyen khoan', 'transfer', 'ck', 'bank transfer') THEN 'Transfer'
+                        WHEN LOWER(LTRIM(RTRIM(s.PaymentMethod))) IN (N'thẻ', N'the', 'card', 'credit') THEN 'Card'
+                        WHEN LOWER(LTRIM(RTRIM(s.PaymentMethod))) IN (N'ví điện tử', N'vi dien tu', 'ewallet', 'momo', 'zalopay') THEN 'EWallet'
                         ELSE 'Cash'
                     END,
                     TRY_CAST(s.Quantity AS INT),
@@ -771,6 +839,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                     ORDER BY ds.StoreKey
                 ) st
                 WHERE s.TenantID = %s
+                  AND NULLIF(s.InvoiceNumber, '') IS NOT NULL
                   AND s.ProductID IS NOT NULL AND s.ProductID != ''
                   AND s.SaleDate IS NOT NULL
                   AND TRY_CAST(s.Quantity AS INT) > 0
@@ -778,13 +847,14 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                   AND NOT EXISTS (
                       SELECT 1 FROM FactSales f
                       WHERE f.TenantID = s.TenantID
+                        AND f.InvoiceNumber = NULLIF(s.InvoiceNumber, '') COLLATE Vietnamese_CI_AS
                         AND f.ProductID = s.ProductID
                         AND f.StoreKey = st.StoreKey
-                        AND TRY_CAST(f.SaleDate AS DATE) = TRY_CAST(s.SaleDate AS DATE)
                   );
             """, [tenant_id])
             logger.info('  [MERGE] FactSales done')
         except Exception as e:
+            phase_failures.append(f'FactSales: {e}')
             logger.warning(f'  [MERGE] FactSales failed: {e}')
 
         # -- 5B. FactInventory: STG_InventoryRaw → FactInventory --
@@ -827,6 +897,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
             """, [tenant_id])
             logger.info('  [MERGE] FactInventory done')
         except Exception as e:
+            phase_failures.append(f'FactInventory: {e}')
             logger.warning(f'  [MERGE] FactInventory failed: {e}')
 
         # -- 5C. FactPurchase: STG_PurchaseRaw → FactPurchase --
@@ -864,6 +935,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
             """, [tenant_id, tenant_id])
             logger.info('  [MERGE] FactPurchase done')
         except Exception as e:
+            phase_failures.append(f'FactPurchase: {e}')
             logger.warning(f'  [MERGE] FactPurchase failed: {e}')
 
         # ---- PHASE 6: REFRESH DATA MART (Python MERGE) ----
@@ -884,11 +956,15 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                     MONTH(TRY_CAST(f.SaleDate AS DATE)),
                     f.ProductID,
                     ISNULL(p.Category, N'Trống'),
-                    SUM(TRY_CAST(f.Revenue AS DECIMAL(18,2))),
-                    0,
-                    SUM(TRY_CAST(f.Revenue AS DECIMAL(18,2))),
-                    COUNT(*),
-                    AVG(TRY_CAST(f.Revenue AS DECIMAL(18,2))),
+                    SUM(ISNULL(TRY_CAST(f.Revenue AS DECIMAL(18,2)), 0)),
+                    SUM(ISNULL(TRY_CAST(f.Cost AS DECIMAL(18,2)), 0)),
+                    SUM(ISNULL(TRY_CAST(f.Revenue AS DECIMAL(18,2)), 0) - ISNULL(TRY_CAST(f.Cost AS DECIMAL(18,2)), 0)),
+                    COUNT(DISTINCT f.InvoiceNumber),
+                    CASE
+                        WHEN COUNT(DISTINCT f.InvoiceNumber) > 0
+                        THEN SUM(ISNULL(TRY_CAST(f.Revenue AS DECIMAL(18,2)), 0)) / COUNT(DISTINCT f.InvoiceNumber)
+                        ELSE 0
+                    END,
                     GETDATE()
                 FROM FactSales f
                 INNER JOIN DimProduct p ON p.ProductID = f.ProductID
@@ -901,6 +977,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
             """, [tenant_id])
             logger.info('  [MERGE] DM_SalesSummary done')
         except Exception as e:
+            phase_failures.append(f'DM_SalesSummary: {e}')
             logger.warning(f'  [MERGE] DM_SalesSummary failed: {e}')
 
         # -- DM_CustomerRFM --
@@ -913,7 +990,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                         f.CustomerID AS CustomerCode,
                         MAX(f.CustomerID) AS CustomerName,
                         MAX(TRY_CAST(f.SaleDate AS DATE)) AS LastSaleDate,
-                        COUNT(*) AS Frequency,
+                        COUNT(DISTINCT f.InvoiceNumber) AS Frequency,
                         SUM(TRY_CAST(f.Revenue AS DECIMAL(18,2))) AS Monetary
                     FROM FactSales f
                     WHERE f.TenantID = %s
@@ -949,18 +1026,32 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
             """, [tenant_id])
             logger.info('  [MERGE] DM_CustomerRFM done')
         except Exception as e:
+            phase_failures.append(f'DM_CustomerRFM: {e}')
             logger.warning(f'  [MERGE] DM_CustomerRFM failed: {e}')
 
         # ---- PHASE 7: UPDATE WATERMARK + FINAL LOG ----
         logger.info(f'[PHASE 7] FINALIZE — {tenant_id}')
-        for ftype in total_stats:
-            if total_stats[ftype]['extracted'] > 0:
-                wm_table = f'{tenant_id}_{ftype.title()}'
-                update_watermark(conn, tenant_id, wm_table, 'SUCCESS')
+        run_succeeded = not failed_files and not phase_failures
+        if run_succeeded:
+            for ftype in total_stats:
+                if total_stats[ftype]['extracted'] > 0:
+                    wm_table = f'{tenant_id}_{ftype.title()}'
+                    update_watermark(conn, tenant_id, wm_table, 'SUCCESS')
 
         total_rows = sum(v['extracted'] for v in total_stats.values())
-        final_status = 'FAILED' if failed_files else 'SUCCESS'
-        final_error = f'Failed source files: {", ".join(failed_files)}' if failed_files else None
+        if run_succeeded:
+            for fpath in successful_files:
+                if os.path.exists(fpath):
+                    archive_path = move_processed_file(fpath, stage_dirs['archive'])
+                    logger.info(f'  [{tenant_id}] Archived processed file: {os.path.basename(fpath)} -> {archive_path}')
+
+        final_status = 'SUCCESS' if run_succeeded else 'FAILED'
+        final_error_parts = []
+        if failed_files:
+            final_error_parts.append(f'Failed source files: {", ".join(failed_files)}')
+        if phase_failures:
+            final_error_parts.append(f'Failed phases: {"; ".join(str(e) for e in phase_failures)}')
+        final_error = ' | '.join(final_error_parts) if final_error_parts else None
         write_etl_log(
             conn, tenant_id, 'ETL_AllFiles', 'PipelineComplete', final_status,
             rows_processed=total_rows,
@@ -969,14 +1060,16 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
             error_msg=final_error,
         )
 
-        if failed_files:
+        if failed_files or phase_failures:
             logger.error(f'[{tenant_id}] ETL COMPLETED WITH FILE ERRORS — {failed_files}')
+            if phase_failures:
+                logger.error(f'[{tenant_id}] ETL COMPLETED WITH PHASE ERRORS — {phase_failures}')
             logger.error(f'ETL FAILED: {tenant_id} | {batch_str}')
         else:
             logger.info(f'[{tenant_id}] ETL SUCCESS — Stats: {total_stats}')
             logger.info(f'ETL SUCCESS: {tenant_id} | {batch_str}')
         conn.close()
-        return not failed_files
+        return run_succeeded
 
     except Exception as ex:
         logger.error(f'ETL FAILED: {tenant_id} — {ex}', exc_info=True)

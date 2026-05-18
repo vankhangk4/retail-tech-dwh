@@ -1,51 +1,221 @@
-﻿Mã KH,Họ tên,Giới tính,Ngày sinh,Thành phố,Tỉnh/TP,Số điện thoại,Email,Loại KH,Điểm tích lũy,Ngày đăng ký,Nhóm tuổi
-00001,Phạm Thị Cường,M,04/07/1982,Nha Trang,Nha Trang,0381971316,phạm.cường128@icloud.com,Lẻ,2218961,18/12/2024,35-44
-00002,Ngô Hải Dương,M,28/10/2000,Nha Trang,Nha Trang,0998753260,ngô.dương234@outlook.com,Lẻ,1613033,14/08/2025,25-34
-00003,Đinh Hải Hoa,M,09/07/1983,Bình Dương,Bình Dương,0757683626,đinh.hoa215@outlook.com,Lẻ,3060434,12/10/2025,35-44
-00004,Đỗ Thị Phượng,M,06/04/2003,Bình Dương,Bình Dương,0717507864,đỗ.phượng235@gmail.com,Lẻ,2264486,23/01/2025,18-24
-00005,Dương Thị Mai,F,23/10/1986,Nha Trang,Nha Trang,0329175900,dương.mai272@yahoo.com,Sỉ,4187855,05/08/2024,35-44
-00006,Hồ Thị Nam,M,19/12/1988,Huế,Huế,0828566572,hồ.nam522@icloud.com,Sỉ,3350414,20/08/2025,35-44
-00007,Dương Hải Bình,M,21/03/1983,Đà Nẵng,Đà Nẵng,0361220073,dương.bình611@icloud.com,Lẻ,3541334,27/11/2025,35-44
-00008,Tạ Hồng Anh,F,22/02/2003,Vũng Tàu,Vũng Tàu,0768353204,tạ.anh162@icloud.com,Lẻ,2853598,30/09/2024,18-24
-00009,Hồ Thị Hùng,M,17/03/2004,Hồ Chí Minh,Hồ Chí Minh,0860185867,hồ.hùng781@yahoo.com,Lẻ,2503536,02/10/2025,18-24
-00010,Đỗ Thị Cường,M,12/02/1980,Cần Thơ,Cần Thơ,0920570592,đỗ.cường88@icloud.com,Lẻ,485911,02/09/2024,45-54
-00011,Dương Tuấn Nam,M,22/03/1984,Bình Dương,Bình Dương,0991415657,dương.nam434@yahoo.com,Sỉ,1385185,16/07/2025,35-44
-00012,Hồ Thanh Dương,M,12/11/2001,Bình Dương,Bình Dương,0840158366,hồ.dương66@outlook.com,Lẻ,3787340,13/06/2025,25-34
-00013,Đỗ Minh Nam,M,01/04/1998,Hồ Chí Minh,Hồ Chí Minh,0914216175,đỗ.nam881@outlook.com,Lẻ,493868,25/12/2025,25-34
-00014,Ngô Hoàng Hoa,M,07/08/2001,Vũng Tàu,Vũng Tàu,0873481353,ngô.hoa827@icloud.com,Sỉ,4790256,15/05/2024,25-34
-00015,Trần Hồng Đức,M,14/06/1993,Huế,Huế,0964038913,trần.đức746@outlook.com,Lẻ,454420,23/04/2025,25-34
-00016,Phạm Minh Giỏi,M,05/08/1997,Huế,Huế,0820117988,phạm.giỏi454@gmail.com,Sỉ,2336606,06/07/2024,25-34
-00017,Trương Hải Nam,M,25/02/1980,Hải Phòng,Hải Phòng,0338688676,trương.nam886@icloud.com,Sỉ,3409248,19/06/2024,45-54
-00018,Lê Văn Sơn,M,26/05/1992,Bình Dương,Bình Dương,0835487660,lê.sơn304@yahoo.com,Sỉ,3548443,19/10/2024,25-34
-00019,Đỗ Văn Nam,M,02/06/2003,Hà Nội,Hà Nội,0978159587,đỗ.nam83@yahoo.com,Lẻ,3999591,21/08/2025,18-24
-00020,Đỗ Hồng Chung,M,04/07/1987,Quảng Ninh,Quảng Ninh,0921003626,đỗ.chung430@outlook.com,Lẻ,4856325,09/09/2024,35-44
-00021,Đặng Minh Nga,F,05/07/1988,Cần Thơ,Cần Thơ,0971510041,đặng.nga637@gmail.com,Lẻ,2652286,13/04/2025,35-44
-00022,Ngô Thị Giỏi,M,12/03/1988,Hồ Chí Minh,Hồ Chí Minh,0868812137,ngô.giỏi854@outlook.com,Sỉ,3099817,07/09/2024,35-44
-00023,Trương Hoàng Nam,M,05/02/2001,Cần Thơ,Cần Thơ,0747816686,trương.nam620@yahoo.com,Lẻ,897882,28/04/2024,25-34
-00024,Đặng Thị Mai,F,28/05/1995,Hà Nội,Hà Nội,0910475894,đặng.mai342@yahoo.com,Sỉ,3553211,04/04/2024,25-34
-00025,Bùi Thị Thúy,F,18/07/2002,Hà Nội,Hà Nội,0914835614,bùi.thúy855@outlook.com,Lẻ,631191,24/04/2024,18-24
-00026,Đặng Văn Em,M,26/06/1989,Hà Nội,Hà Nội,0957469942,đặng.em799@icloud.com,Lẻ,1762249,01/01/2025,35-44
-00027,Cao Hải Hoa,M,14/03/1985,Hà Nội,Hà Nội,0845810056,cao.hoa164@gmail.com,Sỉ,2786573,02/07/2024,35-44
-00028,Trần Minh Trang,F,12/08/1986,Cần Thơ,Cần Thơ,0863481198,trần.trang337@outlook.com,Lẻ,1870018,21/08/2024,35-44
-00029,Dương Quang Hùng,M,13/09/2000,Vũng Tàu,Vũng Tàu,0733966966,dương.hùng595@outlook.com,Lẻ,231530,05/12/2024,25-34
-00030,Trần Thanh Trí,M,26/12/1991,Nha Trang,Nha Trang,0387388337,trần.trí195@outlook.com,Lẻ,4290127,22/03/2025,35-44
-00031,Hồ Văn Tùng,M,22/09/1996,Hải Phòng,Hải Phòng,0793638503,hồ.tùng322@gmail.com,Lẻ,3617984,07/01/2025,25-34
-00032,Lương Hồng My,F,13/06/1993,Cần Thơ,Cần Thơ,0399245317,lương.my963@icloud.com,Lẻ,1067767,21/07/2025,25-34
-00033,Đỗ Hoàng Toàn,M,27/09/1992,Hà Nội,Hà Nội,0387844239,đỗ.toàn622@outlook.com,Lẻ,2406806,07/11/2024,25-34
-00034,Cao Hồng Thúy,F,16/09/1986,Đà Nẵng,Đà Nẵng,0999100953,cao.thúy649@outlook.com,Sỉ,711316,05/11/2025,35-44
-00035,Đinh Hồng Hoa,M,26/04/1989,Hải Phòng,Hải Phòng,0873771720,đinh.hoa626@gmail.com,Lẻ,204895,30/05/2024,35-44
-00036,Đinh Minh Ngọc,F,13/12/2002,Bình Dương,Bình Dương,0924305904,đinh.ngọc798@icloud.com,Lẻ,2046689,13/02/2025,18-24
-00037,Lê Thị Long,M,08/09/1981,Hồ Chí Minh,Hồ Chí Minh,0985017682,lê.long610@outlook.com,Sỉ,1118529,12/04/2025,45-54
-00038,Chu Thanh Yến,F,15/09/2006,Đà Nẵng,Đà Nẵng,0895585469,chu.yến284@icloud.com,Sỉ,3775458,01/05/2025,18-24
-00039,Hoàng Thị Trung,M,08/05/2002,Cần Thơ,Cần Thơ,0830244148,hoàng.trung237@icloud.com,Lẻ,2681918,09/12/2024,18-24
-00040,Hồ Thị Giỏi,M,11/07/1993,Vũng Tàu,Vũng Tàu,0866390708,hồ.giỏi399@gmail.com,Lẻ,3487767,22/04/2025,25-34
-00041,Trịnh Quang Anh,F,28/07/1989,Huế,Huế,0339450273,trịnh.anh280@icloud.com,Lẻ,4581289,05/07/2025,35-44
-00042,Nguyễn Quang Phương,F,26/11/2001,Huế,Huế,0981688860,nguyễn.phương28@icloud.com,Lẻ,3920752,18/06/2024,25-34
-00043,Trần Đức Tùng,M,02/03/1994,Cần Thơ,Cần Thơ,0353868501,trần.tùng346@icloud.com,Lẻ,2746033,23/01/2025,25-34
-00044,Đinh Hải Mai,F,01/08/1982,Vũng Tàu,Vũng Tàu,0997477029,đinh.mai42@gmail.com,Lẻ,2935680,23/02/2024,35-44
-00045,Phạm Xuân An,M,05/04/1984,Bình Dương,Bình Dương,0344392446,phạm.an786@outlook.com,Lẻ,959568,16/11/2025,35-44
-00046,Đỗ Anh Trí,M,25/02/2002,Đà Nẵng,Đà Nẵng,0787282128,đỗ.trí694@icloud.com,Lẻ,906798,14/11/2024,18-24
-00047,Đặng Xuân Chi,F,08/11/2002,Hồ Chí Minh,Hồ Chí Minh,0915512205,đặng.chi356@icloud.com,Lẻ,2529858,14/12/2025,18-24
-00048,Lê Hồng Yến,F,28/01/1990,Huế,Huế,0795306788,lê.yến913@icloud.com,Sỉ,885324,16/05/2025,35-44
-00049,Đặng Anh Phượng,M,09/11/1996,Quảng Ninh,Quảng Ninh,0389520597,đặng.phượng275@outlook.com,Sỉ,4055871,05/07/2025,25-34
-00050,Đinh Hoàng Chung,M,25/04/1994,Bình Dương,Bình Dương,0976344695,đinh.chung872@outlook.com,Sỉ,3179192,06/08/2025,25-34
+﻿Mã KH,Họ tên,Giới tính,Ngày sinh,Thành phố,Tỉnh/TP,Quận/Huyện,Số điện thoại,Email,Loại KH,Điểm tích lũy,Ngày đăng ký,Nhóm tuổi,Kênh ưu tiên
+KH00001,Nguyễn Thị Ngân,Nữ,04/07/2005,Hải Phòng,Hải Phòng,Ngô Quyền,0341334425,nguyen.ngan1981@gmail.com,Thành viên,1928,08/01/2023,18-24,POS
+KH00002,Nguyễn Thùy Hạnh,Nữ,02/02/1994,Khánh Hòa,Khánh Hòa,Nha Trang,0399398909,hanh.nguyen909@gmail.com,Khách lẻ,1117,26/04/2025,25-34,POS
+KH00003,Lê Hoàng Khang,Nam,16/03/1988,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Bình Thạnh,0838591367,khang1983@outlook.com,Thành viên,3664,10/07/2025,35-44,Online
+KH00004,Huỳnh Thị Mai,Nữ,13/03/2005,Nghệ An,Nghệ An,Cửa Lò,0989475547,huynhthimai1984@yahoo.com,Khách lẻ,430,09/10/2023,18-24,POS
+KH00005,Phạm Khánh Loan,Nữ,12/01/1981,Thừa Thiên Huế,Thừa Thiên Huế,Hương Thủy,0705941309,loan309@gmail.com,Thành viên,1384,01/05/2025,45-54,POS
+KH00006,Trần Nhật Huy,Nam,15/09/1986,Hà Nội,Hà Nội,Ba Đình,0398076108,huy108@outlook.com,VIP,17182,18/06/2023,35-44,POS
+KH00007,Nguyễn Hồng Loan,Nữ,27/08/1987,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Bình Thạnh,0815416264,loan1987@gmail.com,Khách lẻ,779,15/12/2023,35-44,Online
+KH00008,Bùi Thu Giang,Nữ,01/09/1985,Nghệ An,Nghệ An,Diễn Châu,0924936507,buithugiang507@icloud.com,Khách lẻ,1718,27/09/2024,35-44,Online
+KH00009,Trần Quang Cường,Nam,17/02/1992,Cần Thơ,Cần Thơ,Ninh Kiều,0394620859,cuong859@gmail.com,Thành viên,4968,20/12/2023,25-34,POS
+KH00010,Trần Mai Thảo,Nữ,03/05/1991,Thừa Thiên Huế,Thừa Thiên Huế,Huế,0886571033,thao.tran033@icloud.com,Khách lẻ,91,17/04/2023,35-44,Marketplace
+KH00011,Nguyễn Hoàng Phúc,Nam,12/08/1987,Hà Nội,Hà Nội,Cầu Giấy,0781142519,nguyenhoangphuc1991@gmail.com,Thành viên,1420,16/08/2023,35-44,Online
+KH00012,Phạm Thùy Hương,Nữ,05/02/2001,Cần Thơ,Cần Thơ,Bình Thủy,0796680195,huong.pham195@gmail.com,Thành viên,2148,22/10/2024,25-34,POS
+KH00013,Phạm Gia Hải,Nam,22/11/1997,Khánh Hòa,Khánh Hòa,Diên Khánh,0389368874,hai874@icloud.com,Khách lẻ,724,06/06/2024,25-34,POS
+KH00014,Nguyễn Minh Sơn,Nam,07/11/1993,Hà Nội,Hà Nội,Nam Từ Liêm,0786059610,nguyenminhson610@outlook.com,Khách doanh nghiệp,12872,24/08/2024,25-34,POS
+KH00015,Trần Ngọc Yến,Nữ,06/08/1992,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Phú Nhuận,0778131394,tran.yen1995@gmail.com,VIP,7238,22/11/2024,25-34,Marketplace
+KH00016,Hoàng Hữu Việt,Nam,26/05/1971,Hà Nội,Hà Nội,Đống Đa,0348940353,hoanghuuviet353@yahoo.com,Khách lẻ,530,17/12/2024,55+,POS
+KH00017,Nguyễn Mai Chi,Nữ,18/10/1997,Hải Phòng,Hải Phòng,Ngô Quyền,0981272237,chi.nguyen1997@gmail.com,Khách lẻ,817,04/12/2023,25-34,POS
+KH00018,Hoàng Thùy Hạnh,Nữ,22/08/2000,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Quận 1,0379348633,hanh633@gmail.com,Khách lẻ,385,27/06/2024,25-34,POS
+KH00019,Nguyễn Thùy Trâm,Nữ,28/11/1982,Hà Nội,Hà Nội,Ba Đình,0777188814,tram814@yahoo.com,Khách lẻ,815,08/07/2024,35-44,Telesales
+KH00020,Nguyễn Đức Phúc,Nam,09/03/1990,Cần Thơ,Cần Thơ,Cái Răng,0965011957,nguyen.phuc957@outlook.com,VIP,12199,22/09/2025,35-44,POS
+KH00021,Nguyễn Gia Thảo,Nữ,14/10/1990,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Phú Nhuận,0977790984,thao.nguyen984@gmail.com,Khách lẻ,346,03/05/2024,35-44,POS
+KH00022,Trần Mai Hà,Nữ,21/04/1992,Bình Dương,Bình Dương,Thủ Dầu Một,0354646488,tran.ha2002@gmail.com,VIP,3806,22/07/2024,25-34,Online
+KH00023,Hồ Hoàng Bảo,Nam,10/07/1979,Khánh Hòa,Khánh Hòa,Nha Trang,0853269423,bao.ho2003@outlook.com,Thành viên,4452,20/04/2025,45-54,POS
+KH00024,Trần Gia Anh,Nữ,26/02/1981,Hà Nội,Hà Nội,Hoàng Mai,0927800122,tran.anh122@icloud.com,Thành viên,5604,02/05/2025,45-54,POS
+KH00025,Nguyễn Thị Trâm,Nữ,05/03/2007,Hà Nội,Hà Nội,Thanh Xuân,0322442710,nguyenthitram2005@icloud.com,Khách lẻ,821,27/12/2025,18-24,POS
+KH00026,Hồ Thành Cường,Nam,07/12/2000,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Bình Thạnh,0823294891,cuong2006@gmail.com,Khách lẻ,829,27/07/2024,25-34,POS
+KH00027,Huỳnh Hồng Thảo,Nữ,07/10/2003,Đà Nẵng,Đà Nẵng,Sơn Trà,0979383893,thao.huynh893@gmail.com,Thành viên,5676,04/06/2025,18-24,POS
+KH00028,Hoàng Văn Bảo,Nam,23/10/1995,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Quận 3,0359309133,hoang.bao133@gmail.com,Thành viên,6384,18/04/2025,25-34,Online
+KH00029,Phạm Thùy My,Nữ,07/09/1989,Hải Phòng,Hải Phòng,Kiến An,0796597959,pham.my2009@gmail.com,Thành viên,2360,05/05/2024,35-44,Online
+KH00030,Nguyễn Thị Dung,Nữ,08/02/1990,Cần Thơ,Cần Thơ,Bình Thủy,0351805434,nguyenthidung434@gmail.com,Thành viên,1896,15/12/2025,35-44,POS
+KH00031,Nguyễn Tuấn Huy,Nam,14/10/1993,Hà Nội,Hà Nội,Đống Đa,0397685357,nguyentuanhuy1981@gmail.com,Thành viên,6340,22/11/2023,25-34,Online
+KH00032,Nguyễn Quang Bảo,Nam,23/03/2004,Hà Nội,Hà Nội,Ba Đình,0334016681,bao.nguyen1982@icloud.com,Khách lẻ,799,14/08/2025,18-24,POS
+KH00033,Bùi Nhật Cường,Nam,19/10/1988,Cần Thơ,Cần Thơ,Ninh Kiều,0327237570,bui.cuong1983@gmail.com,VIP,8910,26/11/2023,35-44,Online
+KH00034,Võ Thị My,Nữ,19/01/1977,Khánh Hòa,Khánh Hòa,Diên Khánh,0333978426,my426@gmail.com,Thành viên,372,21/02/2023,45-54,Online
+KH00035,Nguyễn Khánh Tuấn,Nam,17/12/2007,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Phú Nhuận,0339354429,nguyen.tuan429@gmail.com,Thành viên,1632,10/10/2023,18-24,Telesales
+KH00036,Nguyễn Thu Hạnh,Nữ,09/07/2001,Đồng Nai,Đồng Nai,Biên Hòa,0913367702,hanh702@gmail.com,Thành viên,3248,07/06/2025,25-34,Telesales
+KH00037,Hoàng Mai Thảo,Nữ,25/02/1991,Hà Nội,Hà Nội,Ba Đình,0919775075,hoang.thao1987@outlook.com,VIP,13002,30/12/2025,35-44,POS
+KH00038,Phạm Anh Sơn,Nam,12/09/1968,Hà Nội,Hà Nội,Hoàng Mai,0393991461,son461@icloud.com,VIP,6358,28/09/2024,55+,POS
+KH00039,Lê Thị Phương,Nữ,24/05/1982,Nghệ An,Nghệ An,Vinh,0765090460,phuong.le460@yahoo.com,Thành viên,5368,24/10/2023,35-44,POS
+KH00040,Hoàng Mai Nhi,Nữ,10/06/1984,Khánh Hòa,Khánh Hòa,Nha Trang,0837997091,hoang.nhi1990@gmail.com,Khách lẻ,828,15/11/2023,35-44,POS
+KH00041,Đặng Thanh Vy,Nữ,21/07/1999,Bình Dương,Bình Dương,Thuận An,0704243674,dangthanhvy1991@gmail.com,Khách lẻ,671,29/07/2025,25-34,Marketplace
+KH00042,Phạm Hoàng Phúc,Nam,22/10/1991,Hà Nội,Hà Nội,Ba Đình,0824977309,pham.phuc1992@gmail.com,Thành viên,768,24/05/2023,35-44,Online
+KH00043,Đặng Thanh Quỳnh,Nữ,07/10/1993,Khánh Hòa,Khánh Hòa,Diên Khánh,0771077049,dang.quynh1993@gmail.com,Thành viên,6244,28/09/2025,25-34,POS
+KH00044,Huỳnh Mai Trang,Nữ,05/02/2003,Khánh Hòa,Khánh Hòa,Nha Trang,0823979243,trang1994@gmail.com,Khách lẻ,494,07/09/2024,18-24,POS
+KH00045,Đặng Khánh Nam,Nam,02/07/1998,Hà Nội,Hà Nội,Cầu Giấy,0373451264,dangkhanhnam1995@icloud.com,VIP,16016,14/05/2023,25-34,POS
+KH00046,Nguyễn Thùy Phương,Nữ,26/06/1983,Quảng Ninh,Quảng Ninh,Hạ Long,0966081571,phuong.nguyen571@yahoo.com,Thành viên,2064,28/07/2023,35-44,Telesales
+KH00047,Đặng Thành Cường,Nam,02/08/1996,Quảng Ninh,Quảng Ninh,Cẩm Phả,0346559008,dangthanhcuong008@gmail.com,Khách lẻ,1191,14/02/2024,25-34,POS
+KH00048,Phạm Bảo Loan,Nữ,01/05/1994,Hải Phòng,Hải Phòng,Lê Chân,0331253493,pham.loan1998@yahoo.com,Khách lẻ,725,03/05/2024,25-34,POS
+KH00049,Dương Minh Long,Nam,12/09/2002,Hà Nội,Hà Nội,Nam Từ Liêm,0884475893,duong.long893@outlook.com,Thành viên,6172,03/03/2024,18-24,POS
+KH00050,Trần Gia Long,Nam,23/06/1979,Quảng Ninh,Quảng Ninh,Cẩm Phả,0827757448,trangialong448@yahoo.com,Khách lẻ,867,31/08/2023,45-54,Online
+KH00051,Nguyễn Thanh Ngân,Nữ,08/10/2005,Đà Nẵng,Đà Nẵng,Hải Châu,0392146593,ngan.nguyen593@gmail.com,VIP,8041,12/07/2024,18-24,Online
+KH00052,Ngô Nhật Đức,Nam,12/12/1971,Khánh Hòa,Khánh Hòa,Diên Khánh,0884005427,duc.ngo427@gmail.com,Khách lẻ,428,22/12/2023,55+,POS
+KH00053,Phạm Thanh Anh,Nữ,07/03/1969,Thừa Thiên Huế,Thừa Thiên Huế,Huế,0831654984,anh.pham2003@gmail.com,Thành viên,1956,28/12/2025,55+,Online
+KH00054,Huỳnh Mai Hạnh,Nữ,13/06/1971,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Quận 1,0771734303,huynh.hanh2004@icloud.com,Khách lẻ,1760,06/10/2025,55+,Online
+KH00055,Nguyễn Thùy Vy,Nữ,27/10/1983,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Tân Bình,0854398202,nguyenthuyvy2005@icloud.com,Thành viên,372,07/03/2024,35-44,Online
+KH00056,Nguyễn Ngọc Vy,Nữ,18/08/1969,Đà Nẵng,Đà Nẵng,Sơn Trà,0832873619,vy2006@outlook.com,Thành viên,5196,17/01/2023,55+,POS
+KH00057,Phan Kim Hà,Nữ,17/12/1998,Cần Thơ,Cần Thơ,Bình Thủy,0815909746,ha746@gmail.com,Khách lẻ,551,18/07/2023,25-34,Online
+KH00058,Lê Kim Dung,Nữ,11/08/1987,Đà Nẵng,Đà Nẵng,Cẩm Lệ,0935981429,le.dung429@yahoo.com,VIP,13475,24/10/2024,35-44,Online
+KH00059,Trần Thị Châu,Nữ,03/03/1999,Thừa Thiên Huế,Thừa Thiên Huế,Hương Thủy,0764768233,chau2009@yahoo.com,Khách doanh nghiệp,6032,09/06/2023,25-34,Online
+KH00060,Hoàng Khánh Hà,Nữ,03/09/1995,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Tân Bình,0379779577,hoangkhanhha1980@icloud.com,Khách lẻ,1464,27/06/2024,25-34,POS
+KH00061,Huỳnh Thị Thảo,Nữ,15/08/1975,Thừa Thiên Huế,Thừa Thiên Huế,Phú Vang,0844993826,huynhthithao1981@outlook.com,Thành viên,1644,04/05/2023,45-54,Online
+KH00062,Phạm Ngọc Loan,Nữ,03/08/1980,Bình Dương,Bình Dương,Thuận An,0935525226,loan.pham1982@icloud.com,Khách doanh nghiệp,9128,21/03/2024,45-54,Online
+KH00063,Lê Gia Mai,Nữ,18/10/1982,Bình Dương,Bình Dương,Thuận An,0392029653,mai1983@yahoo.com,Khách lẻ,650,07/11/2023,35-44,POS
+KH00064,Phạm Quang Bảo,Nam,22/12/2006,Hà Nội,Hà Nội,Cầu Giấy,0335711851,phamquangbao1984@gmail.com,Thành viên,992,15/06/2025,18-24,POS
+KH00065,Nguyễn Thu Ngân,Nữ,27/06/1998,Khánh Hòa,Khánh Hòa,Cam Ranh,0938135116,nguyenthungan1985@gmail.com,VIP,15763,21/10/2023,25-34,Telesales
+KH00066,Đỗ Hoàng Huy,Nam,08/08/1982,Quảng Ninh,Quảng Ninh,Hạ Long,0888186450,dohoanghuy450@gmail.com,Thành viên,1256,26/12/2024,35-44,Marketplace
+KH00067,Nguyễn Thanh Yến,Nữ,21/10/1985,Hà Nội,Hà Nội,Cầu Giấy,0906538649,yen.nguyen649@gmail.com,VIP,9966,13/07/2024,35-44,POS
+KH00068,Nguyễn Khánh Trâm,Nữ,15/07/1986,Đà Nẵng,Đà Nẵng,Cẩm Lệ,0373762431,tram1988@gmail.com,Thành viên,832,10/02/2023,35-44,POS
+KH00069,Lê Tuấn Quân,Nam,14/10/1992,Cần Thơ,Cần Thơ,Bình Thủy,0945849662,quan662@icloud.com,VIP,6754,02/04/2023,25-34,POS
+KH00070,Đặng Phương Thảo,Nữ,09/10/2000,Hà Nội,Hà Nội,Hoàng Mai,0908542570,dang.thao1990@yahoo.com,Thành viên,5388,09/04/2023,25-34,Telesales
+KH00071,Dương Hoàng Hiếu,Nam,09/08/2000,Hà Nội,Hà Nội,Ba Đình,0366168293,hieu.duong293@gmail.com,Thành viên,3372,09/10/2023,25-34,POS
+KH00072,Phạm Quang Cường,Nam,12/02/1995,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Thủ Đức,0921593288,cuong1992@icloud.com,Khách lẻ,1119,28/10/2025,25-34,POS
+KH00073,Hoàng Đức Quân,Nam,01/04/2004,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Quận 3,0883430080,quan080@outlook.com,Thành viên,3124,11/05/2025,18-24,POS
+KH00074,Trần Văn Khang,Nam,16/02/1969,Bình Dương,Bình Dương,Dĩ An,0913849670,khang1994@yahoo.com,VIP,13937,10/06/2025,55+,Online
+KH00075,Nguyễn Thị Trâm,Nữ,05/01/1985,Hà Nội,Hà Nội,Ba Đình,0986138704,nguyen.tram704@gmail.com,Thành viên,2412,18/02/2025,35-44,Telesales
+KH00076,Huỳnh Hồng Trang,Nữ,26/02/1992,Quảng Ninh,Quảng Ninh,Hạ Long,0798565797,trang.huynh1996@outlook.com,Thành viên,3416,19/06/2023,25-34,Online
+KH00077,Nguyễn Quang Quân,Nam,17/04/1987,Hà Nội,Hà Nội,Cầu Giấy,0367131702,quan1997@gmail.com,Khách lẻ,1158,13/07/2024,35-44,POS
+KH00078,Đỗ Khánh Hải,Nam,27/03/1999,Hà Nội,Hà Nội,Hoàng Mai,0813066906,hai1998@icloud.com,Thành viên,3012,13/10/2024,25-34,POS
+KH00079,Phạm Anh Đức,Nam,05/02/1984,Hà Nội,Hà Nội,Đống Đa,0344937255,phamanhduc1999@gmail.com,Khách lẻ,1230,11/10/2024,35-44,POS
+KH00080,Nguyễn Gia Trang,Nữ,22/11/1984,Cần Thơ,Cần Thơ,Bình Thủy,0768068454,nguyen.trang2000@gmail.com,Khách lẻ,745,23/01/2024,35-44,Online
+KH00081,Huỳnh Bảo Yến,Nữ,06/06/1994,Đà Nẵng,Đà Nẵng,Hải Châu,0974726380,yen2001@yahoo.com,Khách lẻ,414,06/10/2023,25-34,Online
+KH00082,Vũ Thị Phương,Nữ,08/01/1986,Hà Nội,Hà Nội,Hoàng Mai,0923071771,vuthiphuong2002@icloud.com,Khách doanh nghiệp,920,20/08/2023,35-44,Marketplace
+KH00083,Vũ Kim Yến,Nữ,20/03/1991,Đồng Nai,Đồng Nai,Biên Hòa,0962476114,vukimyen114@gmail.com,Thành viên,416,17/07/2023,35-44,POS
+KH00084,Nguyễn Kim Dung,Nữ,03/05/2000,Hà Nội,Hà Nội,Thanh Xuân,0321120019,dung.nguyen2004@gmail.com,Thành viên,4160,20/12/2024,25-34,Online
+KH00085,Huỳnh Tuấn Hải,Nam,03/03/1995,Hà Nội,Hà Nội,Nam Từ Liêm,0706594129,huynh.hai129@gmail.com,Khách lẻ,1286,23/03/2025,25-34,POS
+KH00086,Trần Kim Thảo,Nữ,13/03/1992,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Phú Nhuận,0935231502,trankimthao2006@gmail.com,Khách lẻ,372,14/12/2023,25-34,Online
+KH00087,Nguyễn Anh Đạt,Nam,22/04/1970,Đà Nẵng,Đà Nẵng,Thanh Khê,0902788514,dat2007@yahoo.com,Thành viên,5060,13/05/2025,55+,Telesales
+KH00088,Hoàng Gia Linh,Nữ,20/08/1973,Đà Nẵng,Đà Nẵng,Hải Châu,0977983507,linh507@outlook.com,Thành viên,2528,10/12/2023,45-54,Marketplace
+KH00089,Nguyễn Gia Giang,Nữ,28/04/1998,Bình Dương,Bình Dương,Thuận An,0886718032,nguyen.giang2009@icloud.com,Khách lẻ,389,17/09/2023,25-34,Online
+KH00090,Hoàng Thùy Hà,Nữ,17/02/1985,Đồng Nai,Đồng Nai,Trảng Bom,0328404277,hoang.ha277@gmail.com,Khách lẻ,1702,09/11/2023,35-44,Online
+KH00091,Nguyễn Mai Châu,Nữ,17/10/1980,Hà Nội,Hà Nội,Đống Đa,0963492946,nguyenmaichau946@icloud.com,Thành viên,6172,25/10/2023,45-54,Marketplace
+KH00092,Vũ Thanh Chi,Nữ,10/11/1970,Đà Nẵng,Đà Nẵng,Hải Châu,0846606897,vuthanhchi897@gmail.com,VIP,5049,26/05/2025,55+,POS
+KH00093,Lê Hữu Khang,Nam,19/09/1989,Hà Nội,Hà Nội,Đống Đa,0859924602,lehuukhang1983@icloud.com,Thành viên,4140,19/02/2023,35-44,Online
+KH00094,Nguyễn Hồng Anh,Nữ,10/12/1994,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Phú Nhuận,0707624749,anh.nguyen749@icloud.com,Thành viên,7080,01/12/2025,25-34,POS
+KH00095,Trần Hữu Quân,Nam,28/04/1996,Hải Phòng,Hải Phòng,Ngô Quyền,0962524418,quan.tran1985@outlook.com,Thành viên,2184,23/09/2023,25-34,POS
+KH00096,Trần Khánh Phương,Nữ,12/05/1974,Đà Nẵng,Đà Nẵng,Hải Châu,0706078225,tran.phuong1986@yahoo.com,Khách lẻ,1487,26/12/2023,45-54,POS
+KH00097,Nguyễn Mai Ngân,Nữ,24/04/1988,Nghệ An,Nghệ An,Vinh,0777847560,ngan1987@icloud.com,Khách lẻ,1438,23/03/2023,35-44,Online
+KH00098,Lê Thùy Hà,Nữ,22/11/2007,Cần Thơ,Cần Thơ,Cái Răng,0828419930,le.ha930@gmail.com,Khách lẻ,221,22/03/2024,18-24,POS
+KH00099,Nguyễn Hữu Quân,Nam,06/01/1981,Thừa Thiên Huế,Thừa Thiên Huế,Huế,0859571895,quan.nguyen1989@gmail.com,Khách lẻ,238,13/02/2023,45-54,Online
+KH00100,Hoàng Thành Tín,Nam,20/04/2005,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Quận 1,0987502409,hoangthanhtin1990@gmail.com,Thành viên,3120,16/05/2023,18-24,POS
+KH00101,Lê Bảo Hạnh,Nữ,11/03/1970,Cần Thơ,Cần Thơ,Cái Răng,0905137616,le.hanh1991@gmail.com,Thành viên,1008,18/04/2023,55+,POS
+KH00102,Trần Hồng Dung,Nữ,24/02/1971,Bình Dương,Bình Dương,Thủ Dầu Một,0973316962,tran.dung1992@outlook.com,Thành viên,3416,26/11/2024,55+,POS
+KH00103,Huỳnh Quang Hải,Nam,02/05/1984,Hà Nội,Hà Nội,Cầu Giấy,0378122715,huynhquanghai715@outlook.com,Thành viên,6308,10/05/2023,35-44,Online
+KH00104,Nguyễn Tuấn Bảo,Nam,24/08/1999,Đồng Nai,Đồng Nai,Biên Hòa,0904108673,bao1994@yahoo.com,Khách lẻ,818,21/10/2025,25-34,POS
+KH00105,Lê Tuấn Cường,Nam,16/03/1994,Hải Phòng,Hải Phòng,Hồng Bàng,0769704105,le.cuong105@outlook.com,Thành viên,528,10/05/2023,25-34,POS
+KH00106,Phạm Hồng Chi,Nữ,03/08/2005,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Bình Thạnh,0333269495,chi495@gmail.com,Khách doanh nghiệp,9672,04/12/2024,18-24,Online
+KH00107,Lê Minh Thắng,Nam,15/03/1986,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Phú Nhuận,0902888817,thang.le817@yahoo.com,Khách lẻ,1592,08/02/2024,35-44,POS
+KH00108,Nguyễn Thùy Nhi,Nữ,22/06/1988,Hà Nội,Hà Nội,Ba Đình,0336216210,nhi.nguyen1998@outlook.com,Thành viên,6392,08/02/2023,35-44,Online
+KH00109,Bùi Văn Quân,Nam,11/02/1990,Hà Nội,Hà Nội,Thanh Xuân,0775111343,quan1999@yahoo.com,Thành viên,3248,12/08/2024,35-44,POS
+KH00110,Phạm Kim Anh,Nữ,15/01/1991,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Bình Thạnh,0984307474,phamkimanh2000@outlook.com,Thành viên,516,12/02/2023,35-44,Online
+KH00111,Ngô Minh Thắng,Nam,21/12/1985,Hà Nội,Hà Nội,Thanh Xuân,0925568744,thang.ngo744@icloud.com,Thành viên,1696,13/08/2023,35-44,Online
+KH00112,Nguyễn Hữu Sơn,Nam,11/01/1987,Hà Nội,Hà Nội,Hoàng Mai,0826715911,nguyen.son911@gmail.com,Khách doanh nghiệp,3280,06/11/2024,35-44,Online
+KH00113,Vũ Gia Hạnh,Nữ,23/11/2005,Hà Nội,Hà Nội,Thanh Xuân,0368211321,hanh.vu321@yahoo.com,Khách doanh nghiệp,824,12/08/2025,18-24,Marketplace
+KH00114,Lê Bảo Anh,Nữ,25/11/1995,Hải Phòng,Hải Phòng,Hồng Bàng,0334675292,le.anh292@icloud.com,VIP,11550,21/11/2025,25-34,POS
+KH00115,Trần Gia Cường,Nam,25/04/1998,Hải Phòng,Hải Phòng,Hồng Bàng,0884831850,cuong.tran2005@gmail.com,Thành viên,5492,08/04/2025,25-34,POS
+KH00116,Phạm Tuấn Khang,Nam,17/09/1996,Hà Nội,Hà Nội,Thanh Xuân,0703298853,khang2006@gmail.com,VIP,2189,17/09/2025,25-34,POS
+KH00117,Nguyễn Thu Mai,Nữ,14/11/1981,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Bình Thạnh,0889670004,mai.nguyen004@gmail.com,Thành viên,7088,21/05/2025,45-54,POS
+KH00118,Nguyễn Hồng Ngân,Nữ,04/09/1987,Bình Dương,Bình Dương,Dĩ An,0975111408,ngan2008@gmail.com,Thành viên,3484,29/06/2025,35-44,Online
+KH00119,Trần Khánh Loan,Nữ,19/05/2007,Hà Nội,Hà Nội,Ba Đình,0883625679,loan.tran679@yahoo.com,Thành viên,3280,29/09/2024,18-24,Online
+KH00120,Vũ Nhật An,Nam,27/06/1986,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Thủ Đức,0341424529,vunhatan1980@gmail.com,Thành viên,1308,18/02/2025,35-44,POS
+KH00121,Trần Hữu Nam,Nam,05/12/1989,Bình Dương,Bình Dương,Dĩ An,0856729672,nam1981@gmail.com,Khách lẻ,646,29/09/2023,35-44,Telesales
+KH00122,Nguyễn Văn Minh,Nam,08/06/1997,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Tân Bình,0855719804,nguyen.minh1982@gmail.com,Thành viên,1660,06/09/2024,25-34,POS
+KH00123,Phan Hồng Ngân,Nữ,18/10/1984,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Thủ Đức,0375208692,ngan.phan1983@icloud.com,Khách lẻ,980,12/03/2024,35-44,Online
+KH00124,Đặng Gia Thảo,Nữ,28/07/1996,Đà Nẵng,Đà Nẵng,Cẩm Lệ,0334410602,thao.dang1984@gmail.com,Thành viên,3356,30/06/2024,25-34,Online
+KH00125,Hồ Thùy Thảo,Nữ,16/08/1981,Đồng Nai,Đồng Nai,Trảng Bom,0385156151,thao1985@gmail.com,Khách doanh nghiệp,5664,28/08/2024,45-54,POS
+KH00126,Bùi Hồng Linh,Nữ,24/12/1971,Hà Nội,Hà Nội,Ba Đình,0793377474,bui.linh1986@gmail.com,Khách lẻ,1543,17/12/2023,55+,POS
+KH00127,Hồ Đức Tuấn,Nam,03/01/2000,Hà Nội,Hà Nội,Thanh Xuân,0337376495,tuan1987@gmail.com,Khách lẻ,1480,22/11/2024,25-34,POS
+KH00128,Trần Văn Nam,Nam,19/01/2003,Khánh Hòa,Khánh Hòa,Nha Trang,0374862838,nam.tran838@gmail.com,Khách lẻ,1462,19/08/2023,18-24,POS
+KH00129,Nguyễn Khánh Sơn,Nam,18/03/1997,Đà Nẵng,Đà Nẵng,Thanh Khê,0384506254,nguyenkhanhson1989@yahoo.com,Khách lẻ,1796,03/04/2024,25-34,POS
+KH00130,Phạm Thùy Trang,Nữ,16/08/2004,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Thủ Đức,0936651395,trang.pham1990@gmail.com,Khách lẻ,632,25/08/2023,18-24,POS
+KH00131,Nguyễn Thùy Hà,Nữ,12/04/1979,Bình Dương,Bình Dương,Thuận An,0372524200,ha.nguyen1991@icloud.com,Khách lẻ,1245,30/08/2023,45-54,Online
+KH00132,Ngô Nhật Đức,Nam,11/02/2001,Đồng Nai,Đồng Nai,Long Khánh,0909982497,ngonhatduc497@gmail.com,Khách lẻ,824,07/12/2025,25-34,Online
+KH00133,Lê Thị My,Nữ,16/08/1982,Bình Dương,Bình Dương,Dĩ An,0768743120,my.le1993@gmail.com,Thành viên,6976,01/05/2024,35-44,POS
+KH00134,Lê Anh An,Nam,08/06/2003,Hà Nội,Hà Nội,Ba Đình,0393348623,an.le623@outlook.com,VIP,2970,11/03/2025,18-24,POS
+KH00135,Vũ Đức Phúc,Nam,21/10/2005,Hà Nội,Hà Nội,Ba Đình,0983088333,phuc1995@gmail.com,Thành viên,372,28/12/2024,18-24,Online
+KH00136,Lý Ngọc Anh,Nữ,24/01/1995,Hải Phòng,Hải Phòng,Hồng Bàng,0815431204,anh204@gmail.com,Thành viên,2276,27/01/2025,25-34,Online
+KH00137,Lê Thanh Ngân,Nữ,02/03/1994,Hà Nội,Hà Nội,Ba Đình,0821700082,ngan.le082@outlook.com,VIP,5775,12/05/2023,25-34,Online
+KH00138,Lê Kim My,Nữ,25/01/2006,Khánh Hòa,Khánh Hòa,Nha Trang,0835885265,my.le1998@icloud.com,Thành viên,1300,28/02/2023,18-24,POS
+KH00139,Nguyễn Anh Sơn,Nam,05/03/1998,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Thủ Đức,0968124759,nguyenanhson1999@icloud.com,Thành viên,2236,10/10/2024,25-34,POS
+KH00140,Nguyễn Thị Anh,Nữ,05/08/1976,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Thủ Đức,0369090079,nguyen.anh2000@gmail.com,Khách lẻ,1004,12/07/2025,45-54,POS
+KH00141,Nguyễn Gia Bảo,Nam,28/07/1998,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Thủ Đức,0356311815,nguyen.bao815@icloud.com,Thành viên,3800,18/08/2024,25-34,Online
+KH00142,Trần Thành Khôi,Nam,23/03/2006,Đà Nẵng,Đà Nẵng,Cẩm Lệ,0339945644,tranthanhkhoi2002@gmail.com,Khách lẻ,1097,20/05/2023,18-24,POS
+KH00143,Dương Thành Phúc,Nam,21/10/1997,Bình Dương,Bình Dương,Thuận An,0337515934,phuc.duong2003@gmail.com,Thành viên,2372,13/01/2025,25-34,POS
+KH00144,Võ Bảo Linh,Nữ,16/08/2007,Hà Nội,Hà Nội,Ba Đình,0709964370,vobaolinh2004@yahoo.com,Thành viên,4872,02/12/2025,18-24,Online
+KH00145,Trần Hữu Thắng,Nam,23/03/1998,Đồng Nai,Đồng Nai,Trảng Bom,0913220791,thang791@outlook.com,Khách doanh nghiệp,8672,11/08/2025,25-34,POS
+KH00146,Trần Hữu Cường,Nam,02/01/1997,Hà Nội,Hà Nội,Đống Đa,0776076107,cuong.tran2006@gmail.com,VIP,10010,10/04/2024,25-34,Online
+KH00147,Nguyễn Hữu Tín,Nam,16/06/1981,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Thủ Đức,0707775230,nguyenhuutin230@gmail.com,Thành viên,1288,07/02/2024,45-54,POS
+KH00148,Đỗ Thanh Anh,Nữ,09/07/1995,Cần Thơ,Cần Thơ,Ninh Kiều,0903673320,anh.do2008@gmail.com,VIP,8690,09/08/2025,25-34,POS
+KH00149,Vũ Thùy Loan,Nữ,19/10/1991,Cần Thơ,Cần Thơ,Bình Thủy,0912642078,vuthuyloan2009@gmail.com,Thành viên,3920,26/12/2024,35-44,Online
+KH00150,Vũ Hữu Khang,Nam,03/12/1994,Hải Phòng,Hải Phòng,Lê Chân,0379182602,khang1980@gmail.com,Thành viên,4088,20/10/2025,25-34,POS
+KH00151,Trần Văn Nam,Nam,19/04/1984,Hải Phòng,Hải Phòng,Hồng Bàng,0828243623,nam.tran623@yahoo.com,Khách lẻ,1472,12/03/2024,35-44,POS
+KH00152,Hoàng Gia Trang,Nữ,10/10/1974,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Thủ Đức,0927645064,hoanggiatrang064@gmail.com,Thành viên,1480,06/03/2023,45-54,Marketplace
+KH00153,Phan Nhật Phúc,Nam,04/10/1981,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Quận 3,0907455194,phuc.phan1983@gmail.com,Khách lẻ,340,06/04/2024,45-54,POS
+KH00154,Ngô Anh Bảo,Nam,26/06/1994,Hải Phòng,Hải Phòng,Kiến An,0386271534,ngo.bao1984@yahoo.com,Thành viên,5504,21/05/2023,25-34,Telesales
+KH00155,Nguyễn Nhật An,Nam,17/01/2007,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Tân Bình,0334648890,an.nguyen890@gmail.com,Thành viên,6592,30/06/2025,18-24,POS
+KH00156,Nguyễn Tuấn Cường,Nam,03/09/2007,Đồng Nai,Đồng Nai,Trảng Bom,0841956639,nguyentuancuong639@gmail.com,Thành viên,1608,30/01/2024,18-24,Online
+KH00157,Phạm Gia Yến,Nữ,02/07/2007,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Phú Nhuận,0978194465,yen.pham465@yahoo.com,Khách lẻ,1337,23/09/2025,18-24,Online
+KH00158,Trần Văn Đạt,Nam,16/08/1971,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Quận 1,0379185462,dat.tran1988@yahoo.com,Thành viên,6444,30/08/2025,55+,Online
+KH00159,Nguyễn Hồng Loan,Nữ,09/09/2004,Đồng Nai,Đồng Nai,Trảng Bom,0828577750,nguyen.loan750@yahoo.com,VIP,5324,23/12/2024,18-24,Online
+KH00160,Nguyễn Văn Minh,Nam,28/12/2004,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Thủ Đức,0987697974,minh1990@outlook.com,Thành viên,4668,27/11/2025,18-24,POS
+KH00161,Trần Thành Huy,Nam,10/07/1991,Đà Nẵng,Đà Nẵng,Sơn Trà,0842798768,huy768@icloud.com,Thành viên,7008,22/12/2023,35-44,Online
+KH00162,Nguyễn Quang Phúc,Nam,21/01/1968,Thừa Thiên Huế,Thừa Thiên Huế,Huế,0847878947,nguyen.phuc1992@outlook.com,Thành viên,5060,01/12/2024,55+,POS
+KH00163,Bùi Hồng Hạnh,Nữ,02/05/2000,Đồng Nai,Đồng Nai,Trảng Bom,0965338549,hanh549@yahoo.com,Thành viên,7116,16/10/2024,25-34,POS
+KH00164,Lê Gia Hạnh,Nữ,07/01/1999,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Quận 1,0343369515,hanh515@gmail.com,Thành viên,5696,25/12/2024,25-34,Online
+KH00165,Phạm Phương Dung,Nữ,01/07/1995,Hà Nội,Hà Nội,Ba Đình,0919087071,pham.dung071@outlook.com,Khách lẻ,735,09/10/2023,25-34,Online
+KH00166,Nguyễn Gia Sơn,Nam,25/04/1990,Hà Nội,Hà Nội,Thanh Xuân,0853026143,son143@gmail.com,Khách lẻ,1180,08/08/2023,35-44,POS
+KH00167,Nguyễn Thu Chi,Nữ,22/04/1989,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Phú Nhuận,0858194118,chi118@gmail.com,Thành viên,4108,25/11/2024,35-44,POS
+KH00168,Đặng Thanh Hương,Nữ,06/04/1990,Hà Nội,Hà Nội,Thanh Xuân,0829405329,huong.dang1998@outlook.com,Thành viên,5084,16/06/2023,35-44,Marketplace
+KH00169,Nguyễn Tuấn An,Nam,28/02/1996,Hà Nội,Hà Nội,Thanh Xuân,0371719095,nguyentuanan1999@outlook.com,Khách lẻ,493,21/04/2023,25-34,Telesales
+KH00170,Vũ Tuấn Bảo,Nam,07/07/2006,Quảng Ninh,Quảng Ninh,Hạ Long,0914383984,bao.vu984@gmail.com,Thành viên,384,14/08/2024,18-24,POS
+KH00171,Võ Hồng Thảo,Nữ,08/09/1973,Hà Nội,Hà Nội,Hoàng Mai,0964115808,thao808@outlook.com,Khách lẻ,1168,29/07/2024,45-54,Online
+KH00172,Lê Thành Đạt,Nam,12/08/2002,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Phú Nhuận,0334905420,dat.le2002@gmail.com,Thành viên,2544,06/06/2023,18-24,POS
+KH00173,Lê Thị Chi,Nữ,11/08/1988,Quảng Ninh,Quảng Ninh,Cẩm Phả,0853669586,lethichi2003@gmail.com,Khách lẻ,328,06/05/2024,35-44,POS
+KH00174,Võ Gia Dũng,Nam,27/11/1988,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Quận 1,0979911115,vo.dung2004@yahoo.com,Khách doanh nghiệp,6712,07/12/2025,35-44,Online
+KH00175,Phan Đức Việt,Nam,20/10/2007,Đà Nẵng,Đà Nẵng,Cẩm Lệ,0982551791,phan.viet2005@gmail.com,Thành viên,2408,14/12/2023,18-24,Online
+KH00176,Phạm Khánh Phúc,Nam,18/05/2002,Hà Nội,Hà Nội,Cầu Giấy,0979809748,pham.phuc748@gmail.com,Thành viên,2032,22/08/2025,18-24,Marketplace
+KH00177,Lê Văn Minh,Nam,07/09/1995,Cần Thơ,Cần Thơ,Bình Thủy,0701587277,minh277@outlook.com,VIP,16412,08/09/2023,25-34,POS
+KH00178,Bùi Gia Nhi,Nữ,16/12/1993,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Bình Thạnh,0329927167,nhi167@gmail.com,Khách lẻ,734,21/03/2025,25-34,POS
+KH00179,Phạm Thanh Thảo,Nữ,15/12/1995,Thừa Thiên Huế,Thừa Thiên Huế,Phú Vang,0946622709,pham.thao2009@icloud.com,Thành viên,2276,07/07/2025,25-34,Online
+KH00180,Phạm Quang Phúc,Nam,23/05/1968,Hà Nội,Hà Nội,Cầu Giấy,0917100522,phamquangphuc1980@gmail.com,Khách doanh nghiệp,13848,13/11/2024,55+,Telesales
+KH00181,Nguyễn Anh Đức,Nam,11/11/1968,Nghệ An,Nghệ An,Cửa Lò,0323616862,nguyenanhduc862@yahoo.com,Thành viên,3672,23/10/2025,55+,Online
+KH00182,Nguyễn Thùy Chi,Nữ,27/11/1991,Hà Nội,Hà Nội,Đống Đa,0989381927,nguyen.chi1982@yahoo.com,Thành viên,6280,26/05/2025,35-44,POS
+KH00183,Nguyễn Nhật Đạt,Nam,24/01/2001,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Quận 3,0841699902,dat902@yahoo.com,Khách lẻ,1186,26/03/2024,25-34,Marketplace
+KH00184,Nguyễn Thanh Hà,Nữ,07/11/1993,Cần Thơ,Cần Thơ,Ninh Kiều,0347886919,nguyen.ha919@gmail.com,Thành viên,4788,26/03/2024,25-34,Online
+KH00185,Trần Gia Nhi,Nữ,01/06/1992,Quảng Ninh,Quảng Ninh,Hạ Long,0797829567,trangianhi1985@gmail.com,Khách doanh nghiệp,8104,26/09/2023,25-34,Marketplace
+KH00186,Nguyễn Thu My,Nữ,09/09/2002,Hải Phòng,Hải Phòng,Ngô Quyền,0773084670,my.nguyen670@gmail.com,Khách lẻ,865,13/12/2024,18-24,POS
+KH00187,Phan Thùy Quỳnh,Nữ,14/07/1970,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Bình Thạnh,0885333462,phanthuyquynh462@outlook.com,VIP,7491,03/12/2023,55+,Marketplace
+KH00188,Phan Khánh Thảo,Nữ,09/08/2002,Đà Nẵng,Đà Nẵng,Thanh Khê,0835448672,phan.thao672@gmail.com,Khách lẻ,1041,02/05/2025,18-24,POS
+KH00189,Ngô Phương Ngân,Nữ,02/11/1983,Hà Nội,Hà Nội,Hoàng Mai,0794436674,ngan1989@outlook.com,VIP,8624,17/06/2023,35-44,POS
+KH00190,Phan Hữu Hiếu,Nam,02/02/1995,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Bình Thạnh,0943312814,phanhuuhieu814@gmail.com,Khách lẻ,601,08/06/2024,25-34,Telesales
+KH00191,Hoàng Bảo Anh,Nữ,14/04/1979,Hải Phòng,Hải Phòng,Lê Chân,0367953227,hoang.anh227@icloud.com,VIP,1518,04/12/2023,45-54,POS
+KH00192,Võ Hữu Tuấn,Nam,25/03/1980,Khánh Hòa,Khánh Hòa,Nha Trang,0789908668,tuan668@icloud.com,Thành viên,3236,01/02/2025,45-54,Telesales
+KH00193,Nguyễn Khánh Cường,Nam,28/02/2007,Hà Nội,Hà Nội,Nam Từ Liêm,0962492156,nguyen.cuong156@outlook.com,Khách lẻ,1404,23/02/2023,18-24,Online
+KH00194,Võ Phương My,Nữ,02/09/1980,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Phú Nhuận,0795918101,vo.my1994@outlook.com,Thành viên,1852,11/02/2023,45-54,POS
+KH00195,Võ Anh An,Nam,23/12/2002,Đồng Nai,Đồng Nai,Trảng Bom,0917922494,an.vo1995@gmail.com,VIP,17215,09/09/2025,18-24,POS
+KH00196,Dương Ngọc Anh,Nữ,14/01/2001,Đà Nẵng,Đà Nẵng,Sơn Trà,0357259630,duong.anh630@outlook.com,Thành viên,804,07/01/2025,25-34,POS
+KH00197,Nguyễn Minh Quân,Nam,15/05/2007,Hải Phòng,Hải Phòng,Hồng Bàng,0815123819,quan.nguyen1997@yahoo.com,Khách doanh nghiệp,13296,02/01/2026,18-24,Telesales
+KH00198,Nguyễn Kim Hương,Nữ,01/05/1998,Hà Nội,Hà Nội,Cầu Giấy,0779388972,nguyen.huong972@icloud.com,Khách lẻ,229,05/12/2025,25-34,POS
+KH00199,Bùi Thùy Linh,Nữ,15/03/1998,Nghệ An,Nghệ An,Vinh,0327505669,bui.linh1999@gmail.com,Khách lẻ,726,27/10/2024,25-34,POS
+KH00200,Nguyễn Minh Sơn,Nam,19/02/1993,Hải Phòng,Hải Phòng,Lê Chân,0821462351,son.nguyen2000@gmail.com,Thành viên,3532,26/12/2024,25-34,POS
+KH00201,Lê Khánh Thắng,Nam,19/01/1997,Hà Nội,Hà Nội,Ba Đình,0901894504,lekhanhthang2001@yahoo.com,VIP,18458,20/05/2025,25-34,POS
+KH00202,Đỗ Khánh Hạnh,Nữ,26/08/2006,Khánh Hòa,Khánh Hòa,Cam Ranh,0342041102,do.hanh102@gmail.com,Thành viên,3960,03/08/2024,18-24,POS
+KH00203,Vũ Thanh Loan,Nữ,25/11/2003,Khánh Hòa,Khánh Hòa,Diên Khánh,0915775855,vu.loan2003@outlook.com,Thành viên,4420,27/05/2024,18-24,POS
+KH00204,Nguyễn Nhật Quân,Nam,05/03/1972,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Quận 3,0352985826,quan.nguyen826@gmail.com,Khách lẻ,605,23/05/2023,45-54,POS
+KH00205,Nguyễn Tuấn Huy,Nam,16/02/2007,Nghệ An,Nghệ An,Cửa Lò,0846783218,nguyentuanhuy218@outlook.com,Khách lẻ,431,21/04/2023,18-24,Telesales
+KH00206,Phạm Gia Linh,Nữ,03/07/1990,Bình Dương,Bình Dương,Dĩ An,0828781274,phamgialinh2006@gmail.com,Thành viên,1924,04/03/2024,35-44,POS
+KH00207,Phạm Thu Loan,Nữ,02/02/1981,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Phú Nhuận,0967106176,pham.loan2007@gmail.com,Khách lẻ,1233,11/09/2024,45-54,POS
+KH00208,Vũ Kim Giang,Nữ,21/10/1998,Hà Nội,Hà Nội,Cầu Giấy,0925164555,vu.giang2008@gmail.com,Thành viên,4000,30/09/2025,25-34,POS
+KH00209,Võ Thu Loan,Nữ,08/03/1976,Quảng Ninh,Quảng Ninh,Uông Bí,0382803758,vothuloan2009@gmail.com,Thành viên,1748,06/04/2024,45-54,POS
+KH00210,Huỳnh Bảo Ngân,Nữ,01/01/1988,Đồng Nai,Đồng Nai,Biên Hòa,0934495944,ngan.huynh1980@gmail.com,Thành viên,5096,20/11/2025,35-44,POS
+KH00211,Nguyễn Đức Hải,Nam,25/12/1999,Hà Nội,Hà Nội,Thanh Xuân,0887399729,nguyen.hai1981@gmail.com,VIP,12870,12/11/2023,25-34,POS
+KH00212,Đặng Mai Anh,Nữ,10/07/1990,Hà Nội,Hà Nội,Thanh Xuân,0794737180,anh.dang1982@icloud.com,Thành viên,392,27/02/2023,35-44,POS
+KH00213,Nguyễn Mai Linh,Nữ,22/06/1996,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Bình Thạnh,0813032519,linh.nguyen519@yahoo.com,Khách lẻ,1398,30/06/2025,25-34,POS
+KH00214,Nguyễn Thanh Hạnh,Nữ,24/11/2001,Hà Nội,Hà Nội,Cầu Giấy,0383563365,hanh365@outlook.com,Khách lẻ,1659,07/02/2025,25-34,POS
+KH00215,Đỗ Tuấn Dũng,Nam,02/12/1985,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Bình Thạnh,0761177725,do.dung725@gmail.com,Khách lẻ,1492,17/06/2024,35-44,Online
+KH00216,Nguyễn Hoàng Khôi,Nam,15/02/1994,Đà Nẵng,Đà Nẵng,Cẩm Lệ,0984311784,nguyen.khoi1986@gmail.com,Khách lẻ,1800,11/02/2024,25-34,POS
+KH00217,Phan Thanh Quỳnh,Nữ,11/02/1999,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Tân Bình,0854877979,quynh979@outlook.com,Khách lẻ,270,27/10/2025,25-34,Telesales
+KH00218,Đỗ Phương Yến,Nữ,04/04/2006,TP. Hồ Chí Minh,TP. Hồ Chí Minh,Tân Bình,0702331934,yen.do1988@gmail.com,Khách doanh nghiệp,6968,01/06/2023,18-24,Online
+KH00219,Võ Đức Bảo,Nam,18/08/2005,Nghệ An,Nghệ An,Vinh,0364345118,vo.bao1989@yahoo.com,Khách lẻ,210,26/05/2025,18-24,Marketplace
+KH00220,Trần Thu Châu,Nữ,18/10/2005,Hà Nội,Hà Nội,Thanh Xuân,0915891656,chau656@yahoo.com,VIP,8041,03/08/2023,18-24,POS

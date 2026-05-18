@@ -41,6 +41,7 @@ COLUMN_MAP_PRODUCT = {
     'Giá niêm yết': 'GiaNiemYet',
     'Đơn vị tính': 'DonViTinh',
     'Bảo hành (tháng)': 'BaoHanh_Thang',
+    'Mã NCC': 'MaNCC',
 }
 
 COLUMN_MAP_PURCHASE = {
@@ -53,6 +54,7 @@ COLUMN_MAP_PURCHASE = {
     'Số lượng đặt': 'SoLuongDat',
     'Số lượng nhận': 'SoLuongNhan',
     'Đơn giá nhập': 'DonGiaNhap',
+    'Đã thanh toán': 'DaThanhToan',
 }
 
 COLUMN_MAP_INVENTORY = {
@@ -110,7 +112,7 @@ def update_watermark(conn, tenant_id: str, table_name: str, status: str) -> None
 
 def extract_sales_from_excel(
     file_path: str,
-    watermark: datetime,
+    watermark: Optional[datetime],
     tenant_id: str,
     sheet_name: str = 'DanhSachHoaDon'
 ) -> pd.DataFrame:
@@ -173,11 +175,14 @@ def extract_sales_from_excel(
         if date_col:
             df[date_col] = pd.to_datetime(df[date_col], dayfirst=True, errors='coerce')
             before_count = len(df)
-            df = df[df[date_col] > pd.Timestamp(watermark)]
-            logger.info(
-                f'[{tenant_id}] Watermark={watermark.date()} | '
-                f'Extracted {len(df)}/{before_count} rows from {file_path}'
-            )
+            if watermark is not None:
+                df = df[df[date_col] > pd.Timestamp(watermark)]
+                logger.info(
+                    f'[{tenant_id}] Watermark={watermark.date()} | '
+                    f'Extracted {len(df)}/{before_count} rows from {file_path}'
+                )
+            else:
+                logger.info(f'[{tenant_id}] Full extract {before_count} rows from {file_path}')
         else:
             logger.warning(f'[{tenant_id}] No date column found in {file_path}')
             return pd.DataFrame()
@@ -195,6 +200,7 @@ def extract_sales_from_excel(
 
         out = pd.DataFrame()
         out['TenantID']       = [tenant_id] * len(df)
+        out['InvoiceNumber']  = df['InvoiceNumber'].fillna('').astype(str).str.strip().str.upper() if 'InvoiceNumber' in df.columns else _empty_str
         out['SaleDate']        = df['SaleDate'].astype(str) if 'SaleDate' in df.columns else _empty_str
         out['ProductID']       = df['ProductID'].fillna('').astype(str).str.strip().str.upper() if 'ProductID' in df.columns else _empty_str
         out['CustomerName']   = df['CustomerName'].fillna('').astype(str).str.strip() if 'CustomerName' in df.columns else _empty_str
@@ -212,7 +218,7 @@ def extract_sales_from_excel(
 
         # Select only columns that exist in ACTUAL STG_SalesRaw DB schema
         stg_sales_cols = [
-            'TenantID', 'SaleDate', 'ProductID', 'CustomerName',
+            'TenantID', 'InvoiceNumber', 'SaleDate', 'ProductID', 'CustomerName',
             'StoreName', 'EmployeeName', 'PaymentMethod', 'Quantity',
             'UnitPrice', 'Discount', 'Revenue', 'LoadStatus',
             'ErrorMessage', 'CreatedAt'
