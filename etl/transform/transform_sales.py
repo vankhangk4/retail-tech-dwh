@@ -76,7 +76,7 @@ def transform_sales(df: pd.DataFrame, tenant_id: str) -> pd.DataFrame:
     # ---- 4. Loại trùng lặp theo Business Key ----
     before = len(df)
     if 'MaHoaDon' in df.columns and 'MaSP' in df.columns:
-        df = df.drop_duplicates(subset=['MaHoaDon', 'MaSP'], keep='last')
+        df = df.drop_duplicates(subset=['MaHoaDon', 'MaSP'], keep='last').copy()
     duplicates_dropped = before - len(df)
     if duplicates_dropped > 0:
         logger.info(f'[{tenant_id}] Dropped {duplicates_dropped} duplicate rows')
@@ -96,7 +96,7 @@ def transform_sales(df: pd.DataFrame, tenant_id: str) -> pd.DataFrame:
             (df['SoLuong'] > 0) &
             (df['DonGiaBan'] >= 0) &
             (df['NgayBan'].notna())
-        ]
+        ].copy()
 
     # ---- 6. Tính cột phái sinh ----
     df['GrossSalesAmount'] = df['SoLuong'] * df['DonGiaBan']
@@ -104,7 +104,7 @@ def transform_sales(df: pd.DataFrame, tenant_id: str) -> pd.DataFrame:
 
     # ---- 7. Kiểm tra null cuối cùng ----
     # Loại dòng không có MaHoaDon hoặc MaSP
-    df = df[(df['MaHoaDon'] != '') & (df['MaHoaDon'] != 'NAN') & (df['MaSP'] != '') & (df['MaSP'] != 'NAN')]
+    df = df[(df['MaHoaDon'] != '') & (df['MaHoaDon'] != 'NAN') & (df['MaSP'] != '') & (df['MaSP'] != 'NAN')].copy()
 
     rows_kept = len(df)
     logger.info(
@@ -113,6 +113,86 @@ def transform_sales(df: pd.DataFrame, tenant_id: str) -> pd.DataFrame:
     )
 
     return df.reset_index(drop=True)
+
+
+def transform_staging_sales(df: pd.DataFrame, tenant_id: str) -> pd.DataFrame:
+    """Clean sales rows after extraction and before loading STG_SalesRaw."""
+    if df.empty:
+        return df
+
+    original_count = len(df)
+    out = df.copy()
+    index = out.index
+
+    empty = pd.Series([''] * len(out), index=index)
+    zeros = pd.Series([0] * len(out), index=index)
+
+    out['InvoiceNumber'] = out.get('InvoiceNumber', empty).fillna('').astype(str).str.strip().str.upper()
+    out['ProductID'] = out.get('ProductID', empty).fillna('').astype(str).str.strip().str.upper()
+    out['CustomerName'] = out.get('CustomerName', empty).fillna('').astype(str).str.strip().str.upper()
+    out['StoreName'] = pd.Series([tenant_id] * len(out), index=index)
+    out['EmployeeName'] = out.get('EmployeeName', empty).fillna('').astype(str).str.strip().str.upper()
+
+    sale_date = pd.to_datetime(out.get('SaleDate', empty), dayfirst=True, errors='coerce')
+    out['Quantity'] = pd.to_numeric(out.get('Quantity', zeros), errors='coerce').fillna(0).astype(int)
+    out['UnitPrice'] = pd.to_numeric(out.get('UnitPrice', zeros), errors='coerce').fillna(0)
+    out['Discount'] = pd.to_numeric(out.get('Discount', zeros), errors='coerce').fillna(0)
+    out['Revenue'] = out['Quantity'] * out['UnitPrice'] - out['Discount']
+
+    payment_map = {
+        'cash': 'Tiền mặt',
+        'tm': 'Tiền mặt',
+        'tien mat': 'Tiền mặt',
+        'tiền mặt': 'Tiền mặt',
+        'transfer': 'Chuyển khoản',
+        'bank transfer': 'Chuyển khoản',
+        'ck': 'Chuyển khoản',
+        'chuyen khoan': 'Chuyển khoản',
+        'chuyển khoản': 'Chuyển khoản',
+        'card': 'Thẻ',
+        'credit': 'Thẻ',
+        'the': 'Thẻ',
+        'thẻ': 'Thẻ',
+        'ewallet': 'Ví điện tử',
+        'e-wallet': 'Ví điện tử',
+        'momo': 'Ví điện tử',
+        'zalopay': 'Ví điện tử',
+        'vi dien tu': 'Ví điện tử',
+        'ví điện tử': 'Ví điện tử',
+    }
+    payment = out.get('PaymentMethod', pd.Series(['Tiền mặt'] * len(out), index=index))
+    out['PaymentMethod'] = (
+        payment.fillna('Tiền mặt')
+        .astype(str)
+        .str.lower()
+        .str.strip()
+        .map(lambda value: payment_map.get(value, 'Tiền mặt'))
+    )
+
+    valid_mask = (
+        (out['InvoiceNumber'] != '') &
+        (out['InvoiceNumber'] != 'NAN') &
+        (out['ProductID'] != '') &
+        (out['ProductID'] != 'NAN') &
+        sale_date.notna() &
+        (out['Quantity'] > 0) &
+        (out['UnitPrice'] >= 0)
+    )
+    out = out.loc[valid_mask].copy()
+    out['SaleDate'] = sale_date.loc[valid_mask].dt.strftime('%Y-%m-%d')
+    out = out.drop_duplicates(subset=['InvoiceNumber', 'ProductID'], keep='last')
+    out['LoadStatus'] = 'LOADED'
+    out['ErrorMessage'] = None
+    if 'CreatedAt' not in out.columns:
+        out['CreatedAt'] = pd.Timestamp.now()
+
+    rows_kept = len(out)
+    logger.info(
+        f'[{tenant_id}] Staging sales transform complete: {rows_kept}/{original_count} rows kept '
+        f'({original_count - rows_kept} filtered)'
+    )
+
+    return out.reset_index(drop=True)
 
 
 def get_transform_stats(df: pd.DataFrame, tenant_id: str) -> dict:

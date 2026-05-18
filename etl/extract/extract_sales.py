@@ -86,7 +86,7 @@ def get_last_watermark(conn, tenant_id: str, source_type: str) -> datetime:
     return row[0] if row[0] else datetime(2020, 1, 1)
 
 
-def update_watermark(conn, tenant_id: str, table_name: str, status: str) -> None:
+def update_watermark(conn, tenant_id: str, table_name: str, status: str, commit: bool = True) -> None:
     """Cập nhật watermark sau mỗi lần ETL."""
     cursor = conn.cursor()
 
@@ -102,7 +102,8 @@ def update_watermark(conn, tenant_id: str, table_name: str, status: str) -> None
                 'VALUES (%s, %s, GETDATE())',
                 (tenant_id, table_name)
             )
-    conn.commit()
+    if commit:
+        conn.commit()
     logger.info(f'[{tenant_id}] Watermark updated: {table_name} -> {status}')
 
 
@@ -406,6 +407,7 @@ def extract_csv_file(
             out['Category']       = df['DanhMuc'].fillna('').astype(str).str.strip() if 'DanhMuc' in df.columns else _empty_str
             out['SubCategory']    = df['DanhMucCon'].fillna('').astype(str).str.strip() if 'DanhMucCon' in df.columns else _empty_str
             out['UnitPrice']      = pd.to_numeric(df['GiaNiemYet'], errors='coerce').fillna(0) if 'GiaNiemYet' in df.columns else _zero_num
+            out['UnitCost']       = pd.to_numeric(df['GiaVon'], errors='coerce').fillna(0) if 'GiaVon' in df.columns else _zero_num
             out['SupplierID']     = df['MaNCC'].fillna('').astype(str).str.strip().str.upper() if 'MaNCC' in df.columns else _empty_str
             out['LoadStatus']     = 'LOADED'
             out['ErrorMessage']   = None
@@ -414,7 +416,7 @@ def extract_csv_file(
             # Select only columns that exist in STG_ProductRaw
             stg_prod_cols = [
                 'ID', 'ProductID', 'ProductName', 'Category', 'SubCategory',
-                'UnitPrice', 'SupplierID', 'LoadStatus', 'ErrorMessage',
+                'UnitPrice', 'UnitCost', 'SupplierID', 'LoadStatus', 'ErrorMessage',
                 'CreatedAt', 'TenantID'
             ]
             out = out[[c for c in stg_prod_cols if c in out.columns]]
@@ -457,7 +459,7 @@ def extract_csv_file(
 # =============================================================================
 
 def load_to_staging(conn, df: pd.DataFrame, table_name: str,
-                    columns: list = None) -> int:
+                    columns: list = None, commit: bool = True) -> int:
     """
     Ghi DataFrame vào bảng Staging (SQL Server) — APPEND mode.
 
@@ -498,7 +500,8 @@ def load_to_staging(conn, df: pd.DataFrame, table_name: str,
     df = df.where(pd.notna(df), None)
 
     cursor.executemany(insert_sql, df[insert_cols].values.tolist())
-    conn.commit()
+    if commit:
+        conn.commit()
 
     rows = cursor.rowcount
     logger.info(f'[STAGING] APPEND {rows} rows into {table_name}')

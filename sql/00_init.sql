@@ -99,6 +99,7 @@ BEGIN
         Category      NVARCHAR(100) NULL,
         SubCategory   NVARCHAR(100) NULL,
         UnitPrice     DECIMAL(18,2) NOT NULL,
+        UnitCost      DECIMAL(18,2) NOT NULL DEFAULT 0,
         SupplierID    VARCHAR(20)   NULL,
         IsActive      BIT           NOT NULL DEFAULT 1,
         TenantID      VARCHAR(20)   NULL
@@ -284,6 +285,7 @@ BEGIN
         Category       NVARCHAR(100) NULL,
         SubCategory    NVARCHAR(100) NULL,
         UnitPrice      NVARCHAR(50)  NULL,
+        UnitCost       NVARCHAR(50)  NULL,
         SupplierID     NVARCHAR(50)  NULL,
         LoadStatus     NVARCHAR(20)  NOT NULL DEFAULT 'PENDING',
         ErrorMessage   NVARCHAR(500) NULL,
@@ -577,6 +579,10 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='STG_Sa
     ALTER TABLE STG_SalesRaw ADD City NVARCHAR(100) NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='STG_ProductRaw' AND COLUMN_NAME='TenantID')
     ALTER TABLE STG_ProductRaw ADD TenantID VARCHAR(20) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='STG_ProductRaw' AND COLUMN_NAME='UnitCost')
+    ALTER TABLE STG_ProductRaw ADD UnitCost NVARCHAR(50) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='DimProduct' AND COLUMN_NAME='UnitCost')
+    ALTER TABLE DimProduct ADD UnitCost DECIMAL(18,2) NOT NULL DEFAULT 0;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='STG_CustomerRaw' AND COLUMN_NAME='Region')
     ALTER TABLE STG_CustomerRaw ADD Region NVARCHAR(100) NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='STG_CustomerRaw' AND COLUMN_NAME='CustomerType')
@@ -628,22 +634,42 @@ CREATE PROCEDURE usp_Load_DimProduct
 AS
 BEGIN
     SET NOCOUNT ON;
+    ;WITH ProductSource AS (
+        SELECT ProductID, ProductName, Category, SubCategory, UnitPrice, UnitCost, SupplierID, TenantID
+        FROM STG_ProductRaw
+        WHERE LoadStatus = ''PENDING''
+          AND ProductID IS NOT NULL
+          AND LEN(RTRIM(ProductID)) > 0
+    ),
+    GroupedProduct AS (
+        SELECT
+            ProductID,
+            MAX(ProductName) AS ProductName,
+            MAX(Category) AS Category,
+            MAX(SubCategory) AS SubCategory,
+            MAX(TRY_CAST(UnitPrice AS DECIMAL(18,2))) AS UnitPrice,
+            MAX(TRY_CAST(UnitCost AS DECIMAL(18,2))) AS UnitCost,
+            MAX(SupplierID) AS SupplierID,
+            MAX(TenantID) AS TenantID
+        FROM ProductSource
+        GROUP BY ProductID
+    )
     MERGE INTO DimProduct AS target
-    USING (
-        SELECT DISTINCT ProductID, ProductName, Category, SubCategory, UnitPrice, SupplierID, TenantID
-        FROM (
-            SELECT ProductID, ProductName, Category, SubCategory, UnitPrice, SupplierID, TenantID FROM STG_ProductRaw WHERE LoadStatus = ''PENDING''
-            UNION ALL
-            SELECT ProductID, ProductName, Category, SubCategory, UnitPrice, SupplierID, TenantID FROM STG_SalesRaw WHERE LoadStatus = ''PENDING''
-        ) AS combined
-        WHERE ProductID IS NOT NULL AND LEN(RTRIM(ProductID)) > 0
-    ) AS source
+    USING GroupedProduct AS source
     ON target.ProductID = source.ProductID
     WHEN NOT MATCHED THEN
-        INSERT (ProductID, ProductName, Category, SubCategory, UnitPrice, SupplierID, TenantID)
-        VALUES (source.ProductID, source.ProductName, source.Category, source.SubCategory, source.UnitPrice, source.SupplierID, source.TenantID)
-    WHEN MATCHED AND source.UnitPrice <> target.UnitPrice THEN
-        UPDATE SET ProductName = source.ProductName, UnitPrice = source.UnitPrice;
+        INSERT (ProductID, ProductName, Category, SubCategory, UnitPrice, UnitCost, SupplierID, TenantID)
+        VALUES (source.ProductID, ISNULL(source.ProductName, source.ProductID), source.Category, source.SubCategory,
+                ISNULL(source.UnitPrice, 0),
+                ISNULL(source.UnitCost, 0),
+                source.SupplierID, source.TenantID)
+    WHEN MATCHED AND (
+        ISNULL(source.UnitPrice, -1) <> target.UnitPrice
+        OR ISNULL(source.UnitCost, -1) <> target.UnitCost
+    ) THEN
+        UPDATE SET ProductName = ISNULL(source.ProductName, target.ProductName),
+                   UnitPrice = ISNULL(source.UnitPrice, target.UnitPrice),
+                   UnitCost = ISNULL(source.UnitCost, target.UnitCost);
 END
 ');
 PRINT 'Created: usp_Load_DimProduct';

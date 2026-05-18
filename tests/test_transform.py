@@ -5,7 +5,7 @@ Không cần DB — chỉ test logic pandas thuần.
 import pytest
 import pandas as pd
 
-from etl.transform.transform_sales import transform_sales, get_transform_stats
+from etl.transform.transform_sales import transform_sales, transform_staging_sales, get_transform_stats
 
 
 # ─────────────────────────────────────────────
@@ -202,6 +202,33 @@ class TestDerivedColumns:
         # Với dòng có ChietKhau > 0, NetSales < GrossSales
         rows_with_discount = result[result['ChietKhau'] > 0]
         assert (rows_with_discount['NetSalesAmount'] < rows_with_discount['GrossSalesAmount']).all()
+
+
+class TestStagingSalesTransform:
+    def test_filters_invalid_and_deduplicates_staging_rows(self):
+        df = pd.DataFrame({
+            'TenantID': ['STORE_HN', 'STORE_HN', 'STORE_HN'],
+            'InvoiceNumber': ['hd001', 'HD001', ''],
+            'SaleDate': ['01/01/2024', '01/01/2024', '01/01/2024'],
+            'ProductID': ['sp001', 'SP001', 'SP002'],
+            'CustomerName': ['kh001', 'kh001', 'kh002'],
+            'StoreName': ['wrong', 'wrong', 'wrong'],
+            'EmployeeName': ['nv001', 'nv001', 'nv002'],
+            'PaymentMethod': ['cash', 'transfer', 'cash'],
+            'Quantity': [1, 2, 1],
+            'UnitPrice': [100000, 120000, 50000],
+            'Discount': [0, 10000, 0],
+            'Revenue': [100000, 230000, 50000],
+        })
+
+        result = transform_staging_sales(df, 'STORE_HN')
+
+        assert len(result) == 1
+        assert result['InvoiceNumber'].iloc[0] == 'HD001'
+        assert result['ProductID'].iloc[0] == 'SP001'
+        assert result['StoreName'].iloc[0] == 'STORE_HN'
+        assert result['PaymentMethod'].iloc[0] == 'Chuyển khoản'
+        assert result['Revenue'].iloc[0] == 230000
 
 
 # ─────────────────────────────────────────────
