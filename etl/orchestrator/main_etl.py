@@ -26,7 +26,7 @@ from etl.extract.extract_sales import (
     extract_csv_file,
     load_to_staging,
 )
-from etl.transform.transform_sales import transform_sales
+from etl.transform.transform_sales import transform_staging_sales
 
 # ---- Configuration ----
 MSSQL_SERVER   = os.environ.get('MSSQL_SERVER', 'localhost')
@@ -194,7 +194,8 @@ def write_etl_log(
     rows_inserted: int = None,
     rows_rejected: int = None,
     duration_sec: float = None,
-    error_msg: str = None
+    error_msg: str = None,
+    commit: bool = True
 ) -> None:
     """Ghi log vào bảng ETLLogs theo schema thực tế (không có BatchDate/SourceTable/RunStatus)."""
     if error_msg and len(error_msg) > 500:
@@ -217,7 +218,8 @@ def write_etl_log(
             error_msg,
         )
     )
-    conn.commit()
+    if commit:
+        conn.commit()
     logger.info(
         f'[ETL_LOG] {tenant_id} | {table_name}.{step_name} | {status} | '
         f'Processed={rows_processed} Inserted={rows_inserted} Rejected={rows_rejected}'
@@ -243,14 +245,15 @@ def run_sp(conn, sp_name: str, params: dict = None) -> None:
     logger.info(f'  [SP] Executed: {sp_name}')
 
 
-def run_sql(conn, sql: str, params: list = None) -> None:
-    """Execute raw SQL and commit."""
+def run_sql(conn, sql: str, params: list = None, commit: bool = True) -> None:
+    """Execute raw SQL and optionally commit."""
     cursor = conn.cursor()
     if params:
         cursor.execute(sql, params)
     else:
         cursor.execute(sql)
-    conn.commit()
+    if commit:
+        conn.commit()
 
 
 def ensure_runtime_schema(conn) -> None:
@@ -258,6 +261,9 @@ def ensure_runtime_schema(conn) -> None:
     cursor = conn.cursor()
     required_columns = [
         ('STG_SalesRaw', 'InvoiceNumber', 'ALTER TABLE STG_SalesRaw ADD InvoiceNumber NVARCHAR(50) NULL'),
+        ('STG_ProductRaw', 'TenantID', 'ALTER TABLE STG_ProductRaw ADD TenantID VARCHAR(20) NULL'),
+        ('STG_ProductRaw', 'UnitCost', 'ALTER TABLE STG_ProductRaw ADD UnitCost NVARCHAR(50) NULL'),
+        ('DimProduct', 'UnitCost', 'ALTER TABLE DimProduct ADD UnitCost DECIMAL(18,2) NOT NULL DEFAULT 0'),
         ('FactSales', 'InvoiceNumber', 'ALTER TABLE FactSales ADD InvoiceNumber VARCHAR(50) NULL'),
     ]
     for table_name, column_name, ddl in required_columns:
@@ -279,6 +285,36 @@ def ensure_runtime_schema(conn) -> None:
         cursor.execute('ALTER TABLE FactSales DROP COLUMN Profit')
         cursor.execute('ALTER TABLE FactSales ADD Profit AS (Revenue - Cost) PERSISTED')
         logger.info('  [SCHEMA] Rebuilt FactSales.Profit as Revenue - Cost')
+
+    cursor.execute("""
+        DECLARE @customer_uq SYSNAME;
+
+        SELECT TOP 1 @customer_uq = kc.name
+        FROM sys.key_constraints kc
+        INNER JOIN sys.index_columns ic
+            ON ic.object_id = kc.parent_object_id
+           AND ic.index_id = kc.unique_index_id
+        INNER JOIN sys.columns c
+            ON c.object_id = ic.object_id
+           AND c.column_id = ic.column_id
+        WHERE kc.parent_object_id = OBJECT_ID('DimCustomer')
+          AND kc.type = 'UQ'
+        GROUP BY kc.name
+        HAVING COUNT(*) = 1 AND MAX(c.name) = 'CustomerID';
+
+        IF @customer_uq IS NOT NULL
+            EXEC('ALTER TABLE DimCustomer DROP CONSTRAINT [' + @customer_uq + ']');
+
+        IF NOT EXISTS (
+            SELECT 1
+            FROM sys.indexes
+            WHERE object_id = OBJECT_ID('DimCustomer')
+              AND name = 'UX_DimCustomer_TenantCustomer'
+        )
+            CREATE UNIQUE INDEX UX_DimCustomer_TenantCustomer
+            ON DimCustomer(TenantID, CustomerID)
+            WHERE TenantID IS NOT NULL AND CustomerID IS NOT NULL;
+    """)
     conn.commit()
 
 
@@ -313,37 +349,42 @@ def classify_file(filename: str) -> dict:
 # Per-file-type processing helpers
 # =============================================================================
 
-def process_sales_file(conn, tenant_id: str, file_path: str, batch_date: date) -> dict:
+def process_sales_file(conn, tenant_id: str, file_path: str, batch_date: date, commit: bool = True) -> dict:
     """Extract, transform, and load a sales Excel file into STG_SalesRaw."""
     df = extract_sales_from_excel(file_path, None, tenant_id)
-    result = {'rows_extracted': len(df), 'rows_inserted': 0, 'rows_rejected': 0}
+    rows_extracted = len(df)
+    result = {'rows_extracted': rows_extracted, 'rows_inserted': 0, 'rows_rejected': 0}
 
     if df.empty:
         write_etl_log(conn, tenant_id, 'STG_SalesRaw', 'Extract', 'SUCCESS',
-                      rows_processed=0, rows_inserted=0, rows_rejected=0, duration_sec=0)
+                      rows_processed=0, rows_inserted=0, rows_rejected=0,
+                      duration_sec=0, commit=commit)
         return result
 
     start = datetime.now()
-    rows_extracted = len(df)
+    df = transform_staging_sales(df, tenant_id)
+    rows_rejected = int(df.attrs.get('rows_rejected', 0))
     stg_sales_cols = [
         'TenantID', 'InvoiceNumber', 'SaleDate', 'ProductID', 'CustomerName',
         'StoreName', 'EmployeeName', 'PaymentMethod', 'Quantity',
         'UnitPrice', 'Discount', 'Revenue', 'LoadStatus',
         'ErrorMessage', 'CreatedAt'
     ]
-    load_to_staging(conn, df, 'STG_SalesRaw', columns=stg_sales_cols)
+    load_to_staging(conn, df, 'STG_SalesRaw', columns=stg_sales_cols, commit=commit)
 
     duration = (datetime.now() - start).total_seconds()
     write_etl_log(conn, tenant_id, 'STG_SalesRaw', 'Extract', 'SUCCESS',
                   rows_processed=rows_extracted,
-                  rows_inserted=rows_extracted,
-                  rows_rejected=0,
-                  duration_sec=duration)
-    result['rows_inserted'] = rows_extracted
+                  rows_inserted=len(df),
+                  rows_rejected=rows_rejected,
+                  duration_sec=duration,
+                  commit=commit)
+    result['rows_inserted'] = len(df)
+    result['rows_rejected'] = rows_rejected
     return result
 
 
-def process_inventory_file(conn, tenant_id: str, file_path: str, batch_date: date) -> dict:
+def process_inventory_file(conn, tenant_id: str, file_path: str, batch_date: date, commit: bool = True) -> dict:
     """Extract and load an inventory Excel file into STG_InventoryRaw."""
     start = datetime.now()
     df = extract_inventory_from_excel(file_path, tenant_id)
@@ -351,7 +392,8 @@ def process_inventory_file(conn, tenant_id: str, file_path: str, batch_date: dat
 
     if df.empty:
         write_etl_log(conn, tenant_id, 'STG_InventoryRaw', 'Extract', 'SUCCESS',
-                      rows_processed=0, rows_inserted=0, rows_rejected=0, duration_sec=0)
+                      rows_processed=0, rows_inserted=0, rows_rejected=0,
+                      duration_sec=0, commit=commit)
         return result
 
     rows_extracted = len(df)
@@ -359,27 +401,28 @@ def process_inventory_file(conn, tenant_id: str, file_path: str, batch_date: dat
         'TenantID', 'CheckDate', 'ProductID', 'StoreName',
         'QuantityOnHand', 'LoadStatus', 'ErrorMessage', 'CreatedAt'
     ]
-    load_to_staging(conn, df, 'STG_InventoryRaw', columns=stg_inv_cols)
+    load_to_staging(conn, df, 'STG_InventoryRaw', columns=stg_inv_cols, commit=commit)
     duration = (datetime.now() - start).total_seconds()
 
     write_etl_log(conn, tenant_id, 'STG_InventoryRaw', 'Extract', 'SUCCESS',
                   rows_processed=rows_extracted,
                   rows_inserted=rows_extracted,
                   rows_rejected=0,
-                  duration_sec=duration)
+                  duration_sec=duration,
+                  commit=commit)
     result['rows_inserted'] = rows_extracted
     return result
 
 
 def process_csv_file(conn, tenant_id: str, file_path: str, file_type: str,
-                     batch_date: date) -> dict:
+                     batch_date: date, commit: bool = True) -> dict:
     """Extract and load a CSV file into the appropriate staging table."""
     table_map = {
         'customer': ('STG_CustomerRaw',  ['CustomerID', 'CustomerName', 'Phone', 'Email',
                                            'City', 'Region', 'CustomerType', 'LoadStatus',
                                            'ErrorMessage', 'CreatedAt', 'TenantID']),
         'product':  ('STG_ProductRaw',   ['ProductID', 'ProductName', 'Category', 'SubCategory',
-                                           'UnitPrice', 'SupplierID', 'LoadStatus',
+                                           'UnitPrice', 'UnitCost', 'SupplierID', 'LoadStatus',
                                            'ErrorMessage', 'CreatedAt', 'TenantID']),
         'purchase': ('STG_PurchaseRaw',   ['TenantID', 'PurchaseDate', 'ProductID', 'SupplierID',
                                            'Quantity', 'UnitCost', 'TotalCost', 'IsPaid',
@@ -396,18 +439,20 @@ def process_csv_file(conn, tenant_id: str, file_path: str, file_type: str,
 
     if df.empty:
         write_etl_log(conn, tenant_id, table_name, 'Extract', 'SUCCESS',
-                      rows_processed=0, rows_inserted=0, rows_rejected=0, duration_sec=0)
+                      rows_processed=0, rows_inserted=0, rows_rejected=0,
+                      duration_sec=0, commit=commit)
         return result
 
     rows_extracted = len(df)
-    load_to_staging(conn, df, table_name, columns=stg_cols)
+    load_to_staging(conn, df, table_name, columns=stg_cols, commit=commit)
     duration = (datetime.now() - start).total_seconds()
 
     write_etl_log(conn, tenant_id, table_name, 'Extract', 'SUCCESS',
                   rows_processed=rows_extracted,
                   rows_inserted=rows_extracted,
                   rows_rejected=0,
-                  duration_sec=duration)
+                  duration_sec=duration,
+                  commit=commit)
     result['rows_inserted'] = rows_extracted
     return result
 
@@ -428,7 +473,7 @@ def supplier_value(row, *columns, default=''):
     return default
 
 
-def process_supplier_file(conn, tenant_id: str, file_path: str, batch_date: date) -> dict:
+def process_supplier_file(conn, tenant_id: str, file_path: str, batch_date: date, commit: bool = True) -> dict:
     """Load supplier catalog directly into DimSupplier because there is no STG supplier table."""
     start = datetime.now()
     try:
@@ -481,17 +526,19 @@ def process_supplier_file(conn, tenant_id: str, file_path: str, batch_date: date
         cursor.execute(sql, insert_values)
         inserted += 1
 
-    conn.commit()
+    if commit:
+        conn.commit()
     duration = (datetime.now() - start).total_seconds()
     write_etl_log(conn, tenant_id, 'DimSupplier', 'Extract', 'SUCCESS',
                   rows_processed=inserted,
                   rows_inserted=inserted,
                   rows_rejected=0,
-                  duration_sec=duration)
+                  duration_sec=duration,
+                  commit=commit)
     return {'rows_extracted': inserted, 'rows_inserted': inserted, 'rows_rejected': 0}
 
 
-def clear_staging_for_run(conn, tenant_id: str, source_types: set) -> None:
+def clear_staging_for_run(conn, tenant_id: str, source_types: set, commit: bool = True) -> None:
     """Clear staging rows only for source domains included in the current ETL run."""
     staging_tables = {
         'sales': 'STG_SalesRaw',
@@ -506,10 +553,10 @@ def clear_staging_for_run(conn, tenant_id: str, source_types: set) -> None:
 
         columns = get_table_columns(conn, table_name)
         if 'TenantID' in columns:
-            run_sql(conn, f'DELETE FROM {table_name} WHERE TenantID = %s;', [tenant_id])
+            run_sql(conn, f'DELETE FROM {table_name} WHERE TenantID = %s;', [tenant_id], commit=commit)
         else:
             # Product staging can be shared in older schemas; clear it only when a product file is part of this run.
-            run_sql(conn, f'DELETE FROM {table_name};')
+            run_sql(conn, f'DELETE FROM {table_name};', commit=commit)
         logger.info(f'  [STAGING] Cleared {table_name} for current {source_type} load')
 
 
@@ -584,11 +631,11 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
         if not all_files and not failed_files:
             logger.warning(f'[{tenant_id}] No recognizable data files found in {landing_dir}')
             write_etl_log(
-                conn, tenant_id, 'ETL_AllFiles', 'PipelineComplete', 'FAILED',
+                conn, tenant_id, 'ETL_AllFiles', 'PipelineComplete', 'SKIPPED',
                 error_msg='Chua upload du lieu moi trong 1_landing.'
             )
             conn.close()
-            return False
+            return True
 
         if failed_files:
             final_error = f'Failed source files: {", ".join(failed_files)}'
@@ -606,7 +653,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
             f'{[(os.path.basename(f["path"]), f["type"]) for f in all_files]}'
         )
         source_types = {f['type'] for f in all_files}
-        clear_staging_for_run(conn, tenant_id, source_types)
+        clear_staging_for_run(conn, tenant_id, source_types, commit=False)
 
         # Track overall results
         total_stats = {
@@ -629,23 +676,23 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
 
             try:
                 if ftype == 'sales':
-                    stats = process_sales_file(conn, tenant_id, fpath, batch_date)
+                    stats = process_sales_file(conn, tenant_id, fpath, batch_date, commit=False)
                     total_stats['sales']['extracted'] += stats['rows_extracted']
                     total_stats['sales']['inserted']   += stats['rows_inserted']
                     total_stats['sales']['rejected']   += stats['rows_rejected']
 
                 elif ftype == 'inventory':
-                    stats = process_inventory_file(conn, tenant_id, fpath, batch_date)
+                    stats = process_inventory_file(conn, tenant_id, fpath, batch_date, commit=False)
                     total_stats['inventory']['extracted'] += stats['rows_extracted']
                     total_stats['inventory']['inserted']   += stats['rows_inserted']
 
                 elif ftype in ('customer', 'product', 'purchase'):
-                    stats = process_csv_file(conn, tenant_id, fpath, ftype, batch_date)
+                    stats = process_csv_file(conn, tenant_id, fpath, ftype, batch_date, commit=False)
                     total_stats[ftype]['extracted'] += stats['rows_extracted']
                     total_stats[ftype]['inserted']   += stats['rows_inserted']
 
                 elif ftype == 'supplier':
-                    stats = process_supplier_file(conn, tenant_id, fpath, batch_date)
+                    stats = process_supplier_file(conn, tenant_id, fpath, batch_date, commit=False)
                     total_stats['supplier']['extracted'] += stats['rows_extracted']
                     total_stats['supplier']['inserted']   += stats['rows_inserted']
 
@@ -661,7 +708,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                 )
                 write_etl_log(
                     conn, tenant_id, log_table,
-                    'Extract', 'FAILED', error_msg=str(ex)
+                    'Extract', 'FAILED', error_msg=str(ex), commit=False
                 )
                 try:
                     error_path = move_processed_file(fpath, stage_dirs['error'])
@@ -671,6 +718,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                 # Continue with other files — don't abort the whole tenant
 
         if failed_files:
+            conn.rollback()
             total_rows = sum(v['extracted'] for v in total_stats.values())
             final_error = f'Failed source files: {", ".join(failed_files)}'
             write_etl_log(
@@ -699,45 +747,70 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
         logger.info(f'[PHASE 4] LOAD DIMENSIONS — {tenant_id}')
 
         # Upsert DimProduct (SHARED — no TenantID needed)
-        try:
-            run_sql(conn, """
-                MERGE INTO DimProduct AS target
-                USING (
-                    SELECT DISTINCT ProductID, ProductName, Category, SubCategory,
-                           UnitPrice, SupplierID
-                    FROM STG_ProductRaw
-                    WHERE ProductID IS NOT NULL AND ProductID != ''
-                ) AS source
-                ON target.ProductID = source.ProductID
-                WHEN MATCHED THEN
-                    UPDATE SET
-                        target.ProductName = source.ProductName,
-                        target.Category = source.Category,
-                        target.SubCategory = source.SubCategory,
-                        target.UnitPrice = CAST(source.UnitPrice AS DECIMAL(18,2)),
-                        target.SupplierID = source.SupplierID,
-                        target.IsActive = 1
-                WHEN NOT MATCHED THEN
-                    INSERT (ProductID, ProductName, Category, SubCategory, UnitPrice, SupplierID, IsActive)
-                    VALUES (source.ProductID, source.ProductName, source.Category, source.SubCategory,
-                            CAST(source.UnitPrice AS DECIMAL(18,2)), source.SupplierID, 1);
-            """)
-            logger.info('  [MERGE] DimProduct done')
-        except Exception as e:
-            phase_failures.append(f'DimProduct: {e}')
-            logger.warning(f'  [MERGE] DimProduct failed: {e}')
+        if total_stats['product']['extracted'] > 0:
+            try:
+                run_sql(conn, """
+                    ;WITH RankedProduct AS (
+                        SELECT
+                            ProductID,
+                            MAX(ProductName) AS ProductName,
+                            MAX(Category) AS Category,
+                            MAX(SubCategory) AS SubCategory,
+                            MAX(TRY_CAST(NULLIF(UnitPrice, '') AS DECIMAL(18,2))) AS UnitPrice,
+                            MAX(TRY_CAST(NULLIF(UnitCost, '') AS DECIMAL(18,2))) AS UnitCost,
+                            MAX(SupplierID) AS SupplierID
+                        FROM STG_ProductRaw
+                        WHERE TenantID = %s
+                          AND ProductID IS NOT NULL
+                          AND ProductID != ''
+                        GROUP BY ProductID
+                    )
+                    MERGE INTO DimProduct AS target
+                    USING RankedProduct AS source
+                    ON target.ProductID = source.ProductID
+                    WHEN MATCHED THEN
+                        UPDATE SET
+                            target.ProductName = source.ProductName,
+                            target.Category = source.Category,
+                            target.SubCategory = source.SubCategory,
+                            target.UnitPrice = COALESCE(source.UnitPrice, 0),
+                            target.UnitCost = COALESCE(source.UnitCost, 0),
+                            target.SupplierID = source.SupplierID,
+                            target.IsActive = 1
+                    WHEN NOT MATCHED THEN
+                        INSERT (ProductID, ProductName, Category, SubCategory, UnitPrice, UnitCost, SupplierID, IsActive)
+                        VALUES (source.ProductID, source.ProductName, source.Category, source.SubCategory,
+                                COALESCE(source.UnitPrice, 0), COALESCE(source.UnitCost, 0),
+                                source.SupplierID, 1);
+                """, [tenant_id], commit=False)
+                logger.info('  [MERGE] DimProduct done')
+            except Exception as e:
+                phase_failures.append(f'DimProduct: {e}')
+                logger.warning(f'  [MERGE] DimProduct failed: {e}')
+        else:
+            logger.info('  [MERGE] DimProduct skipped because no product file was loaded')
 
         # Upsert DimCustomer (per TenantID)
         try:
-            run_sql(conn, f"""
-                MERGE INTO DimCustomer AS target
-                USING (
-                    SELECT DISTINCT CustomerID, CustomerName, Phone, Email,
-                           City, Region, CustomerType, TenantID
+            run_sql(conn, """
+                ;WITH GroupedCustomer AS (
+                    SELECT
+                        CustomerID,
+                        MAX(CustomerName) AS CustomerName,
+                        MAX(Phone) AS Phone,
+                        MAX(Email) AS Email,
+                        MAX(City) AS City,
+                        MAX(Region) AS Region,
+                        MAX(CustomerType) AS CustomerType,
+                        TenantID
                     FROM STG_CustomerRaw
                     WHERE TenantID = %s
-                      AND CustomerID IS NOT NULL AND CustomerID != ''
-                ) AS source
+                      AND CustomerID IS NOT NULL
+                      AND CustomerID != ''
+                    GROUP BY TenantID, CustomerID
+                )
+                MERGE INTO DimCustomer AS target
+                USING GroupedCustomer AS source
                 ON target.CustomerID = source.CustomerID AND target.TenantID = source.TenantID
                 WHEN MATCHED THEN
                     UPDATE SET
@@ -751,7 +824,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                     INSERT (CustomerID, CustomerName, Phone, Email, City, Region, CustomerType, TenantID)
                     VALUES (source.CustomerID, source.CustomerName, source.Phone, source.Email,
                             source.City, source.Region, source.CustomerType, source.TenantID);
-            """, [tenant_id])
+            """, [tenant_id], commit=False)
             logger.info('  [MERGE] DimCustomer done')
         except Exception as e:
             phase_failures.append(f'DimCustomer: {e}')
@@ -786,7 +859,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                     FROM Tenants
                     WHERE TenantID = %s;
                 END
-            """, [tenant_id, tenant_id, tenant_id])
+            """, [tenant_id, tenant_id, tenant_id], commit=False)
             logger.info('  [MERGE] DimStore synced from Tenants done')
         except Exception as e:
             phase_failures.append(f'DimStore: {e}')
@@ -798,7 +871,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
         # -- 5A. FactSales: STG_SalesRaw → FactSales --
         try:
             if 'sales' in replace_fact_types:
-                run_sql(conn, 'DELETE FROM FactSales WHERE TenantID = %s;', [tenant_id])
+                run_sql(conn, 'DELETE FROM FactSales WHERE TenantID = %s;', [tenant_id], commit=False)
                 logger.info('  [REPLACE] Cleared FactSales for current tenant')
             run_sql(conn, f"""
                 INSERT INTO FactSales (
@@ -827,8 +900,8 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                     -- Revenue = Qty * UnitPrice - Discount
                     TRY_CAST(s.Quantity AS DECIMAL(18,2)) * TRY_CAST(s.UnitPrice AS DECIMAL(18,2))
                         - TRY_CAST(s.Discount AS DECIMAL(18,2)),
-                    -- Cost = Qty * Product's UnitCostPrice from DimProduct
-                    TRY_CAST(s.Quantity AS DECIMAL(18,2)) * ISNULL(p.UnitPrice, 0),
+                    -- Cost = Qty * product unit cost from DimProduct
+                    TRY_CAST(s.Quantity AS DECIMAL(18,2)) * ISNULL(p.UnitCost, 0),
                     GETDATE()
                 FROM STG_SalesRaw s
                 INNER JOIN DimProduct p ON p.ProductID = s.ProductID AND p.IsActive = 1
@@ -851,7 +924,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                         AND f.ProductID = s.ProductID
                         AND f.StoreKey = st.StoreKey
                   );
-            """, [tenant_id])
+            """, [tenant_id], commit=False)
             logger.info('  [MERGE] FactSales done')
         except Exception as e:
             phase_failures.append(f'FactSales: {e}')
@@ -860,7 +933,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
         # -- 5B. FactInventory: STG_InventoryRaw → FactInventory --
         try:
             if 'inventory' in replace_fact_types:
-                run_sql(conn, 'DELETE FROM FactInventory WHERE TenantID = %s;', [tenant_id])
+                run_sql(conn, 'DELETE FROM FactInventory WHERE TenantID = %s;', [tenant_id], commit=False)
                 logger.info('  [REPLACE] Cleared FactInventory for current tenant')
             run_sql(conn, f"""
                 INSERT INTO FactInventory (
@@ -894,7 +967,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                         AND f.StoreKey = st.StoreKey
                         AND CAST(f.CheckDate AS DATE) = TRY_CAST(s.CheckDate AS DATE)
                   );
-            """, [tenant_id])
+            """, [tenant_id], commit=False)
             logger.info('  [MERGE] FactInventory done')
         except Exception as e:
             phase_failures.append(f'FactInventory: {e}')
@@ -903,7 +976,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
         # -- 5C. FactPurchase: STG_PurchaseRaw → FactPurchase --
         try:
             if 'purchase' in replace_fact_types:
-                run_sql(conn, 'DELETE FROM FactPurchase WHERE TenantID = %s;', [tenant_id])
+                run_sql(conn, 'DELETE FROM FactPurchase WHERE TenantID = %s;', [tenant_id], commit=False)
                 logger.info('  [REPLACE] Cleared FactPurchase for current tenant')
             run_sql(conn, f"""
                 INSERT INTO FactPurchase (
@@ -932,7 +1005,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                         AND f.ProductID = s.ProductID
                         AND CAST(f.PurchaseDate AS DATE) = TRY_CAST(s.PurchaseDate AS DATE)
                   );
-            """, [tenant_id, tenant_id])
+            """, [tenant_id], commit=False)
             logger.info('  [MERGE] FactPurchase done')
         except Exception as e:
             phase_failures.append(f'FactPurchase: {e}')
@@ -943,7 +1016,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
 
         # -- DM_SalesSummary --
         try:
-            run_sql(conn, f"DELETE FROM DM_SalesSummary WHERE TenantID = %s;", [tenant_id])
+            run_sql(conn, f"DELETE FROM DM_SalesSummary WHERE TenantID = %s;", [tenant_id], commit=False)
             run_sql(conn, f"""
                 INSERT INTO DM_SalesSummary (
                     TenantID, Year, Quarter, Month, ProductID, Category,
@@ -974,7 +1047,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                          DATEPART(QUARTER, TRY_CAST(f.SaleDate AS DATE)),
                          MONTH(TRY_CAST(f.SaleDate AS DATE)),
                          f.ProductID, p.Category;
-            """, [tenant_id])
+            """, [tenant_id], commit=False)
             logger.info('  [MERGE] DM_SalesSummary done')
         except Exception as e:
             phase_failures.append(f'DM_SalesSummary: {e}')
@@ -982,7 +1055,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
 
         # -- DM_CustomerRFM --
         try:
-            run_sql(conn, f"DELETE FROM DM_CustomerRFM WHERE TenantID = %s;", [tenant_id])
+            run_sql(conn, f"DELETE FROM DM_CustomerRFM WHERE TenantID = %s;", [tenant_id], commit=False)
             run_sql(conn, f"""
                 ;WITH RFMBase AS (
                     SELECT
@@ -1023,7 +1096,7 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
                     END,
                     GETDATE()
                 FROM RFMAll r;
-            """, [tenant_id])
+            """, [tenant_id], commit=False)
             logger.info('  [MERGE] DM_CustomerRFM done')
         except Exception as e:
             phase_failures.append(f'DM_CustomerRFM: {e}')
@@ -1036,15 +1109,9 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
             for ftype in total_stats:
                 if total_stats[ftype]['extracted'] > 0:
                     wm_table = f'{tenant_id}_{ftype.title()}'
-                    update_watermark(conn, tenant_id, wm_table, 'SUCCESS')
+                    update_watermark(conn, tenant_id, wm_table, 'SUCCESS', commit=False)
 
         total_rows = sum(v['extracted'] for v in total_stats.values())
-        if run_succeeded:
-            for fpath in successful_files:
-                if os.path.exists(fpath):
-                    archive_path = move_processed_file(fpath, stage_dirs['archive'])
-                    logger.info(f'  [{tenant_id}] Archived processed file: {os.path.basename(fpath)} -> {archive_path}')
-
         final_status = 'SUCCESS' if run_succeeded else 'FAILED'
         final_error_parts = []
         if failed_files:
@@ -1052,29 +1119,48 @@ def run_etl_for_tenant(tenant_id: str, data_dir: str, batch_date: date = None) -
         if phase_failures:
             final_error_parts.append(f'Failed phases: {"; ".join(str(e) for e in phase_failures)}')
         final_error = ' | '.join(final_error_parts) if final_error_parts else None
+
+        if not run_succeeded:
+            conn.rollback()
+            write_etl_log(
+                conn, tenant_id, 'ETL_AllFiles', 'PipelineComplete', final_status,
+                rows_processed=total_rows,
+                rows_inserted=sum(v['inserted'] for v in total_stats.values()),
+                duration_sec=0,
+                error_msg=final_error,
+            )
+            logger.error(f'[{tenant_id}] ETL COMPLETED WITH FILE ERRORS — {failed_files}')
+            if phase_failures:
+                logger.error(f'[{tenant_id}] ETL COMPLETED WITH PHASE ERRORS — {phase_failures}')
+            logger.error(f'ETL FAILED: {tenant_id} | {batch_str}')
+            conn.close()
+            return False
+
         write_etl_log(
             conn, tenant_id, 'ETL_AllFiles', 'PipelineComplete', final_status,
             rows_processed=total_rows,
             rows_inserted=sum(v['inserted'] for v in total_stats.values()),
             duration_sec=0,
             error_msg=final_error,
+            commit=False,
         )
+        conn.commit()
 
-        if failed_files or phase_failures:
-            logger.error(f'[{tenant_id}] ETL COMPLETED WITH FILE ERRORS — {failed_files}')
-            if phase_failures:
-                logger.error(f'[{tenant_id}] ETL COMPLETED WITH PHASE ERRORS — {phase_failures}')
-            logger.error(f'ETL FAILED: {tenant_id} | {batch_str}')
-        else:
-            logger.info(f'[{tenant_id}] ETL SUCCESS — Stats: {total_stats}')
-            logger.info(f'ETL SUCCESS: {tenant_id} | {batch_str}')
+        for fpath in successful_files:
+            if os.path.exists(fpath):
+                archive_path = move_processed_file(fpath, stage_dirs['archive'])
+                logger.info(f'  [{tenant_id}] Archived processed file: {os.path.basename(fpath)} -> {archive_path}')
+
+        logger.info(f'[{tenant_id}] ETL SUCCESS — Stats: {total_stats}')
+        logger.info(f'ETL SUCCESS: {tenant_id} | {batch_str}')
         conn.close()
-        return run_succeeded
+        return True
 
     except Exception as ex:
         logger.error(f'ETL FAILED: {tenant_id} — {ex}', exc_info=True)
         if conn:
             try:
+                conn.rollback()
                 update_watermark(conn, tenant_id, f'{tenant_id}_ALL', 'FAILED')
                 write_etl_log(
                     conn, tenant_id, 'ETL_AllFiles', 'PipelineComplete', 'FAILED',

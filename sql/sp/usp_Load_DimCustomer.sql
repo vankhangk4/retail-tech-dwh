@@ -16,6 +16,21 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    ;WITH GroupedCustomer AS (
+        SELECT
+            CustomerID,
+            MAX(CustomerName) AS CustomerName,
+            MAX(Phone) AS Phone,
+            MAX(Email) AS Email,
+            MAX(City) AS City,
+            MAX(Region) AS Region,
+            MAX(CustomerType) AS CustomerType,
+            TenantID
+        FROM STG_CustomerRaw
+        WHERE CustomerID IS NOT NULL AND CustomerID != ''
+        GROUP BY TenantID, CustomerID
+    )
+
     -- Upsert DimCustomer
     UPDATE dc
     SET dc.CustomerName  = stg.CustomerName,
@@ -25,7 +40,22 @@ BEGIN
         dc.Region          = stg.Region,
         dc.CustomerType   = stg.CustomerType
     FROM DimCustomer dc
-    INNER JOIN STG_CustomerRaw stg ON stg.CustomerID = dc.CustomerID AND stg.TenantID = dc.TenantID;
+    INNER JOIN GroupedCustomer stg ON stg.CustomerID = dc.CustomerID AND stg.TenantID = dc.TenantID;
+
+    ;WITH GroupedCustomer AS (
+        SELECT
+            CustomerID,
+            MAX(CustomerName) AS CustomerName,
+            MAX(Phone) AS Phone,
+            MAX(Email) AS Email,
+            MAX(City) AS City,
+            MAX(Region) AS Region,
+            MAX(CustomerType) AS CustomerType,
+            TenantID
+        FROM STG_CustomerRaw
+        WHERE CustomerID IS NOT NULL AND CustomerID != ''
+        GROUP BY TenantID, CustomerID
+    )
 
     INSERT INTO DimCustomer (CustomerID, CustomerName, Phone, Email, City, Region, CustomerType, TenantID)
     SELECT
@@ -37,7 +67,7 @@ BEGIN
         stg.Region,
         stg.CustomerType,
         stg.TenantID
-    FROM STG_CustomerRaw stg
+    FROM GroupedCustomer stg
     WHERE NOT EXISTS (
         SELECT 1 FROM DimCustomer dc
         WHERE dc.CustomerID = stg.CustomerID AND dc.TenantID = stg.TenantID

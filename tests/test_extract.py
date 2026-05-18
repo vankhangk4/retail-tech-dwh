@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 
 from etl.extract.extract_sales import (
     get_last_watermark,
+    extract_csv_file,
     COLUMN_MAP_CUSTOMER,
     COLUMN_MAP_PRODUCT,
     COLUMN_MAP_INVENTORY,
@@ -67,6 +68,22 @@ class TestColumnMaps:
     def test_purchase_map_don_gia_nhap(self):
         assert 'Đơn giá nhập' in COLUMN_MAP_PURCHASE
         assert COLUMN_MAP_PURCHASE['Đơn giá nhập'] == 'DonGiaNhap'
+
+
+class TestProductExtract:
+    def test_product_extract_keeps_unit_cost(self, tmp_path):
+        product_file = tmp_path / 'DanhMucSanPham.csv'
+        product_file.write_text(
+            'Mã SP,Tên SP,Danh mục,Danh mục con,Giá vốn,Giá niêm yết,Mã NCC\n'
+            'SP001,Sản phẩm kiểm thử,Điện thoại,Android,70000,100000,NCC001\n',
+            encoding='utf-8-sig',
+        )
+
+        result = extract_csv_file(str(product_file), 'STORE_HN', 'product')
+
+        assert 'UnitCost' in result.columns
+        assert result['UnitCost'].iloc[0] == 70000
+        assert result['UnitPrice'].iloc[0] == 100000
 
 
 # ─────────────────────────────────────────────

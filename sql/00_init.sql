@@ -99,6 +99,7 @@ BEGIN
         Category      NVARCHAR(100) NULL,
         SubCategory   NVARCHAR(100) NULL,
         UnitPrice     DECIMAL(18,2) NOT NULL,
+        UnitCost      DECIMAL(18,2) NOT NULL DEFAULT 0,
         SupplierID    VARCHAR(20)   NULL,
         IsActive      BIT           NOT NULL DEFAULT 1,
         TenantID      VARCHAR(20)   NULL
@@ -110,7 +111,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'DimCustomer')
 BEGIN
     CREATE TABLE DimCustomer (
         CustomerKey   INT IDENTITY(1,1) PRIMARY KEY,
-        CustomerID    VARCHAR(20)   NOT NULL UNIQUE,
+        CustomerID    VARCHAR(20)   NOT NULL,
         CustomerName  NVARCHAR(200) NOT NULL,
         Phone         VARCHAR(20)   NULL,
         Email         VARCHAR(100)  NULL,
@@ -284,6 +285,7 @@ BEGIN
         Category       NVARCHAR(100) NULL,
         SubCategory    NVARCHAR(100) NULL,
         UnitPrice      NVARCHAR(50)  NULL,
+        UnitCost       NVARCHAR(50)  NULL,
         SupplierID     NVARCHAR(50)  NULL,
         LoadStatus     NVARCHAR(20)  NOT NULL DEFAULT 'PENDING',
         ErrorMessage   NVARCHAR(500) NULL,
@@ -577,12 +579,39 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='STG_Sa
     ALTER TABLE STG_SalesRaw ADD City NVARCHAR(100) NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='STG_ProductRaw' AND COLUMN_NAME='TenantID')
     ALTER TABLE STG_ProductRaw ADD TenantID VARCHAR(20) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='STG_ProductRaw' AND COLUMN_NAME='UnitCost')
+    ALTER TABLE STG_ProductRaw ADD UnitCost NVARCHAR(50) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='DimProduct' AND COLUMN_NAME='UnitCost')
+    ALTER TABLE DimProduct ADD UnitCost DECIMAL(18,2) NOT NULL DEFAULT 0;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='STG_CustomerRaw' AND COLUMN_NAME='Region')
     ALTER TABLE STG_CustomerRaw ADD Region NVARCHAR(100) NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='STG_CustomerRaw' AND COLUMN_NAME='CustomerType')
     ALTER TABLE STG_CustomerRaw ADD CustomerType NVARCHAR(50) NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='STG_CustomerRaw' AND COLUMN_NAME='TenantID')
     ALTER TABLE STG_CustomerRaw ADD TenantID VARCHAR(20) NULL;
+DECLARE @customer_uq SYSNAME;
+SELECT TOP 1 @customer_uq = kc.name
+FROM sys.key_constraints kc
+INNER JOIN sys.index_columns ic
+    ON ic.object_id = kc.parent_object_id
+   AND ic.index_id = kc.unique_index_id
+INNER JOIN sys.columns c
+    ON c.object_id = ic.object_id
+   AND c.column_id = ic.column_id
+WHERE kc.parent_object_id = OBJECT_ID('DimCustomer')
+  AND kc.type = 'UQ'
+GROUP BY kc.name
+HAVING COUNT(*) = 1 AND MAX(c.name) = 'CustomerID';
+IF @customer_uq IS NOT NULL
+    EXEC('ALTER TABLE DimCustomer DROP CONSTRAINT [' + @customer_uq + ']');
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID('DimCustomer')
+      AND name = 'UX_DimCustomer_TenantCustomer'
+)
+    CREATE UNIQUE INDEX UX_DimCustomer_TenantCustomer
+    ON DimCustomer(TenantID, CustomerID)
+    WHERE TenantID IS NOT NULL AND CustomerID IS NOT NULL;
 PRINT 'Fixed: STG columns added';
 
 -- ============================================================
@@ -628,22 +657,42 @@ CREATE PROCEDURE usp_Load_DimProduct
 AS
 BEGIN
     SET NOCOUNT ON;
+    ;WITH ProductSource AS (
+        SELECT ProductID, ProductName, Category, SubCategory, UnitPrice, UnitCost, SupplierID, TenantID
+        FROM STG_ProductRaw
+        WHERE LoadStatus = ''PENDING''
+          AND ProductID IS NOT NULL
+          AND LEN(RTRIM(ProductID)) > 0
+    ),
+    GroupedProduct AS (
+        SELECT
+            ProductID,
+            MAX(ProductName) AS ProductName,
+            MAX(Category) AS Category,
+            MAX(SubCategory) AS SubCategory,
+            MAX(TRY_CAST(UnitPrice AS DECIMAL(18,2))) AS UnitPrice,
+            MAX(TRY_CAST(UnitCost AS DECIMAL(18,2))) AS UnitCost,
+            MAX(SupplierID) AS SupplierID,
+            MAX(TenantID) AS TenantID
+        FROM ProductSource
+        GROUP BY ProductID
+    )
     MERGE INTO DimProduct AS target
-    USING (
-        SELECT DISTINCT ProductID, ProductName, Category, SubCategory, UnitPrice, SupplierID, TenantID
-        FROM (
-            SELECT ProductID, ProductName, Category, SubCategory, UnitPrice, SupplierID, TenantID FROM STG_ProductRaw WHERE LoadStatus = ''PENDING''
-            UNION ALL
-            SELECT ProductID, ProductName, Category, SubCategory, UnitPrice, SupplierID, TenantID FROM STG_SalesRaw WHERE LoadStatus = ''PENDING''
-        ) AS combined
-        WHERE ProductID IS NOT NULL AND LEN(RTRIM(ProductID)) > 0
-    ) AS source
+    USING GroupedProduct AS source
     ON target.ProductID = source.ProductID
     WHEN NOT MATCHED THEN
-        INSERT (ProductID, ProductName, Category, SubCategory, UnitPrice, SupplierID, TenantID)
-        VALUES (source.ProductID, source.ProductName, source.Category, source.SubCategory, source.UnitPrice, source.SupplierID, source.TenantID)
-    WHEN MATCHED AND source.UnitPrice <> target.UnitPrice THEN
-        UPDATE SET ProductName = source.ProductName, UnitPrice = source.UnitPrice;
+        INSERT (ProductID, ProductName, Category, SubCategory, UnitPrice, UnitCost, SupplierID, TenantID)
+        VALUES (source.ProductID, ISNULL(source.ProductName, source.ProductID), source.Category, source.SubCategory,
+                ISNULL(source.UnitPrice, 0),
+                ISNULL(source.UnitCost, 0),
+                source.SupplierID, source.TenantID)
+    WHEN MATCHED AND (
+        ISNULL(source.UnitPrice, -1) <> target.UnitPrice
+        OR ISNULL(source.UnitCost, -1) <> target.UnitCost
+    ) THEN
+        UPDATE SET ProductName = ISNULL(source.ProductName, target.ProductName),
+                   UnitPrice = ISNULL(source.UnitPrice, target.UnitPrice),
+                   UnitCost = ISNULL(source.UnitCost, target.UnitCost);
 END
 ');
 PRINT 'Created: usp_Load_DimProduct';
